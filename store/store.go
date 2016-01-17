@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-// Package whawty.store implements a simple storage backend for whawty password
+// Package whawty implements a simple storage backend for whawty password
 // hash files. The schema of the whawty password store can be found in the doc
 // directory.
 // If the environment contains the variable WHAWTY_DEBUG logging will be enabled.
@@ -70,19 +70,19 @@ func (s *Store) Init(admin, password string) (err error) {
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.
-func (s *Store) AddUser(user, password string, is_admin bool) (err error) {
+func (s *Store) AddUser(user, password string, isAdmin bool) (err error) {
 	return
 }
 
 // UpdateUser changes the password and admin status of user. It is an error
 // if the user does not exist.
-func (s *Store) UpdateUser(user, password string, is_admin bool) (err error) {
+func (s *Store) UpdateUser(user, password string, isAdmin bool) (err error) {
 	return
 }
 
 // AddOrUpdateUser changes the password and admin status of an already exisitng
 // user. If the user does not exist yet it will get created.
-func (s *Store) AddOrUpdateUser(user, password string, is_admin bool) (err error) {
+func (s *Store) AddOrUpdateUser(user, password string, isAdmin bool) (err error) {
 	return
 }
 
@@ -92,17 +92,17 @@ func (s *Store) RemoveUser(user string) {
 }
 
 // Exists checks if user exists.
-func (s *Store) Exists(user string) (is_admin bool) {
+func (s *Store) Exists(user string) (isAdmin bool) {
 	return
 }
 
 // IsAdmin checks if user exists and is an admin.
-func (s *Store) IsAdmin(user string) (is_admin bool, err error) {
+func (s *Store) IsAdmin(user string) (isAdmin bool, err error) {
 	return
 }
 
 // Authenticate checks user and password are a valid combination. It also returns
 // whether user is an admin.
-func (s *Store) Authenticate(user, password string) (authenticated, is_admin bool, err error) {
+func (s *Store) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
 	return
 }

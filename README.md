@@ -1,8 +1,12 @@
 # whawty
 
-simple file base authentication suite
+simple file based authentication suite
 
 tba...
+
+## golang API
+
+[![GoDoc](https://godoc.org/github.com/spreadspace/whawty/store?status.svg)](https://godoc.org/github.com/spreadspace/whawty/store)
 
 ## Licence
 

@@ -1,0 +1,4 @@
+/pam/*.o
+/pam/*.d
+/pam/*.d.*
+/pam/pam_whawty.so

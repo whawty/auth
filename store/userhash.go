@@ -32,6 +32,7 @@
 package auth
 
 import (
+	"gopkg.in/spreadspace/scryptauth.v2"
 	"io"
 	"os"
 	"path/filepath"
@@ -40,21 +41,21 @@ import (
 // UserHash is the representation of a single user hash file inside the store.
 // Use NewUserHash to create it.
 type UserHash struct {
-	basedir string
-	user    string
+	store *Store
+	user  string
 }
 
 // NewUserHash creates a new whawty.auth UserHash fo user inside basedir.
-func NewUserHash(basedir, user string) (u *UserHash) {
+func NewUserHash(store *Store, user string) (u *UserHash) {
 	u = &UserHash{}
-	u.basedir = basedir
+	u.store = store
 	u.user = user
 	return
 }
 
 // Add creates the hash file. It is an error if the user already exists.
 func (u *UserHash) Add(password string, isAdmin bool) (err error) {
-	filename := filepath.Join(u.basedir, u.user)
+	filename := filepath.Join(u.store.basedir, u.user)
 	if isAdmin {
 		filename += ".admin"
 	} else {
@@ -65,11 +66,13 @@ func (u *UserHash) Add(password string, isAdmin bool) (err error) {
 		return
 	}
 	defer file.Close()
-	var hash string
-	if hash, err = CalcHash(password); err != nil {
+
+	var hash, salt []byte
+	if hash, salt, err = u.store.contexts[u.store.defaultParamId].Gen([]byte(password)); err != nil {
 		return
 	}
-	if _, err = io.WriteString(file, hash+"\n"); err != nil {
+	hash_str := scryptauth.EncodeBase64(u.store.defaultParamId, hash, salt)
+	if _, err = io.WriteString(file, hash_str+"\n"); err != nil {
 		return // TODO: retry if write was short
 	}
 	return
@@ -83,7 +86,7 @@ func (u *UserHash) Update(password string, isAdmin bool) (err error) {
 
 // Remove deletes hash file.
 func (u *UserHash) Remove() {
-	filename := filepath.Join(u.basedir, u.user)
+	filename := filepath.Join(u.store.basedir, u.user)
 	os.Remove(filename + ".admin")
 	os.Remove(filename + ".user")
 	return

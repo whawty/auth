@@ -37,6 +37,7 @@
 package auth
 
 import (
+	"gopkg.in/spreadspace/scryptauth.v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -55,13 +56,23 @@ func init() {
 
 // Store represents a whawty.auth password hash store. Use NewStore to create it.
 type Store struct {
-	basedir string
+	basedir        string
+	contexts       map[uint]*scryptauth.Context
+	defaultParamId uint
 }
 
 // NewStore creates a new whawty.auth store using basedir as base directory.
-func NewStore(basedir string) (s *Store) {
+func NewStore(basedir string) (s *Store, err error) {
 	s = &Store{}
 	s.basedir = filepath.Clean(basedir)
+	s.contexts = make(map[uint]*scryptauth.Context)
+	var ctx *scryptauth.Context
+	if ctx, err = scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")); err != nil {
+		return
+	}
+	s.defaultParamId = 1
+	s.contexts[s.defaultParamId] = ctx
+	// TODO: properly initilze contexts using a config file
 	return
 }
 
@@ -99,7 +110,7 @@ func (s *Store) AddOrUpdateUser(user, password string, isAdmin bool) (err error)
 
 // RemoveUser removes user from the store.
 func (s *Store) RemoveUser(user string) {
-	NewUserHash(s.basedir, user).Remove()
+	NewUserHash(s, user).Remove()
 	return
 }
 
@@ -116,12 +127,12 @@ func (s *Store) List() (list UserList) {
 
 // Exists checks if user exists.
 func (s *Store) Exists(user string) (isAdmin bool, err error) {
-	return NewUserHash(s.basedir, user).Exists()
+	return NewUserHash(s, user).Exists()
 }
 
 // IsAdmin checks if user exists and is an admin.
 func (s *Store) IsAdmin(user string) (isAdmin bool, err error) {
-	return NewUserHash(s.basedir, user).IsAdmin()
+	return NewUserHash(s, user).IsAdmin()
 }
 
 // Authenticate checks user and password are a valid combination. It also returns

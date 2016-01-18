@@ -43,7 +43,8 @@ const (
 )
 
 func TestAddRemoveAdmin(t *testing.T) {
-	u := NewUserHash(testBaseDir, "test")
+	s, _ := NewStore(testBaseDir)
+	u := NewUserHash(s, "test")
 
 	if err := u.Add("secret", true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -65,7 +66,8 @@ func TestAddRemoveAdmin(t *testing.T) {
 }
 
 func TestAddRemoveUser(t *testing.T) {
-	u := NewUserHash(testBaseDir, "test2")
+	s, _ := NewStore(testBaseDir)
+	u := NewUserHash(s, "test2")
 
 	if err := u.Add("secret", false); err != nil {
 		t.Fatal("unexpected error:", err)

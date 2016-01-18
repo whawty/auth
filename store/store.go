@@ -13,7 +13,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 //
-// * Neither the name of whawty nor the names of its
+// * Neither the name of whawty.auth nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 //
@@ -29,12 +29,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-// Package whawty implements a simple storage backend for whawty password
-// hash files. The schema of the whawty password store can be found in the doc
-// directory.
-// If the environment contains the variable WHAWTY_DEBUG logging will be enabled.
-// By default whawty doesn't log anything.
-package whawty
+// Package auth implements a simple storage backend for whawty.auth password
+// hash files. The schema of the whawty.auth password store can be found in the
+// doc directory.
+// If the environment contains the variable WHAWTY_AUTH_DEBUG logging will be enabled.
+// By default whawty.auth doesn't log anything.
+package auth
 
 import (
 	"io/ioutil"
@@ -44,21 +44,21 @@ import (
 )
 
 var (
-	wl = log.New(ioutil.Discard, "[whawty]\t", log.LstdFlags)
+	wl = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
 )
 
 func init() {
-	if _, exists := os.LookupEnv("WHAWTY_DEBUG"); exists {
+	if _, exists := os.LookupEnv("WHAWTY_AUTH_DEBUG"); exists {
 		wl.SetOutput(os.Stderr)
 	}
 }
 
-// Store represents a whawty password hash store. Use NewStore to create it.
+// Store represents a whawty.auth password hash store. Use NewStore to create it.
 type Store struct {
 	basedir string
 }
 
-// NewStore creates a new whawty store using basedir as base directory.
+// NewStore creates a new whawty.auth store using basedir as base directory.
 func NewStore(basedir string) (s *Store) {
 	s = &Store{}
 	s.basedir = filepath.Clean(basedir)
@@ -71,7 +71,7 @@ func (s *Store) Init(admin, password string) (err error) {
 	return
 }
 
-// Check tests if the directory is a valid whawty base directory.
+// Check tests if the directory is a valid whawty.auth base directory.
 func (s *Store) Check() (ok bool, err error) {
 	// TODO: implement this
 	return

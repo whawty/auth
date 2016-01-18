@@ -1,23 +1,24 @@
-# whawty storage schema
+# whawty.auth storage schema
 
-The whawty store consists of a single directory which contains all
+The whawty.auth store consists of a single directory which contains all
 usernames and password hashes in flat files. Password files are named
 after the user. The file extension is used to distinguish between admin
 and normal user.
 
-    /path/to/whawty/base
+    /path/to/whawty/auth/base
       adminuser.admin       ; password hash for user adminuser which is an admin
       gimpf.admin           ; there are multiple admins allowed
       equinox.user          ; password hash for user equinox
       fredl.user            ; password hash for user fredl
 
-The directory must not contain any other files. A valid whawty base directory
-contains at least one admin file which uses an supported hashing format.
+The directory must not contain any other files. A valid whawty.auth base
+directory contains at least one admin file which uses an supported hashing
+format.
 Furthermore a directory may contain only one hash file per user.
 If this conditions are not met the agent has to exit with an error.
 
-If a whawty agent doesn't support the hashing format of a file it has to act
-according to the following rules:
+If a whawty.auth agent doesn't support the hashing format of a file it has
+to act according to the following rules:
 
 - on authenticate: ignore the file and act as if the user does not exist
 - on add: report an error (user exists)
@@ -31,8 +32,8 @@ allowed to add new users. Also granting admin privileges to normal users
 may only be done by admins. An admin is also allowed to change any password.
 Normal users may only update their own password.
 
-A whawty agent may upgrade the hashing algorihtm to an other(newer) format
-during authentication.
+A whawty.auth agent may upgrade the hashing algorihtm to an other(newer)
+format xduring authentication.
 However if an agent supports this it must be possible to disable upgrades.
 
 The contents of the files depend on the hashing algorithm used. For now

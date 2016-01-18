@@ -13,7 +13,7 @@
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
 //
-// * Neither the name of whawty nor the names of its
+// * Neither the name of whawty.auth nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
 //
@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-package whawty
+package auth
 
 import (
 	"io"
@@ -44,7 +44,7 @@ type UserHash struct {
 	user    string
 }
 
-// NewUserHash creates a new whawty UserHash fo user inside basedir.
+// NewUserHash creates a new whawty.auth UserHash fo user inside basedir.
 func NewUserHash(basedir, user string) (u *UserHash) {
 	u = &UserHash{}
 	u.basedir = basedir

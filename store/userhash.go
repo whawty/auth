@@ -71,8 +71,8 @@ func (u *UserHash) Add(password string, isAdmin bool) (err error) {
 	if hash, salt, err = u.store.contexts[u.store.defaultParamID].Gen([]byte(password)); err != nil {
 		return
 	}
-	hash_str := scryptauth.EncodeBase64(u.store.defaultParamID, hash, salt)
-	if _, err = io.WriteString(file, hash_str+"\n"); err != nil {
+	hashStr := scryptauth.EncodeBase64(u.store.defaultParamID, hash, salt)
+	if _, err = io.WriteString(file, hashStr+"\n"); err != nil {
 		return // TODO: retry if write was short
 	}
 	return

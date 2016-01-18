@@ -20,7 +20,14 @@ according to the following rules:
 - on authenticate: ignore the file and act as if the user does not exist
 - on add: report an error (user exists)
 - on update: report an error (won't overwrite unsupported formats)
-- on delete: delete the file without warning
+- on delete: delete the file (a warning may be shown)
+
+Uernames must only contain the following characters:
+    [-_@A-Za-z0-0]
+
+The difference between admins and normal users is that admin users are
+allowed to add new users. Also granting admin privileges to normal users
+may only be done by admins. Normal users my only update their password.
 
 A whawty agent may upgrade the hashing algorihtm to an other(newer) format
 during authentication.

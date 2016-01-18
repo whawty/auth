@@ -40,6 +40,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 var (
@@ -60,7 +61,7 @@ type Store struct {
 // NewStore creates a new whawty store using basedir as base directory.
 func NewStore(basedir string) (s *Store) {
 	s = &Store{}
-	s.basedir = basedir
+	s.basedir = filepath.Clean(basedir)
 	return
 }
 

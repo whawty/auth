@@ -32,69 +32,66 @@
 package whawty
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 )
 
-// UserHash is the representation of a single user hash file inside the store.
-// Use NewUserHash to create it.
-type UserHash struct {
-	basedir string
-	user    string
-	file    *os.File
-}
+const (
+	testBaseDir string = "test-store"
+)
 
-// NewUserHash creates a new whawty UserHash fo user inside basedir.
-func NewUserHash(basedir, user string) (u *UserHash) {
-	u = &UserHash{}
-	u.basedir = basedir
-	u.user = user
-	return
-}
+func TestAddRemoveAdmin(t *testing.T) {
+	u := NewUserHash(testBaseDir, "test")
 
-// Add creates the hash file. It is an error if the user already exists.
-func (u *UserHash) Add(password string, isAdmin bool) (err error) {
-	filename := filepath.Join(u.basedir, u.user)
-	if isAdmin {
-		filename += ".admin"
-	} else {
-		filename += ".user"
+	if err := u.Add("secret", true); err != nil {
+		t.Fatal("unexpected error:", err)
 	}
-	if u.file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600); err != nil {
-		return
+	if _, err := os.Open(filepath.Join(testBaseDir, "test.admin")); err != nil {
+		t.Fatal("cannot open test user file after add:", err)
 	}
-	// TODO: create hash and write it to the file
-	return
+
+	if err := u.Add("secret", true); err == nil {
+		t.Fatal("adding user a second time returned no error!")
+	}
+
+	u.Remove()
+	if _, err := os.Open(filepath.Join(testBaseDir, "test.admin")); err == nil {
+		t.Fatal("test user does still exist after remove")
+	} else if !os.IsNotExist(err) {
+		t.Fatal("unexpected error:", err)
+	}
 }
 
-// Update changes the password and admin status of user.
-func (u *UserHash) Update(password string, isAdmin bool) (err error) {
-	// TODO: implement this
-	return
+func TestAddRemoveUser(t *testing.T) {
+	u := NewUserHash(testBaseDir, "test2")
+
+	if err := u.Add("secret", false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if _, err := os.Open(filepath.Join(testBaseDir, "test2.user")); err != nil {
+		t.Fatal("cannot open test user file after add:", err)
+	}
+
+	u.Remove()
+	if _, err := os.Open(filepath.Join(testBaseDir, "test2.user")); err == nil {
+		t.Fatal("test user does still exist after remove")
+	} else if !os.IsNotExist(err) {
+		t.Fatal("unexpected error:", err)
+	}
 }
 
-// Remove deletes hash file.
-func (u *UserHash) Remove() {
-	filename := filepath.Join(u.basedir, u.user)
-	os.Remove(filename + ".admin")
-	os.Remove(filename + ".user")
-	return
-}
+func TestMain(m *testing.M) {
+	if err := os.Mkdir(testBaseDir, 0755); err != nil {
+		fmt.Println("Error creating store base directory:", err)
+		os.Exit(-1)
+	}
 
-// Check if the format of the hash file is supported
-func (u *UserHash) IsFormatSupported() (ok bool, err error) {
-	// TODO: implement this
-	return
-}
+	ret := m.Run()
 
-// Exists checks if user exists.
-func (u *UserHash) Exists() (isAdmin bool, err error) {
-	// TODO: implement this
-	return
-}
-
-// IsAdmin checks if user exists and is an admin.
-func (u *UserHash) IsAdmin() (isAdmin bool, err error) {
-	// TODO: implement this
-	return
+	if err := os.RemoveAll(testBaseDir); err != nil {
+		fmt.Println("Error removing store base directory:", err)
+	}
+	os.Exit(ret)
 }

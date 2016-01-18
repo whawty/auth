@@ -69,6 +69,11 @@ func (s *Store) Init(admin, password string) (err error) {
 	return
 }
 
+// Check tests if the directory is a valid whawty base directory.
+func (s *Store) Check() (ok bool, err error) {
+	return
+}
+
 // AddUser adds user to the store. It is an error if the user already exists.
 func (s *Store) AddUser(user, password string, isAdmin bool) (err error) {
 	return
@@ -88,6 +93,15 @@ func (s *Store) AddOrUpdateUser(user, password string, isAdmin bool) (err error)
 
 // RemoveUser removes user from the store.
 func (s *Store) RemoveUser(user string) {
+	return
+}
+
+// UserList is the return value of List(). The key of the map is the username
+// and the value is true if the user is an admin.
+type UserList map[string]bool
+
+// List returns a list of all users in the store.
+func (s *Store) List() UserList {
 	return
 }
 

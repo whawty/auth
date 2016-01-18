@@ -48,6 +48,8 @@ const (
 	hkeylen  int  = 32
 )
 
+// CalcHash produces a hash string containing all parameters and values needed to check
+// if a password is correct.
 func CalcHash(password string) (hash string, err error) {
 	salt := make([]byte, hsaltlen)
 	if _, err = rand.Read(salt); err != nil {
@@ -66,6 +68,8 @@ func CalcHash(password string) (hash string, err error) {
 	return
 }
 
+// CheckHash checks wheter password is correct using hash which contains all parameters
+// to recalculate the secure hash.
 func CheckHash(hash, password string) (ok bool, err error) {
 	// TODO: parse paremeter from hash string and compare with computed key
 	ok = false

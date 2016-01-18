@@ -89,7 +89,7 @@ func (u *UserHash) Remove() {
 	return
 }
 
-// Check if the format of the hash file is supported
+// IsFormatSupported checks if the format of the hash file is supported
 func (u *UserHash) IsFormatSupported() (ok bool, err error) {
 	// TODO: implement this
 	return

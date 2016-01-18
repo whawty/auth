@@ -29,12 +29,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-// Package auth implements a simple storage backend for whawty.auth password
+// Package store implements a simple storage backend for whawty.auth password
 // hash files. The schema of the whawty.auth password store can be found in the
 // doc directory.
 // If the environment contains the variable WHAWTY_AUTH_DEBUG logging will be enabled.
 // By default whawty.auth doesn't log anything.
-package auth
+package store
 
 import (
 	"gopkg.in/spreadspace/scryptauth.v2"
@@ -54,63 +54,63 @@ func init() {
 	}
 }
 
-// Store represents a whawty.auth password hash store. Use NewStore to create it.
-type Store struct {
+// Dir represents a directoy containing whawty.auth password hash store. Use NewDir to create it.
+type Dir struct {
 	basedir        string
 	contexts       map[uint]*scryptauth.Context
 	defaultParamID uint
 }
 
-// NewStore creates a new whawty.auth store using basedir as base directory.
-func NewStore(basedir string) (s *Store, err error) {
-	s = &Store{}
-	s.basedir = filepath.Clean(basedir)
-	s.contexts = make(map[uint]*scryptauth.Context)
+// NewDir creates a new whawty.auth store using basedir as base directory.
+func NewDir(basedir string) (d *Dir, err error) {
+	d = &Dir{}
+	d.basedir = filepath.Clean(basedir)
+	d.contexts = make(map[uint]*scryptauth.Context)
 	var ctx *scryptauth.Context
 	if ctx, err = scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")); err != nil {
 		return
 	}
-	s.defaultParamID = 1
-	s.contexts[s.defaultParamID] = ctx
+	d.defaultParamID = 1
+	d.contexts[d.defaultParamID] = ctx
 	// TODO: properly initilze contexts using a config file
 	return
 }
 
 // Init initalizes the store by creating a password file for an admin user.
-func (s *Store) Init(admin, password string) (err error) {
+func (d *Dir) Init(admin, password string) (err error) {
 	// TODO: implement this
 	return
 }
 
 // Check tests if the directory is a valid whawty.auth base directory.
-func (s *Store) Check() (ok bool, err error) {
+func (d *Dir) Check() (ok bool, err error) {
 	// TODO: implement this
 	return
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.
-func (s *Store) AddUser(user, password string, isAdmin bool) (err error) {
+func (d *Dir) AddUser(user, password string, isAdmin bool) (err error) {
 	// TODO: implement this
 	return
 }
 
 // UpdateUser changes the password and admin status of user. It is an error
 // if the user does not exist.
-func (s *Store) UpdateUser(user, password string, isAdmin bool) (err error) {
+func (d *Dir) UpdateUser(user, password string, isAdmin bool) (err error) {
 	// TODO: implement this
 	return
 }
 
 // AddOrUpdateUser changes the password and admin status of an already exisitng
 // user. If the user does not exist yet it will get created.
-func (s *Store) AddOrUpdateUser(user, password string, isAdmin bool) (err error) {
+func (d *Dir) AddOrUpdateUser(user, password string, isAdmin bool) (err error) {
 	// TODO: implement this
 	return
 }
 
 // RemoveUser removes user from the store.
-func (s *Store) RemoveUser(user string) {
-	NewUserHash(s, user).Remove()
+func (d *Dir) RemoveUser(user string) {
+	NewUserHash(d, user).Remove()
 	return
 }
 
@@ -119,25 +119,25 @@ func (s *Store) RemoveUser(user string) {
 type UserList map[string]bool
 
 // List returns a list of all users in the store.
-func (s *Store) List() (list UserList) {
+func (d *Dir) List() (list UserList) {
 	list = make(UserList)
 	// TODO: implement this
 	return
 }
 
 // Exists checks if user exists.
-func (s *Store) Exists(user string) (isAdmin bool, err error) {
-	return NewUserHash(s, user).Exists()
+func (d *Dir) Exists(user string) (isAdmin bool, err error) {
+	return NewUserHash(d, user).Exists()
 }
 
 // IsAdmin checks if user exists and is an admin.
-func (s *Store) IsAdmin(user string) (isAdmin bool, err error) {
-	return NewUserHash(s, user).IsAdmin()
+func (d *Dir) IsAdmin(user string) (isAdmin bool, err error) {
+	return NewUserHash(d, user).IsAdmin()
 }
 
 // Authenticate checks user and password are a valid combination. It also returns
 // whether user is an admin.
-func (s *Store) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
+func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
 	// TODO: implement this
 	return
 }

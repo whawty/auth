@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-package auth
+package store
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ const (
 )
 
 func TestAddRemoveAdmin(t *testing.T) {
-	s, _ := NewStore(testBaseDir)
+	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, "test")
 
 	if err := u.Add("secret", true); err != nil {
@@ -66,7 +66,7 @@ func TestAddRemoveAdmin(t *testing.T) {
 }
 
 func TestAddRemoveUser(t *testing.T) {
-	s, _ := NewStore(testBaseDir)
+	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, "test2")
 
 	if err := u.Add("secret", false); err != nil {

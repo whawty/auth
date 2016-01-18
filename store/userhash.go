@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-package auth
+package store
 
 import (
 	"gopkg.in/spreadspace/scryptauth.v2"
@@ -41,12 +41,12 @@ import (
 // UserHash is the representation of a single user hash file inside the store.
 // Use NewUserHash to create it.
 type UserHash struct {
-	store *Store
+	store *Dir
 	user  string
 }
 
-// NewUserHash creates a new whawty.auth UserHash fo user inside basedir.
-func NewUserHash(store *Store, user string) (u *UserHash) {
+// NewUserHash creates a new whawty.auth UserHash for user inside basedir.
+func NewUserHash(store *Dir, user string) (u *UserHash) {
 	u = &UserHash{}
 	u.store = store
 	u.user = user

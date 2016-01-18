@@ -38,6 +38,30 @@ import (
 	"path/filepath"
 )
 
+const (
+	adminExt string = ".admin"
+	userExt  string = ".user"
+)
+
+// fileExists returns whether the given file or directory exists or not
+// this is from: stackoverflow.com/questions/10510691
+func fileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+// IsFormatSupported checks if the format of the hash file is supported
+func IsFormatSupported(filename string) (ok bool, err error) {
+	// TODO: implement this
+	return
+}
+
 // UserHash is the representation of a single user hash file inside the store.
 // Use NewUserHash to create it.
 type UserHash struct {
@@ -57,9 +81,9 @@ func NewUserHash(store *Dir, user string) (u *UserHash) {
 func (u *UserHash) Add(password string, isAdmin bool) (err error) {
 	filename := filepath.Join(u.store.basedir, u.user)
 	if isAdmin {
-		filename += ".admin"
+		filename += adminExt
 	} else {
-		filename += ".user"
+		filename += userExt
 	}
 	var file *os.File
 	if file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600); err != nil {
@@ -78,8 +102,14 @@ func (u *UserHash) Add(password string, isAdmin bool) (err error) {
 	return
 }
 
-// Update changes the password and admin status of user.
+// Update changes the password for user.
 func (u *UserHash) Update(password string, isAdmin bool) (err error) {
+	// TODO: implement this
+	return
+}
+
+// SetAdmin changes the admin status of user.
+func (u *UserHash) SetAdmin(isAdmin bool) (err error) {
 	// TODO: implement this
 	return
 }
@@ -87,25 +117,27 @@ func (u *UserHash) Update(password string, isAdmin bool) (err error) {
 // Remove deletes hash file.
 func (u *UserHash) Remove() {
 	filename := filepath.Join(u.store.basedir, u.user)
-	os.Remove(filename + ".admin")
-	os.Remove(filename + ".user")
+	os.Remove(filename + adminExt)
+	os.Remove(filename + userExt)
 	return
 }
 
-// IsFormatSupported checks if the format of the hash file is supported
-func (u *UserHash) IsFormatSupported() (ok bool, err error) {
-	// TODO: implement this
+// Exists checks if user exists. It also returns whether user is an admin.
+func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
+	filename := filepath.Join(u.store.basedir, u.user)
+	var ok bool
+	if ok, err = fileExists(filename + adminExt); err != nil {
+		return
+	} else if ok {
+		return true, true, nil
+	}
+	isAdmin = false
+	exists, err = fileExists(filename + userExt)
 	return
 }
 
-// Exists checks if user exists.
-func (u *UserHash) Exists() (isAdmin bool, err error) {
-	// TODO: implement this
-	return
-}
-
-// IsAdmin checks if user exists and is an admin.
-func (u *UserHash) IsAdmin() (isAdmin bool, err error) {
+// Authenticate checks the user password. It also returns whether user is an admin.
+func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool, err error) {
 	// TODO: implement this
 	return
 }

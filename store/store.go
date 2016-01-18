@@ -94,16 +94,16 @@ func (d *Dir) AddUser(user, password string, isAdmin bool) (err error) {
 	return
 }
 
-// UpdateUser changes the password and admin status of user. It is an error
-// if the user does not exist.
-func (d *Dir) UpdateUser(user, password string, isAdmin bool) (err error) {
+// UpdateUser changes the password of user. It is an error if the user does
+// not exist.
+func (d *Dir) UpdateUser(user, password string) (err error) {
 	// TODO: implement this
 	return
 }
 
-// AddOrUpdateUser changes the password and admin status of an already exisitng
-// user. If the user does not exist yet it will get created.
-func (d *Dir) AddOrUpdateUser(user, password string, isAdmin bool) (err error) {
+// SetAdmin changes the admin status of user. It is an error if the user does
+// not exist.
+func (d *Dir) SetAdmin(user, isAdmin bool) (err error) {
 	// TODO: implement this
 	return
 }
@@ -125,14 +125,9 @@ func (d *Dir) List() (list UserList) {
 	return
 }
 
-// Exists checks if user exists.
-func (d *Dir) Exists(user string) (isAdmin bool, err error) {
+// Exists checks if user exists. It also returns whether user is an admin.
+func (d *Dir) Exists(user string) (exists bool, isAdmin bool, err error) {
 	return NewUserHash(d, user).Exists()
-}
-
-// IsAdmin checks if user exists and is an admin.
-func (d *Dir) IsAdmin(user string) (isAdmin bool, err error) {
-	return NewUserHash(d, user).IsAdmin()
 }
 
 // Authenticate checks user and password are a valid combination. It also returns

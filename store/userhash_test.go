@@ -43,14 +43,16 @@ const (
 )
 
 func TestAddRemoveAdmin(t *testing.T) {
+	username := "test"
+
 	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, "test")
+	u := NewUserHash(s, username)
 
 	if err := u.Add("secret", true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Open(filepath.Join(testBaseDir, "test.admin")); err != nil {
-		t.Fatal("cannot open test user file after add:", err)
+	if _, err := os.Stat(filepath.Join(testBaseDir, username+".admin")); err != nil {
+		t.Fatal("cannot read test user file after add:", err)
 	}
 
 	if err := u.Add("secret", true); err == nil {
@@ -58,7 +60,7 @@ func TestAddRemoveAdmin(t *testing.T) {
 	}
 
 	u.Remove()
-	if _, err := os.Open(filepath.Join(testBaseDir, "test.admin")); err == nil {
+	if _, err := os.Stat(filepath.Join(testBaseDir, username+".admin")); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
 		t.Fatal("unexpected error:", err)
@@ -66,21 +68,69 @@ func TestAddRemoveAdmin(t *testing.T) {
 }
 
 func TestAddRemoveUser(t *testing.T) {
+	username := "test2"
+
 	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, "test2")
+	u := NewUserHash(s, username)
 
 	if err := u.Add("secret", false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Open(filepath.Join(testBaseDir, "test2.user")); err != nil {
-		t.Fatal("cannot open test user file after add:", err)
+	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err != nil {
+		t.Fatal("cannot read test user file after add:", err)
 	}
 
 	u.Remove()
-	if _, err := os.Open(filepath.Join(testBaseDir, "test2.user")); err == nil {
+	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
 		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestExistsUser(t *testing.T) {
+	username := "test3"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if exists, _, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if exists {
+		t.Fatal("hash file for test user shouldn't exist")
+	}
+
+	if err := u.Add("secret", false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if exists, isAdmin, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if !exists {
+		t.Fatal("hash file for test user should exist")
+	} else if isAdmin {
+		t.Fatal("test user shouldn't be an admin")
+	}
+}
+
+func TestExistsAdmin(t *testing.T) {
+	username := "test4"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add("secret", true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if exists, isAdmin, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if !exists {
+		t.Fatal("test user should exist")
+	} else if !isAdmin {
+		t.Fatal("test user should be an admin")
 	}
 }
 

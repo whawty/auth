@@ -12,8 +12,10 @@ and normal user.
       fredl.user            ; password hash for user fredl
 
 The directory must not contain any other files. A valid whawty base directory
-contains at least one admin file which uses an supported hashing format. If
-this conditions are not met the agent has to exit with an error.
+contains at least one admin file which uses an supported hashing format.
+Furthermore a directory may contain only one hash file per user.
+If this conditions are not met the agent has to exit with an error.
+
 If a whawty agent doesn't support the hashing format of a file it has to act
 according to the following rules:
 

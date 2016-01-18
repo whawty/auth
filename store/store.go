@@ -52,7 +52,7 @@ func init() {
 	}
 }
 
-// Store contains all values needed to run the server. Use NewStore to create it.
+// Store represents a whawty password hash store. Use NewStore to create it.
 type Store struct {
 	basedir string
 }
@@ -61,7 +61,7 @@ type Store struct {
 func NewStore(basedir string) (s *Store) {
 	s = &Store{}
 	s.basedir = basedir
-	return s
+	return
 }
 
 // Init initalizes the store by creating a password file for an admin user.
@@ -101,12 +101,13 @@ func (s *Store) RemoveUser(user string) {
 type UserList map[string]bool
 
 // List returns a list of all users in the store.
-func (s *Store) List() UserList {
+func (s *Store) List() (list UserList) {
+	list = make(UserList)
 	return
 }
 
 // Exists checks if user exists.
-func (s *Store) Exists(user string) (isAdmin bool) {
+func (s *Store) Exists(user string) (isAdmin bool, err error) {
 	return
 }
 

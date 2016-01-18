@@ -32,77 +32,42 @@
 package whawty
 
 import (
-	"io"
-	"os"
-	"path/filepath"
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"golang.org/x/crypto/scrypt"
 )
 
-// UserHash is the representation of a single user hash file inside the store.
-// Use NewUserHash to create it.
-type UserHash struct {
-	basedir string
-	user    string
-}
+// TODO: make this configurable?
+const (
+	hNe      uint = 14
+	hN       int  = 1 << hNe
+	hr       int  = 8
+	hp       int  = 1
+	hsaltlen int  = 16
+	hkeylen  int  = 32
+)
 
-// NewUserHash creates a new whawty UserHash fo user inside basedir.
-func NewUserHash(basedir, user string) (u *UserHash) {
-	u = &UserHash{}
-	u.basedir = basedir
-	u.user = user
-	return
-}
-
-// Add creates the hash file. It is an error if the user already exists.
-func (u *UserHash) Add(password string, isAdmin bool) (err error) {
-	filename := filepath.Join(u.basedir, u.user)
-	if isAdmin {
-		filename += ".admin"
-	} else {
-		filename += ".user"
-	}
-	var file *os.File
-	if file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600); err != nil {
+func CalcHash(password string) (hash string, err error) {
+	salt := make([]byte, hsaltlen)
+	if _, err = rand.Read(salt); err != nil {
 		return
 	}
-	defer file.Close()
-	var hash string
-	if hash, err = CalcHash(password); err != nil {
+	var key []byte
+	if key, err = scrypt.Key([]byte(password), salt, hN, hr, hp, hkeylen); err != nil {
 		return
 	}
-	if _, err = io.WriteString(file, hash+"\n"); err != nil {
-		return // TODO: retry if write was short
-	}
+
+	// TODO: create hash string compatible to libsodium
+	params := fmt.Sprintf("%04X%02X%02X", hNe, hr, hp)
+	salt64 := base64.StdEncoding.EncodeToString(salt)
+	key64 := base64.StdEncoding.EncodeToString(key)
+	hash = fmt.Sprintf("$s0$%s$%s$%s", params, salt64, key64)
 	return
 }
 
-// Update changes the password and admin status of user.
-func (u *UserHash) Update(password string, isAdmin bool) (err error) {
-	// TODO: implement this
-	return
-}
-
-// Remove deletes hash file.
-func (u *UserHash) Remove() {
-	filename := filepath.Join(u.basedir, u.user)
-	os.Remove(filename + ".admin")
-	os.Remove(filename + ".user")
-	return
-}
-
-// Check if the format of the hash file is supported
-func (u *UserHash) IsFormatSupported() (ok bool, err error) {
-	// TODO: implement this
-	return
-}
-
-// Exists checks if user exists.
-func (u *UserHash) Exists() (isAdmin bool, err error) {
-	// TODO: implement this
-	return
-}
-
-// IsAdmin checks if user exists and is an admin.
-func (u *UserHash) IsAdmin() (isAdmin bool, err error) {
-	// TODO: implement this
+func CheckHash(hash, password string) (ok bool, err error) {
+	// TODO: parse paremeter from hash string and compare with computed key
+	ok = false
 	return
 }

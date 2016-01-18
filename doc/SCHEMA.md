@@ -26,7 +26,8 @@ Uernames must only contain the following characters: [-_@A-Za-z0-9]
 
 The difference between admins and normal users is that admin users are
 allowed to add new users. Also granting admin privileges to normal users
-may only be done by admins. Normal users my only update their password.
+may only be done by admins. An admin is also allowed to change any password.
+Normal users may only update their own password.
 
 A whawty agent may upgrade the hashing algorihtm to an other(newer) format
 during authentication.

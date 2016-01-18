@@ -22,8 +22,7 @@ according to the following rules:
 - on update: report an error (won't overwrite unsupported formats)
 - on delete: delete the file (a warning may be shown)
 
-Uernames must only contain the following characters:
-    [-_@A-Za-z0-0]
+Uernames must only contain the following characters: [-_@A-Za-z0-9]
 
 The difference between admins and normal users is that admin users are
 allowed to add new users. Also granting admin privileges to normal users

@@ -58,7 +58,7 @@ func init() {
 type Store struct {
 	basedir        string
 	contexts       map[uint]*scryptauth.Context
-	defaultParamId uint
+	defaultParamID uint
 }
 
 // NewStore creates a new whawty.auth store using basedir as base directory.
@@ -70,8 +70,8 @@ func NewStore(basedir string) (s *Store, err error) {
 	if ctx, err = scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")); err != nil {
 		return
 	}
-	s.defaultParamId = 1
-	s.contexts[s.defaultParamId] = ctx
+	s.defaultParamID = 1
+	s.contexts[s.defaultParamID] = ctx
 	// TODO: properly initilze contexts using a config file
 	return
 }

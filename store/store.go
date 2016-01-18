@@ -66,33 +66,39 @@ func NewStore(basedir string) (s *Store) {
 
 // Init initalizes the store by creating a password file for an admin user.
 func (s *Store) Init(admin, password string) (err error) {
+	// TODO: implement this
 	return
 }
 
 // Check tests if the directory is a valid whawty base directory.
 func (s *Store) Check() (ok bool, err error) {
+	// TODO: implement this
 	return
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.
 func (s *Store) AddUser(user, password string, isAdmin bool) (err error) {
+	// TODO: implement this
 	return
 }
 
 // UpdateUser changes the password and admin status of user. It is an error
 // if the user does not exist.
 func (s *Store) UpdateUser(user, password string, isAdmin bool) (err error) {
+	// TODO: implement this
 	return
 }
 
 // AddOrUpdateUser changes the password and admin status of an already exisitng
 // user. If the user does not exist yet it will get created.
 func (s *Store) AddOrUpdateUser(user, password string, isAdmin bool) (err error) {
+	// TODO: implement this
 	return
 }
 
 // RemoveUser removes user from the store.
 func (s *Store) RemoveUser(user string) {
+	NewUserHash(s.basedir, user).Remove()
 	return
 }
 
@@ -103,21 +109,23 @@ type UserList map[string]bool
 // List returns a list of all users in the store.
 func (s *Store) List() (list UserList) {
 	list = make(UserList)
+	// TODO: implement this
 	return
 }
 
 // Exists checks if user exists.
 func (s *Store) Exists(user string) (isAdmin bool, err error) {
-	return
+	return NewUserHash(s.basedir, user).Exists()
 }
 
 // IsAdmin checks if user exists and is an admin.
 func (s *Store) IsAdmin(user string) (isAdmin bool, err error) {
-	return
+	return NewUserHash(s.basedir, user).IsAdmin()
 }
 
 // Authenticate checks user and password are a valid combination. It also returns
 // whether user is an admin.
 func (s *Store) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
+	// TODO: implement this
 	return
 }

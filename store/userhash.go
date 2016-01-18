@@ -48,30 +48,36 @@ func NewUserHash(basedir, user string) (u *UserHash) {
 
 // Check if the format of the hash file is supported
 func (s *UserHash) IsFormatSupported() (ok bool, err error) {
+	// TODO: implement this
 	return
 }
 
 // Add creates the hash file. It is an error if the user already exists.
 func (s *UserHash) Add(password string, isAdmin bool) (err error) {
+	// TODO: implement this
 	return
 }
 
 // Update changes the password and admin status of user.
 func (s *UserHash) Update(password string, isAdmin bool) (err error) {
+	// TODO: implement this
 	return
 }
 
 // Remove deletes hash file.
 func (s *UserHash) Remove() {
+	// TODO: implement this
 	return
 }
 
 // Exists checks if user exists.
 func (s *UserHash) Exists() (isAdmin bool, err error) {
+	// TODO: implement this
 	return
 }
 
 // IsAdmin checks if user exists and is an admin.
 func (s *UserHash) IsAdmin() (isAdmin bool, err error) {
+	// TODO: implement this
 	return
 }

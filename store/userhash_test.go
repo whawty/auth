@@ -42,12 +42,15 @@ const (
 	testBaseDir string = "test-store"
 )
 
+var (
+	testStoreUserHash *Dir
+)
+
 func TestAddRemoveUser(t *testing.T) {
 	username := "test-addremove-user"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -72,8 +75,7 @@ func TestAddRemoveAdmin(t *testing.T) {
 	username := "test-addremove-admin"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -98,8 +100,7 @@ func TestAddUserAdmin(t *testing.T) {
 	username := "test-add-user-admin"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -115,8 +116,7 @@ func TestAddAdminUser(t *testing.T) {
 	username := "test-add-user-admin"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -132,8 +132,7 @@ func TestExistsUser(t *testing.T) {
 	username := "test-exists-user"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if exists, _, err := u.Exists(); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -159,8 +158,7 @@ func TestExistsAdmin(t *testing.T) {
 	username := "test-exists-admin"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -180,8 +178,7 @@ func TestSetAdmin(t *testing.T) {
 	username := "test-set-admin"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -220,8 +217,7 @@ func TestSetAdmin(t *testing.T) {
 func TestSetAdminNonExistent(t *testing.T) {
 	username := "test-setadmin-nonexistent"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.SetAdmin(true); err == nil {
 		t.Fatal("setting admin on not exisiting user should be an error")
@@ -237,8 +233,7 @@ func TestIsFormatSupported(t *testing.T) {
 		"hmac_sha256_scrypt:23:aGVsbG8=:abcd$", "hmac_sha256_scrypt:12::aGVsbG8=", "hmac_sha256_scrypt::d29ybGQ=:aGVsbG8=",
 		"hmac_sha256_scrypt:142:d29ybGQ=:", "hmac_sha1_scrypt:1:aGVsbG8=:d29ybGQ="}
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -280,8 +275,7 @@ func TestAuthenticate(t *testing.T) {
 	password1 := "secret1"
 	password2 := "secret2"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -305,8 +299,7 @@ func TestAuthenticateNonExistent(t *testing.T) {
 	username := "test-auth-nonexistent"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating not exisiting user should be an error")
@@ -329,8 +322,7 @@ func TestAuthenticateUnkownContext(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating a password which uses an unkown context should give an error")
@@ -353,8 +345,7 @@ func TestAuthenticateInvalidHash(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating a password with an invalid hash string should give an error")
@@ -366,8 +357,7 @@ func TestUpdateUser(t *testing.T) {
 	password1 := "secret"
 	password2 := "moresecret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password1, false); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -397,8 +387,7 @@ func TestUpdateAdmin(t *testing.T) {
 	password1 := "secret"
 	password2 := "moresecret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -427,8 +416,7 @@ func TestUpdateNonExistent(t *testing.T) {
 	username := "test-update-nonexistent"
 	password := "secret"
 
-	s, _ := NewDir(testBaseDir)
-	u := NewUserHash(s, username)
+	u := NewUserHash(testStoreUserHash, username)
 
 	if err := u.Update(password); err == nil {
 		t.Fatal("updating not exisiting user should be an error")
@@ -438,6 +426,12 @@ func TestUpdateNonExistent(t *testing.T) {
 func TestMain(m *testing.M) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		fmt.Println("Error creating store base directory:", err)
+		os.Exit(-1)
+	}
+
+	var err error
+	if testStoreUserHash, err = NewDir(testBaseDir); err != nil {
+		fmt.Println("Error creating test store:", err)
 		os.Exit(-1)
 	}
 

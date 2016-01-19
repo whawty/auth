@@ -32,8 +32,10 @@
 package store
 
 import (
+	"fmt"
 	"gopkg.in/spreadspace/scryptauth.v2"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -92,10 +94,10 @@ func (u *UserHash) Add(password string, isAdmin bool) (err error) {
 	defer file.Close()
 
 	var hash, salt []byte
-	if hash, salt, err = u.store.contexts[u.store.defaultParamID].Gen([]byte(password)); err != nil {
+	if hash, salt, err = u.store.contexts[u.store.defaultCtxID].Gen([]byte(password)); err != nil {
 		return
 	}
-	hashStr := scryptauth.EncodeBase64(u.store.defaultParamID, hash, salt)
+	hashStr := scryptauth.EncodeBase64(u.store.defaultCtxID, hash, salt)
 	if _, err = io.WriteString(file, hashStr+"\n"); err != nil {
 		return // TODO: retry if write was short
 	}
@@ -103,7 +105,7 @@ func (u *UserHash) Add(password string, isAdmin bool) (err error) {
 }
 
 // Update changes the password for user.
-func (u *UserHash) Update(password string, isAdmin bool) (err error) {
+func (u *UserHash) Update(password string) (err error) {
 	// TODO: implement this
 	return
 }
@@ -138,6 +140,42 @@ func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
 
 // Authenticate checks the user password. It also returns whether user is an admin.
 func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool, err error) {
-	// TODO: implement this
+	var exists bool
+	if exists, isAdmin, err = u.Exists(); err != nil {
+		return
+	} else if !exists {
+		return false, false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	}
+
+	filename := filepath.Join(u.store.basedir, u.user)
+	if isAdmin {
+		filename += adminExt
+	} else {
+		filename += userExt
+	}
+
+	var file *os.File
+	if file, err = os.Open(filename); err != nil {
+		return
+	}
+	defer file.Close()
+
+	var hashStr []byte
+	if hashStr, err = ioutil.ReadAll(file); err != nil {
+		return
+	}
+
+	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
+	if err != nil {
+		return false, false, err
+	}
+
+	ctx, ctxExists := u.store.contexts[ctxID]
+	if !ctxExists {
+		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
+	}
+
+	isAuthenticated, err = ctx.Check(hash, []byte(password), salt)
+
 	return
 }

@@ -56,9 +56,9 @@ func init() {
 
 // Dir represents a directoy containing whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
-	basedir        string
-	contexts       map[uint]*scryptauth.Context
-	defaultParamID uint
+	basedir      string
+	contexts     map[uint]*scryptauth.Context
+	defaultCtxID uint
 }
 
 // NewDir creates a new whawty.auth store using basedir as base directory.
@@ -70,8 +70,8 @@ func NewDir(basedir string) (d *Dir, err error) {
 	if ctx, err = scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")); err != nil {
 		return
 	}
-	d.defaultParamID = 1
-	d.contexts[d.defaultParamID] = ctx
+	d.defaultCtxID = 1
+	d.contexts[d.defaultCtxID] = ctx
 	// TODO: properly initilze contexts using a config file
 	return
 }

@@ -44,18 +44,19 @@ const (
 
 func TestAddRemoveAdmin(t *testing.T) {
 	username := "test"
+	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, username)
 
-	if err := u.Add("secret", true); err != nil {
+	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 	if _, err := os.Stat(filepath.Join(testBaseDir, username+".admin")); err != nil {
 		t.Fatal("cannot read test user file after add:", err)
 	}
 
-	if err := u.Add("secret", true); err == nil {
+	if err := u.Add(password, true); err == nil {
 		t.Fatal("adding user a second time returned no error!")
 	}
 
@@ -69,11 +70,12 @@ func TestAddRemoveAdmin(t *testing.T) {
 
 func TestAddRemoveUser(t *testing.T) {
 	username := "test2"
+	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, username)
 
-	if err := u.Add("secret", false); err != nil {
+	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err != nil {
@@ -90,6 +92,7 @@ func TestAddRemoveUser(t *testing.T) {
 
 func TestExistsUser(t *testing.T) {
 	username := "test3"
+	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, username)
@@ -100,7 +103,7 @@ func TestExistsUser(t *testing.T) {
 		t.Fatal("hash file for test user shouldn't exist")
 	}
 
-	if err := u.Add("secret", false); err != nil {
+	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 	defer u.Remove()
@@ -116,11 +119,12 @@ func TestExistsUser(t *testing.T) {
 
 func TestExistsAdmin(t *testing.T) {
 	username := "test4"
+	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, username)
 
-	if err := u.Add("secret", true); err != nil {
+	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 	defer u.Remove()
@@ -129,6 +133,32 @@ func TestExistsAdmin(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	} else if !exists {
 		t.Fatal("test user should exist")
+	} else if !isAdmin {
+		t.Fatal("test user should be an admin")
+	}
+}
+
+func TestAuthenticate(t *testing.T) {
+	username := "test5"
+	password1 := "secret1"
+	password2 := "secret2"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password1, true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if isAuthOk, isAdmin, _ := u.Authenticate(password1); !isAuthOk {
+		t.Fatal("authentication should succeed")
+	} else if !isAdmin {
+		t.Fatal("test user should be an admin")
+	}
+
+	if isAuthOk, isAdmin, _ := u.Authenticate(password2); isAuthOk {
+		t.Fatal("authentication shouldn't succeed")
 	} else if !isAdmin {
 		t.Fatal("test user should be an admin")
 	}

@@ -176,6 +176,51 @@ func TestExistsAdmin(t *testing.T) {
 	}
 }
 
+func TestIsFormatSupported(t *testing.T) {
+	username := "test-format-supported"
+	password := "secret"
+	username2 := "test-format-supported2"
+	invalidStrings := []string{"", "hello", "42:aGVsbG8=", "0:aGVsbG8=:d29ybGQ=",
+		"214:aGVsbG8=:d29ybGQ=:d29ybGQ=", "17:aGVsbG8=:d29ybGQ=:", "23:aGVsbG8=:abcd$",
+		"12::aGVsbG8=", ":d29ybGQ=:aGVsbG8=", "142:d29ybGQ=:"}
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password, false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if ok, err := IsFormatSupported(filepath.Join(testBaseDir, username+".user")); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if !ok {
+		t.Fatal("IsFormatSupported reported false negative")
+	}
+
+	filename := filepath.Join(testBaseDir, username2+".user")
+	file, err := os.Create(filename)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer file.Close()
+	for _, invalid := range invalidStrings {
+		if _, err := file.Seek(0, 0); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+		if err := file.Truncate(0); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+		if _, err := file.WriteString(invalid); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+
+		if ok, err := IsFormatSupported(filename); err == nil && ok {
+			t.Fatalf("IsFormatSupported reported false positive for '%s'", invalid)
+		}
+	}
+}
+
 func TestAuthenticate(t *testing.T) {
 	username := "test-auth"
 	password1 := "secret1"

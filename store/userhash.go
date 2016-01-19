@@ -58,10 +58,31 @@ func fileExists(path string) (bool, error) {
 	return true, err
 }
 
+// readHashStr returns the whole contents of the user hash file
+func readHashStr(filename string) (hashStr []byte, err error) {
+	var file *os.File
+	if file, err = os.Open(filename); err != nil {
+		return
+	}
+	defer file.Close()
+
+	return ioutil.ReadAll(file)
+}
+
 // IsFormatSupported checks if the format of the hash file is supported
-func IsFormatSupported(filename string) (ok bool, err error) {
-	// TODO: implement this
-	return
+func IsFormatSupported(filename string) (bool, error) {
+	hashStr, err := readHashStr(filename)
+	if err != nil {
+		return false, err
+	}
+	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
+	if err != nil {
+		return false, err
+	}
+	if ctxID == 0 || len(hash) == 0 || len(salt) == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 // UserHash is the representation of a single user hash file inside the store.
@@ -159,16 +180,11 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 	} else {
 		filename += userExt
 	}
-	var file *os.File
-	if file, err = os.Open(filename); err != nil {
-		return
-	}
-	defer file.Close()
-	var hashStr []byte
-	if hashStr, err = ioutil.ReadAll(file); err != nil {
-		return
-	}
 
+	var hashStr []byte
+	if hashStr, err = readHashStr(filename); err != nil {
+		return
+	}
 	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
 	if err != nil {
 		return false, false, err

@@ -138,9 +138,28 @@ func (u *UserHash) Update(password string) (err error) {
 }
 
 // SetAdmin changes the admin status of user.
-func (u *UserHash) SetAdmin(isAdmin bool) (err error) {
-	// TODO: implement this
-	return
+func (u *UserHash) SetAdmin(adminState bool) error {
+	exists, isAdmin, err := u.Exists()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	}
+	if isAdmin == adminState {
+		return nil
+	}
+
+	oldname := filepath.Join(u.store.basedir, u.user)
+	newname := oldname
+	if adminState {
+		oldname += userExt
+		newname += adminExt
+	} else {
+		oldname += adminExt
+		newname += userExt
+	}
+	return os.Rename(oldname, newname)
 }
 
 // Remove deletes hash file.

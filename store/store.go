@@ -78,7 +78,8 @@ func NewDir(basedir string) (d *Dir, err error) {
 
 // Init initalizes the store by creating a password file for an admin user.
 func (d *Dir) Init(admin, password string) (err error) {
-	// TODO: implement this
+	// TODO: check if dir exists and is empty
+	NewUserHash(d, admin).Add(password, true)
 	return
 }
 
@@ -90,21 +91,21 @@ func (d *Dir) Check() (ok bool, err error) {
 
 // AddUser adds user to the store. It is an error if the user already exists.
 func (d *Dir) AddUser(user, password string, isAdmin bool) (err error) {
-	// TODO: implement this
+	NewUserHash(d, user).Add(password, isAdmin)
 	return
 }
 
 // UpdateUser changes the password of user. It is an error if the user does
 // not exist.
 func (d *Dir) UpdateUser(user, password string) (err error) {
-	// TODO: implement this
+	NewUserHash(d, user).Update(password)
 	return
 }
 
 // SetAdmin changes the admin status of user. It is an error if the user does
 // not exist.
-func (d *Dir) SetAdmin(user, isAdmin bool) (err error) {
-	// TODO: implement this
+func (d *Dir) SetAdmin(user string, adminState bool) (err error) {
+	NewUserHash(d, user).SetAdmin(adminState)
 	return
 }
 
@@ -133,6 +134,5 @@ func (d *Dir) Exists(user string) (exists bool, isAdmin bool, err error) {
 // Authenticate checks user and password are a valid combination. It also returns
 // whether user is an admin.
 func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
-	// TODO: implement this
-	return
+	return NewUserHash(d, user).Authenticate(password)
 }

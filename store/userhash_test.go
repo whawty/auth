@@ -247,6 +247,39 @@ func TestAuthenticate(t *testing.T) {
 	}
 }
 
+func TestSetAdmin(t *testing.T) {
+	username := "test-set-admin"
+	password := "secret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password, false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if err := u.SetAdmin(true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if _, isAdmin, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if !isAdmin {
+		t.Fatal("test user should be an admin")
+	}
+
+	if err := u.SetAdmin(false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if _, isAdmin, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if isAdmin {
+		t.Fatal("test user shouldn't be an admin")
+	}
+}
+
 func TestMain(m *testing.M) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		fmt.Println("Error creating store base directory:", err)

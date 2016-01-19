@@ -80,7 +80,7 @@ func readHashStr(filename string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-// IsFormatupSupported checks if the format of the hash file is supported
+// IsFormatSupported checks if the format of the hash file is supported
 func IsFormatSupported(filename string) (bool, error) {
 	idStr, hashStr, err := readHashStr(filename)
 	if err != nil {

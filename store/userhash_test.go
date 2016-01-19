@@ -42,8 +42,34 @@ const (
 	testBaseDir string = "test-store"
 )
 
+func TestAddRemoveUser(t *testing.T) {
+	username := "test-addremove-user"
+	password := "secret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password, false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err != nil {
+		t.Fatal("cannot read test user file after add:", err)
+	}
+
+	if err := u.Add(password, false); err == nil {
+		t.Fatal("adding user a second time returned no error!")
+	}
+
+	u.Remove()
+	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err == nil {
+		t.Fatal("test user does still exist after remove")
+	} else if !os.IsNotExist(err) {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
 func TestAddRemoveAdmin(t *testing.T) {
-	username := "test"
+	username := "test-addremove-admin"
 	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
@@ -68,8 +94,8 @@ func TestAddRemoveAdmin(t *testing.T) {
 	}
 }
 
-func TestAddRemoveUser(t *testing.T) {
-	username := "test2"
+func TestAddUserAdmin(t *testing.T) {
+	username := "test-add-user-admin"
 	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
@@ -78,20 +104,32 @@ func TestAddRemoveUser(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err != nil {
-		t.Fatal("cannot read test user file after add:", err)
-	}
+	defer u.Remove()
 
-	u.Remove()
-	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err == nil {
-		t.Fatal("test user does still exist after remove")
-	} else if !os.IsNotExist(err) {
+	if err := u.Add(password, true); err == nil {
+		t.Fatal("re-adding existing user as admin shouldn't work")
+	}
+}
+
+func TestAddAdminUser(t *testing.T) {
+	username := "test-add-user-admin"
+	password := "secret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if err := u.Add(password, false); err == nil {
+		t.Fatal("re-adding existing user as normal user shouldn't work")
 	}
 }
 
 func TestExistsUser(t *testing.T) {
-	username := "test3"
+	username := "test-exists-user"
 	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
@@ -118,7 +156,7 @@ func TestExistsUser(t *testing.T) {
 }
 
 func TestExistsAdmin(t *testing.T) {
-	username := "test4"
+	username := "test-exists-admin"
 	password := "secret"
 
 	s, _ := NewDir(testBaseDir)
@@ -139,7 +177,7 @@ func TestExistsAdmin(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	username := "test5"
+	username := "test-auth"
 	password1 := "secret1"
 	password2 := "secret2"
 

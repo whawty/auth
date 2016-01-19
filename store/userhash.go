@@ -81,6 +81,12 @@ func NewUserHash(store *Dir, user string) (u *UserHash) {
 
 // Add creates the hash file. It is an error if the user already exists.
 func (u *UserHash) Add(password string, isAdmin bool) (err error) {
+	if exists, _, err := u.Exists(); err != nil {
+		return err
+	} else if exists {
+		return fmt.Errorf("user '%s' already exists", u.user)
+	}
+
 	filename := filepath.Join(u.store.basedir, u.user)
 	if isAdmin {
 		filename += adminExt
@@ -153,13 +159,11 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 	} else {
 		filename += userExt
 	}
-
 	var file *os.File
 	if file, err = os.Open(filename); err != nil {
 		return
 	}
 	defer file.Close()
-
 	var hashStr []byte
 	if hashStr, err = ioutil.ReadAll(file); err != nil {
 		return
@@ -169,13 +173,11 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 	if err != nil {
 		return false, false, err
 	}
-
 	ctx, ctxExists := u.store.contexts[ctxID]
 	if !ctxExists {
 		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
 	}
 
 	isAuthenticated, err = ctx.Check(hash, []byte(password), salt)
-
 	return
 }

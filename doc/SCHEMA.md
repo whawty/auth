@@ -40,16 +40,17 @@ The contents of the files depend on the hashing algorithm used. For now
 the only supported algorithm is scrypt inside hmac-sha256 which has the
 following structure:
 
-    ctxID:base64(salt):base64(hash)
+    hmac_sha256_scrypt:ctxID:base64(salt):base64(hash)
 
-ctxID is a identifier for a set of parameters which must be stored outside of
-the base directory. The parameters needed are:
+_hmac_sha256_scrypt_ is the itenfier for this algorithm, _ctxID_ is an
+identifier for a set of parameters which must be stored outside of the base
+directory. The following parameters are needed by this algorithm:
 
     server_key: the key for the hmac-sha256
     pw_cost:    (1<<pw_cost) forms the scrypt parameter N
     p:          the scrypt parameter p
     r:          the scrypt parameter r
 
-salt is a random number with 256bits, hash is the output of the following function
+_salt_ is a random number with 256bits, _hash_ is the output of the following function
 
     hmac_sha256(scrypt(user_password, salt), server_key)

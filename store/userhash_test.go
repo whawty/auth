@@ -213,9 +213,10 @@ func TestIsFormatSupported(t *testing.T) {
 	username := "test-format-supported"
 	password := "secret"
 	username2 := "test-format-supported2"
-	invalidStrings := []string{"", "hello", "42:aGVsbG8=", "0:aGVsbG8=:d29ybGQ=",
-		"214:aGVsbG8=:d29ybGQ=:d29ybGQ=", "17:aGVsbG8=:d29ybGQ=:", "23:aGVsbG8=:abcd$",
-		"12::aGVsbG8=", ":d29ybGQ=:aGVsbG8=", "142:d29ybGQ=:"}
+	invalidStrings := []string{"", "hello", "hmac_sha256_scrypt:42:aGVsbG8=", "hmac_sha256_scrypt:0:aGVsbG8=:d29ybGQ=",
+		"hmac_sha256_scrypt:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", "hmac_sha256_scrypt:17:aGVsbG8=:d29ybGQ=:",
+		"hmac_sha256_scrypt:23:aGVsbG8=:abcd$", "hmac_sha256_scrypt:12::aGVsbG8=", "hmac_sha256_scrypt::d29ybGQ=:aGVsbG8=",
+		"hmac_sha256_scrypt:142:d29ybGQ=:", "hmac_sha1_scrypt:1:aGVsbG8=:d29ybGQ="}
 
 	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, username)

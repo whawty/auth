@@ -38,9 +38,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
+	algoID   string = "hmac_sha256_scrypt"
 	adminExt string = ".admin"
 	userExt  string = ".user"
 )
@@ -59,22 +61,35 @@ func fileExists(path string) (bool, error) {
 }
 
 // readHashStr returns the whole contents of the user hash file
-func readHashStr(filename string) (hashStr []byte, err error) {
-	var file *os.File
-	if file, err = os.Open(filename); err != nil {
-		return
+func readHashStr(filename string) (string, string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", "", err
 	}
 	defer file.Close()
 
-	return ioutil.ReadAll(file)
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", "", err
+	}
+
+	parts := strings.SplitN(string(data), ":", 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("whawty.auth.store: hash file format is invalid")
+	}
+	return parts[0], parts[1], nil
 }
 
-// IsFormatSupported checks if the format of the hash file is supported
+// IsFormatupSported checks if the format of the hash file is supported
 func IsFormatSupported(filename string) (bool, error) {
-	hashStr, err := readHashStr(filename)
+	idStr, hashStr, err := readHashStr(filename)
 	if err != nil {
 		return false, err
 	}
+	if idStr != algoID {
+		return false, fmt.Errorf("whawty.auth.store: hash file alogrithm ID is not supported")
+	}
+
 	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
 	if err != nil {
 		return false, err
@@ -120,7 +135,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error 
 		return err
 	}
 	hashStr := scryptauth.EncodeBase64(u.store.defaultCtxID, hash, salt)
-	_, err = io.WriteString(file, hashStr+"\n") // TODO: retry if write was short??
+	_, err = io.WriteString(file, algoID+":"+hashStr+"\n") // TODO: retry if write was short??
 	return err
 }
 
@@ -209,11 +224,11 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 		filename += userExt
 	}
 
-	var hashStr []byte
-	if hashStr, err = readHashStr(filename); err != nil {
+	var hashStr string
+	if _, hashStr, err = readHashStr(filename); err != nil {
 		return
 	}
-	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
+	ctxID, hash, salt, err := scryptauth.DecodeBase64(hashStr)
 	if err != nil {
 		return false, false, err
 	}

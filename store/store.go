@@ -73,7 +73,7 @@ func NewDir(basedir string) (d *Dir) {
 func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d = &Dir{}
 	d.Contexts = make(map[uint]*scryptauth.Context)
-	err = d.ReadConfig(configfile)
+	err = d.fromConfig(configfile)
 	return
 }
 

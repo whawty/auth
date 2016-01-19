@@ -34,6 +34,7 @@ package store
 import (
 	"fmt"
 	"gopkg.in/spreadspace/scryptauth.v2"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -46,6 +47,46 @@ const (
 var (
 	testStoreUserHash *Dir
 )
+
+func TestDirFromConfig(t *testing.T) {
+	jsonData := []struct {
+		s     string
+		valid bool
+	}{
+		{"", false},
+		{"{}", false},
+		{"{ \"basedir\": \"/tmp\" }", true},
+	}
+
+	file, err := ioutil.TempFile("", "whawty-auth-config")
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer file.Close()
+	defer os.Remove(file.Name())
+
+	for _, json := range jsonData {
+		if _, err := file.Seek(0, 0); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+		if err := file.Truncate(0); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+		if _, err := file.WriteString(json.s); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+
+		if json.valid {
+			if _, err := NewDirFromConfig(file.Name()); err != nil {
+				t.Fatalf("NewDirFromConfig returned an unexpected error for '%s': %s", json.s, err)
+			}
+		} else {
+			if _, err := NewDirFromConfig(file.Name()); err == nil {
+				t.Fatalf("NewDirFromConfig didn't return with an error for '%s'", json.s)
+			}
+		}
+	}
+}
 
 func TestMain(m *testing.M) {
 	if err := os.Mkdir(testBaseDirUserHash, 0755); err != nil {

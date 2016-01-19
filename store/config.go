@@ -52,23 +52,34 @@ type config struct {
 	Contexts   []cfgCtx `json:"contexts"`
 }
 
-func (d *Dir) ReadConfig(configfile string) error {
+func readConfig(configfile string) (*config, error) {
 	file, err := os.Open(configfile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer file.Close()
 
 	jsondata, err := ioutil.ReadAll(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c := &config{}
 	if jsonerr := json.Unmarshal(jsondata, c); jsonerr != nil {
-		return fmt.Errorf("Error parsing config file: %s", jsonerr)
+		return nil, fmt.Errorf("Error parsing config file: %s", jsonerr)
 	}
-	fmt.Printf("\nConfig = %+v\n\n", c)
+	return c, nil
+}
+
+func (d *Dir) fromConfig(configfile string) error {
+	c, err := readConfig(configfile)
+	if err != nil {
+		return err
+	}
+	if c.BaseDir == "" {
+		return fmt.Errorf("Error: config file does not contain a base directory")
+	}
+
 	// TODO: set Dir member variables according to c
 	return nil
 }

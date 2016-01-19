@@ -32,18 +32,9 @@
 package store
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
-)
-
-const (
-	testBaseDir string = "test-store"
-)
-
-var (
-	testStoreUserHash *Dir
 )
 
 func TestAddRemoveUser(t *testing.T) {
@@ -55,7 +46,7 @@ func TestAddRemoveUser(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err != nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".user")); err != nil {
 		t.Fatal("cannot read test user file after add:", err)
 	}
 
@@ -64,7 +55,7 @@ func TestAddRemoveUser(t *testing.T) {
 	}
 
 	u.Remove()
-	if _, err := os.Stat(filepath.Join(testBaseDir, username+".user")); err == nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".user")); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
 		t.Fatal("unexpected error:", err)
@@ -80,7 +71,7 @@ func TestAddRemoveAdmin(t *testing.T) {
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDir, username+".admin")); err != nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".admin")); err != nil {
 		t.Fatal("cannot read test user file after add:", err)
 	}
 
@@ -89,7 +80,7 @@ func TestAddRemoveAdmin(t *testing.T) {
 	}
 
 	u.Remove()
-	if _, err := os.Stat(filepath.Join(testBaseDir, username+".admin")); err == nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".admin")); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
 		t.Fatal("unexpected error:", err)
@@ -228,10 +219,25 @@ func TestIsFormatSupported(t *testing.T) {
 	username := "test-format-supported"
 	password := "secret"
 	username2 := "test-format-supported2"
-	invalidStrings := []string{"", "hello", "hmac_sha256_scrypt:42:aGVsbG8=", "hmac_sha256_scrypt:0:aGVsbG8=:d29ybGQ=",
-		"hmac_sha256_scrypt:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", "hmac_sha256_scrypt:17:aGVsbG8=:d29ybGQ=:",
-		"hmac_sha256_scrypt:23:aGVsbG8=:abcd$", "hmac_sha256_scrypt:12::aGVsbG8=", "hmac_sha256_scrypt::d29ybGQ=:aGVsbG8=",
-		"hmac_sha256_scrypt:142:d29ybGQ=:", "hmac_sha1_scrypt:1:aGVsbG8=:d29ybGQ="}
+	hashStrings := []struct {
+		s     string
+		valid bool
+	}{
+		{"", false},
+		{"hello", false},
+		{"hmac_sha256_scrypt:42:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:0:aGVsbG8=:d29ybGQ=", false},
+		{"hmac_sha256_scrypt:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", false},
+		{"hmac_sha256_scrypt:17:aGVsbG8=:d29ybGQ=:", false},
+		{"hmac_sha256_scrypt:23:aGVsbG8=:abcd$", false},
+		{"hmac_sha256_scrypt:12::aGVsbG8=", false},
+		{"hmac_sha256_scrypt::d29ybGQ=:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:142:d29ybGQ=:", false},
+		{"hmac_sha1_scrypt:1:aGVsbG8=:d29ybGQ=", false},
+
+		{"hmac_sha256_scrypt:42:aGVsbG8=:d29ybGQ=", true},
+		{"hmac_sha256_scrypt:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
+	}
 
 	u := NewUserHash(testStoreUserHash, username)
 
@@ -240,32 +246,38 @@ func TestIsFormatSupported(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if ok, err := IsFormatSupported(filepath.Join(testBaseDir, username+".user")); err != nil {
+	if ok, err := IsFormatSupported(filepath.Join(testBaseDirUserHash, username+".user")); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else if !ok {
 		t.Fatal("IsFormatSupported reported false negative")
 	}
 
-	filename := filepath.Join(testBaseDir, username2+".user")
+	filename := filepath.Join(testBaseDirUserHash, username2+".user")
 	file, err := os.Create(filename)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 	defer file.Close()
 	defer os.Remove(filename)
-	for _, invalid := range invalidStrings {
+	for _, hashStr := range hashStrings {
 		if _, err := file.Seek(0, 0); err != nil {
 			t.Fatal("unexpected error:", err)
 		}
 		if err := file.Truncate(0); err != nil {
 			t.Fatal("unexpected error:", err)
 		}
-		if _, err := file.WriteString(invalid); err != nil {
+		if _, err := file.WriteString(hashStr.s); err != nil {
 			t.Fatal("unexpected error:", err)
 		}
 
-		if ok, err := IsFormatSupported(filename); err == nil && ok {
-			t.Fatalf("IsFormatSupported reported false positive for '%s'", invalid)
+		if hashStr.valid {
+			if ok, err := IsFormatSupported(filename); err != nil || !ok {
+				t.Fatalf("IsFormatSupported reported false negative for '%s'", hashStr.s)
+			}
+		} else {
+			if ok, err := IsFormatSupported(filename); err == nil && ok {
+				t.Fatalf("IsFormatSupported reported false positive for '%s'", hashStr.s)
+			}
 		}
 	}
 }
@@ -311,7 +323,7 @@ func TestAuthenticateUnkownContext(t *testing.T) {
 	password := "secret"
 	hashStr := "hmac_sha256_scrypt:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w="
 
-	filename := filepath.Join(testBaseDir, username+".user")
+	filename := filepath.Join(testBaseDirUserHash, username+".user")
 	file, err := os.Create(filename)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
@@ -334,7 +346,7 @@ func TestAuthenticateInvalidHash(t *testing.T) {
 	password := "secret"
 	hashStr := "hmac_sha256_scrypt:23:this is no salt:??"
 
-	filename := filepath.Join(testBaseDir, username+".user")
+	filename := filepath.Join(testBaseDirUserHash, username+".user")
 	file, err := os.Create(filename)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
@@ -421,24 +433,4 @@ func TestUpdateNonExistent(t *testing.T) {
 	if err := u.Update(password); err == nil {
 		t.Fatal("updating not exisiting user should be an error")
 	}
-}
-
-func TestMain(m *testing.M) {
-	if err := os.Mkdir(testBaseDir, 0755); err != nil {
-		fmt.Println("Error creating store base directory:", err)
-		os.Exit(-1)
-	}
-
-	var err error
-	if testStoreUserHash, err = NewDir(testBaseDir); err != nil {
-		fmt.Println("Error creating test store:", err)
-		os.Exit(-1)
-	}
-
-	ret := m.Run()
-
-	if err := os.RemoveAll(testBaseDir); err != nil {
-		fmt.Println("Error removing store base directory:", err)
-	}
-	os.Exit(ret)
 }

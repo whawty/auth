@@ -54,7 +54,7 @@ func init() {
 	}
 }
 
-// Dir represents a directoy containing whawty.auth password hash store. Use NewDir to create it.
+// Dir represents a directoy containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
 	basedir      string
 	contexts     map[uint]*scryptauth.Context
@@ -131,7 +131,7 @@ func (d *Dir) Exists(user string) (exists bool, isAdmin bool, err error) {
 	return NewUserHash(d, user).Exists()
 }
 
-// Authenticate checks user and password are a valid combination. It also returns
+// Authenticate checks if user and password are a valid combination. It also returns
 // whether user is an admin.
 func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
 	return NewUserHash(d, user).Authenticate(password)

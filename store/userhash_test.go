@@ -104,7 +104,7 @@ func TestAddUserAdmin(t *testing.T) {
 }
 
 func TestAddAdminUser(t *testing.T) {
-	username := "test-add-user-admin"
+	username := "test-add-admin-user"
 	password := "secret"
 
 	u := NewUserHash(testStoreUserHash, username)

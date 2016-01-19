@@ -124,17 +124,22 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 }
 
 func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error {
+	ctx, ctxExists := u.store.Contexts[u.store.DefaultCtxID]
+	if !ctxExists {
+		return fmt.Errorf("whawty.auth.store: the store has no default context")
+	}
+	hash, salt, err := ctx.Gen([]byte(password))
+	if err != nil {
+		return err
+	}
+
 	file, err := os.OpenFile(u.getFilename(isAdmin), flags, 0600)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	hash, salt, err := u.store.contexts[u.store.defaultCtxID].Gen([]byte(password))
-	if err != nil {
-		return err
-	}
-	hashStr := scryptauth.EncodeBase64(u.store.defaultCtxID, hash, salt)
+	hashStr := scryptauth.EncodeBase64(u.store.DefaultCtxID, hash, salt)
 	_, err = io.WriteString(file, algoID+":"+hashStr+"\n") // TODO: retry if write was short??
 	return err
 }
@@ -232,7 +237,7 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 	if err != nil {
 		return false, false, err
 	}
-	ctx, ctxExists := u.store.contexts[ctxID]
+	ctx, ctxExists := u.store.Contexts[ctxID]
 	if !ctxExists {
 		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
 	}

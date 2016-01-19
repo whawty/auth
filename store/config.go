@@ -32,36 +32,43 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
-	"gopkg.in/spreadspace/scryptauth.v2"
+	"io/ioutil"
 	"os"
-	"testing"
 )
 
-const (
-	testBaseDirUserHash string = "test-store-user"
-	testBaseDir         string = "test-store"
-)
+type cfgCtx struct {
+	ID            uint   `json:"id"`
+	HmacKeyBase64 string `json:"hmackey"`
+	PwCost        uint   `json:"pwcost"`
+	R             int    `json:"r"`
+	P             int    `json:"p"`
+}
 
-var (
-	testStoreUserHash *Dir
-)
+type config struct {
+	BaseDir    string   `json:"basedir"`
+	DefaultCtx uint     `json:"defaultctx"`
+	Contexts   []cfgCtx `json:"contexts"`
+}
 
-func TestMain(m *testing.M) {
-	if err := os.Mkdir(testBaseDirUserHash, 0755); err != nil {
-		fmt.Println("Error creating store base directory:", err)
-		os.Exit(-1)
+func (d *Dir) ReadConfig(configfile string) error {
+	file, err := os.Open(configfile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	jsondata, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
 	}
 
-	testStoreUserHash = NewDir(testBaseDirUserHash)
-	testStoreUserHash.DefaultCtxID = 1
-	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	testStoreUserHash.Contexts[testStoreUserHash.DefaultCtxID] = ctx
-
-	ret := m.Run()
-
-	if err := os.RemoveAll(testBaseDirUserHash); err != nil {
-		fmt.Println("Error removing store base directory:", err)
+	c := &config{}
+	if jsonerr := json.Unmarshal(jsondata, c); jsonerr != nil {
+		return fmt.Errorf("Error parsing config file: %s", jsonerr)
 	}
-	os.Exit(ret)
+	fmt.Printf("\nConfig = %+v\n\n", c)
+	// TODO: set Dir member variables according to c
+	return nil
 }

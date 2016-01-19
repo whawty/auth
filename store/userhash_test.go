@@ -202,10 +202,29 @@ func TestSetAdmin(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 
+	if err := u.SetAdmin(false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
 	if _, isAdmin, err := u.Exists(); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else if isAdmin {
 		t.Fatal("test user shouldn't be an admin")
+	}
+
+	if err := u.SetAdmin(false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestSetAdminNonExistent(t *testing.T) {
+	username := "test-setadmin-nonexistent"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.SetAdmin(true); err == nil {
+		t.Fatal("setting admin on not exisiting user should be an error")
 	}
 }
 
@@ -238,6 +257,7 @@ func TestIsFormatSupported(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 	defer file.Close()
+	defer os.Remove(filename)
 	for _, invalid := range invalidStrings {
 		if _, err := file.Seek(0, 0); err != nil {
 			t.Fatal("unexpected error:", err)
@@ -281,6 +301,66 @@ func TestAuthenticate(t *testing.T) {
 	}
 }
 
+func TestAuthenticateNonExistent(t *testing.T) {
+	username := "test-auth-nonexistent"
+	password := "secret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if _, _, err := u.Authenticate(password); err == nil {
+		t.Fatal("authenticating not exisiting user should be an error")
+	}
+}
+
+func TestAuthenticateUnkownContext(t *testing.T) {
+	username := "test-auth-unknown-ctx"
+	password := "secret"
+	hashStr := "hmac_sha256_scrypt:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w="
+
+	filename := filepath.Join(testBaseDir, username+".user")
+	file, err := os.Create(filename)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer file.Close()
+	defer os.Remove(filename)
+	if _, err := file.WriteString(hashStr); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if _, _, err := u.Authenticate(password); err == nil {
+		t.Fatal("authenticating a password which uses an unkown context should give an error")
+	}
+}
+
+func TestAuthenticateInvalidHash(t *testing.T) {
+	username := "test-auth-invalid-hash"
+	password := "secret"
+	hashStr := "hmac_sha256_scrypt:23:this is no salt:??"
+
+	filename := filepath.Join(testBaseDir, username+".user")
+	file, err := os.Create(filename)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer file.Close()
+	defer os.Remove(filename)
+	if _, err := file.WriteString(hashStr); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if _, _, err := u.Authenticate(password); err == nil {
+		t.Fatal("authenticating a password with an invalid hash string should give an error")
+	}
+}
+
 func TestUpdateUser(t *testing.T) {
 	username := "test-update-user"
 	password1 := "secret"
@@ -313,7 +393,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestUpdateAdmin(t *testing.T) {
-	username := "test-update-user"
+	username := "test-update-admin"
 	password1 := "secret"
 	password2 := "moresecret"
 
@@ -340,6 +420,18 @@ func TestUpdateAdmin(t *testing.T) {
 	}
 	if isAuthOk, _, _ := u.Authenticate(password2); !isAuthOk {
 		t.Fatal("authentication should succeed")
+	}
+}
+
+func TestUpdateNonExistent(t *testing.T) {
+	username := "test-update-nonexistent"
+	password := "secret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Update(password); err == nil {
+		t.Fatal("updating not exisiting user should be an error")
 	}
 }
 

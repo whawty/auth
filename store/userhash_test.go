@@ -176,6 +176,39 @@ func TestExistsAdmin(t *testing.T) {
 	}
 }
 
+func TestSetAdmin(t *testing.T) {
+	username := "test-set-admin"
+	password := "secret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password, false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if err := u.SetAdmin(true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if _, isAdmin, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if !isAdmin {
+		t.Fatal("test user should be an admin")
+	}
+
+	if err := u.SetAdmin(false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if _, isAdmin, err := u.Exists(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if isAdmin {
+		t.Fatal("test user shouldn't be an admin")
+	}
+}
+
 func TestIsFormatSupported(t *testing.T) {
 	username := "test-format-supported"
 	password := "secret"
@@ -247,36 +280,65 @@ func TestAuthenticate(t *testing.T) {
 	}
 }
 
-func TestSetAdmin(t *testing.T) {
-	username := "test-set-admin"
-	password := "secret"
+func TestUpdateUser(t *testing.T) {
+	username := "test-update-user"
+	password1 := "secret"
+	password2 := "moresecret"
 
 	s, _ := NewDir(testBaseDir)
 	u := NewUserHash(s, username)
 
-	if err := u.Add(password, false); err != nil {
+	if err := u.Add(password1, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 	defer u.Remove()
 
-	if err := u.SetAdmin(true); err != nil {
-		t.Fatal("unexpected error:", err)
+	if isAuthOk, _, _ := u.Authenticate(password1); !isAuthOk {
+		t.Fatal("authentication should succeed")
+	}
+	if isAuthOk, _, _ := u.Authenticate(password2); isAuthOk {
+		t.Fatal("authentication shouldn't succeed")
 	}
 
-	if _, isAdmin, err := u.Exists(); err != nil {
-		t.Fatal("unexpected error:", err)
-	} else if !isAdmin {
-		t.Fatal("test user should be an admin")
-	}
-
-	if err := u.SetAdmin(false); err != nil {
+	if err := u.Update(password2); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
+	if isAuthOk, _, _ := u.Authenticate(password1); isAuthOk {
+		t.Fatal("authentication shouldn't succeed")
+	}
+	if isAuthOk, _, _ := u.Authenticate(password2); !isAuthOk {
+		t.Fatal("authentication should succeed")
+	}
+}
 
-	if _, isAdmin, err := u.Exists(); err != nil {
+func TestUpdateAdmin(t *testing.T) {
+	username := "test-update-user"
+	password1 := "secret"
+	password2 := "moresecret"
+
+	s, _ := NewDir(testBaseDir)
+	u := NewUserHash(s, username)
+
+	if err := u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
-	} else if isAdmin {
-		t.Fatal("test user shouldn't be an admin")
+	}
+	defer u.Remove()
+
+	if isAuthOk, _, _ := u.Authenticate(password1); !isAuthOk {
+		t.Fatal("authentication should succeed")
+	}
+	if isAuthOk, _, _ := u.Authenticate(password2); isAuthOk {
+		t.Fatal("authentication shouldn't succeed")
+	}
+
+	if err := u.Update(password2); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if isAuthOk, _, _ := u.Authenticate(password1); isAuthOk {
+		t.Fatal("authentication shouldn't succeed")
+	}
+	if isAuthOk, _, _ := u.Authenticate(password2); !isAuthOk {
+		t.Fatal("authentication should succeed")
 	}
 }
 

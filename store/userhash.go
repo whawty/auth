@@ -100,41 +100,50 @@ func NewUserHash(store *Dir, user string) (u *UserHash) {
 	return
 }
 
-// Add creates the hash file. It is an error if the user already exists.
-func (u *UserHash) Add(password string, isAdmin bool) (err error) {
-	if exists, _, err := u.Exists(); err != nil {
-		return err
-	} else if exists {
-		return fmt.Errorf("user '%s' already exists", u.user)
-	}
-
+func (u *UserHash) getFilename(isAdmin bool) string {
 	filename := filepath.Join(u.store.basedir, u.user)
 	if isAdmin {
-		filename += adminExt
-	} else {
-		filename += userExt
+		return filename + adminExt
 	}
-	var file *os.File
-	if file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600); err != nil {
-		return
+	return filename + userExt
+}
+
+func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error {
+	file, err := os.OpenFile(u.getFilename(isAdmin), flags, 0600)
+	if err != nil {
+		return err
 	}
 	defer file.Close()
 
-	var hash, salt []byte
-	if hash, salt, err = u.store.contexts[u.store.defaultCtxID].Gen([]byte(password)); err != nil {
-		return
+	hash, salt, err := u.store.contexts[u.store.defaultCtxID].Gen([]byte(password))
+	if err != nil {
+		return err
 	}
 	hashStr := scryptauth.EncodeBase64(u.store.defaultCtxID, hash, salt)
-	if _, err = io.WriteString(file, hashStr+"\n"); err != nil {
-		return // TODO: retry if write was short
+	_, err = io.WriteString(file, hashStr+"\n") // TODO: retry if write was short??
+	return err
+}
+
+// Add creates the hash file. It is an error if the user already exists.
+func (u *UserHash) Add(password string, isAdmin bool) error {
+	exists, _, err := u.Exists()
+	if err != nil {
+		return err
+	} else if exists {
+		return fmt.Errorf("whawty.auth.store: user '%s' already exists", u.user)
 	}
-	return
+	return u.writeHashStr(password, isAdmin, os.O_WRONLY|os.O_CREATE|os.O_EXCL)
 }
 
 // Update changes the password for user.
-func (u *UserHash) Update(password string) (err error) {
-	// TODO: implement this
-	return
+func (u *UserHash) Update(password string) error {
+	exists, isAdmin, err := u.Exists()
+	if err != nil {
+		return err
+	} else if !exists {
+		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	}
+	return u.writeHashStr(password, isAdmin, os.O_WRONLY|os.O_TRUNC)
 }
 
 // SetAdmin changes the admin status of user.

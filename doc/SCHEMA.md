@@ -50,5 +50,6 @@ the base directory. The parameters needed are:
     p:          the scrypt parameter p
     r:          the scrypt parameter r
 
-salt is a random number with 256bits
-hash is the output of hmac_sha256(scrypt(user_password, salt), server_key)
+salt is a random number with 256bits, hash is the output of the following function
+
+    hmac_sha256(scrypt(user_password, salt), server_key)

@@ -55,7 +55,37 @@ func TestDirFromConfig(t *testing.T) {
 	}{
 		{"", false},
 		{"{}", false},
-		{"{ \"basedir\": \"/tmp\" }", true},
+		{`{ "basedir": "/tmp" }`, true},
+		{`{ "basedir": "/tmp", "defaultctx": 0 }`, true},
+		{`{ "basedir": "/tmp", "defaultctx": 17 }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 0, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 13, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 17, "hmackey": "", "pwcost": 12 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 17, "hmackey": "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA==", "pwcost": 12 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 17, "hmackey": "$$invalid§§", "pwcost": 12 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 33 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 0, "contexts": [
+         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14 }
+     ] }`, false},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
+     ] }`, true},
+		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 },
+         { "ID": 18, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14, "p": 7, "r": 2 }
+     ] }`, true},
 	}
 
 	file, err := ioutil.TempFile("", "whawty-auth-config")

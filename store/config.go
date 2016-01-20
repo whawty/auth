@@ -32,8 +32,10 @@
 package store
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/spreadspace/scryptauth.v2"
 	"io/ioutil"
 	"os"
 )
@@ -79,7 +81,38 @@ func (d *Dir) fromConfig(configfile string) error {
 	if c.BaseDir == "" {
 		return fmt.Errorf("Error: config file does not contain a base directory")
 	}
+	d.basedir = c.BaseDir
+	for _, ctx := range c.Contexts {
+		if ctx.ID == 0 {
+			return fmt.Errorf("Error: context ID 0 is not allowed")
+		}
+		hk, err := base64.URLEncoding.DecodeString(ctx.HmacKeyBase64)
+		if err != nil {
+			return fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
+		}
+		if len(hk) != scryptauth.KeyLength {
+			return fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", ctx.ID, scryptauth.KeyLength, len(hk))
+		}
 
-	// TODO: set Dir member variables according to c
+		sactx, err := scryptauth.New(ctx.PwCost, hk)
+		if err != nil {
+			return err
+		}
+		if ctx.R > 0 {
+			sactx.R = ctx.R
+		}
+		if ctx.P > 0 {
+			sactx.P = ctx.P
+		}
+		d.Contexts[ctx.ID] = sactx
+	}
+	if c.DefaultCtx == 0 {
+		if len(d.Contexts) != 0 {
+			return fmt.Errorf("Error: no default context")
+		}
+	} else if _, exists := d.Contexts[c.DefaultCtx]; !exists {
+		return fmt.Errorf("Error: invalid default context %d", c.DefaultCtx)
+	}
+	d.DefaultCtxID = c.DefaultCtx
 	return nil
 }

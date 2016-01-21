@@ -37,6 +37,7 @@
 package store
 
 import (
+	"fmt"
 	"gopkg.in/spreadspace/scryptauth.v2"
 	"io/ioutil"
 	"log"
@@ -77,11 +78,43 @@ func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	return
 }
 
+func openDir(path string) (*os.File, error) {
+	dir, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if i, err := dir.Stat(); err != nil {
+		defer dir.Close()
+		return nil, err
+	} else {
+		if !i.IsDir() {
+			defer dir.Close()
+			return nil, fmt.Errorf("Error: '%s' is not a directory", path)
+		}
+	}
+	return dir, nil
+}
+
+func isDirEmpty(dir *os.File) bool {
+	if _, err := dir.Readdir(1); err == nil {
+		return false
+	}
+	return true
+}
+
 // Init initalizes the store by creating a password file for an admin user.
-func (d *Dir) Init(admin, password string) (err error) {
-	// TODO: check if dir exists and is empty
-	NewUserHash(d, admin).Add(password, true)
-	return
+func (d *Dir) Init(admin, password string) error {
+	dir, err := openDir(d.basedir)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	if empty := isDirEmpty(dir); !empty {
+		return fmt.Errorf("Error: '%s' is not empty", d.basedir)
+	}
+	return d.AddUser(admin, password, true)
 }
 
 // Check tests if the directory is a valid whawty.auth base directory.
@@ -92,28 +125,24 @@ func (d *Dir) Check() (ok bool, err error) {
 
 // AddUser adds user to the store. It is an error if the user already exists.
 func (d *Dir) AddUser(user, password string, isAdmin bool) (err error) {
-	NewUserHash(d, user).Add(password, isAdmin)
-	return
+	return NewUserHash(d, user).Add(password, isAdmin)
 }
 
 // UpdateUser changes the password of user. It is an error if the user does
 // not exist.
 func (d *Dir) UpdateUser(user, password string) (err error) {
-	NewUserHash(d, user).Update(password)
-	return
+	return NewUserHash(d, user).Update(password)
 }
 
 // SetAdmin changes the admin status of user. It is an error if the user does
 // not exist.
 func (d *Dir) SetAdmin(user string, adminState bool) (err error) {
-	NewUserHash(d, user).SetAdmin(adminState)
-	return
+	return NewUserHash(d, user).SetAdmin(adminState)
 }
 
 // RemoveUser removes user from the store.
 func (d *Dir) RemoveUser(user string) {
 	NewUserHash(d, user).Remove()
-	return
 }
 
 // UserList is the return value of List(). The key of the map is the username

@@ -36,6 +36,7 @@ import (
 	"gopkg.in/spreadspace/scryptauth.v2"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -48,7 +49,7 @@ var (
 	testStoreUserHash *Dir
 )
 
-func TestDirFromConfig(t *testing.T) {
+func TestNewDirFromConfig(t *testing.T) {
 	jsonData := []struct {
 		s     string
 		valid bool
@@ -115,6 +116,68 @@ func TestDirFromConfig(t *testing.T) {
 				t.Fatalf("NewDirFromConfig didn't return with an error for '%s'", json.s)
 			}
 		}
+	}
+}
+
+func TestInitDir(t *testing.T) {
+	adminuser := "root"
+	password := "verysecret"
+
+	store := NewDir(testBaseDir)
+
+	if err := store.Init(adminuser, password); err == nil {
+		t.Fatalf("Initializing a not existing dir should give an error")
+	}
+
+	if file, err := os.Create(testBaseDir); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+
+	if err := store.Init(adminuser, password); err == nil {
+		t.Fatalf("Initializing where path is a not a dir should give an error")
+	}
+
+	if err := os.Remove(testBaseDir); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if err := os.Mkdir(testBaseDir, 0000); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer os.RemoveAll(testBaseDir)
+
+	if err := store.Init(adminuser, password); err == nil {
+		t.Fatalf("Initializing of a directory with wrong permissions shouldn't work")
+	}
+
+	if err := os.Chmod(testBaseDir, 0755); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if file, err := os.Create(filepath.Join(testBaseDir, "testfile")); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+
+	if err := store.Init(adminuser, password); err == nil {
+		t.Fatalf("Initializing a non-empty directory should give an error")
+	}
+
+	if err := os.Remove(filepath.Join(testBaseDir, "testfile")); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if err := store.Init(adminuser, password); err == nil {
+		t.Fatalf("Initializing a directory without a context should give an error")
+	}
+
+	store.DefaultCtxID = 1
+	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+	store.Contexts[store.DefaultCtxID] = ctx
+
+	if err := store.Init(adminuser, password); err != nil {
+		t.Fatalf("unexpected error")
 	}
 }
 

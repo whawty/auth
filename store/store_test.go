@@ -33,11 +33,12 @@ package store
 
 import (
 	"fmt"
-	"gopkg.in/spreadspace/scryptauth.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 const (
@@ -178,6 +179,44 @@ func TestInitDir(t *testing.T) {
 
 	if err := store.Init(adminuser, password); err != nil {
 		t.Fatalf("unexpected error")
+	}
+}
+
+func TestCheckDir(t *testing.T) {
+	store := NewDir(testBaseDir)
+
+	if ok, err := store.Check(); err == nil && ok == true {
+		t.Fatalf("check should return an error for not existing directory")
+	}
+
+	if file, err := os.Create(testBaseDir); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+
+	if ok, err := store.Check(); err == nil && ok == true {
+		t.Fatalf("check should return an error if path is not a directory")
+	}
+
+	if err := os.Remove(testBaseDir); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if err := os.Mkdir(testBaseDir, 0000); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer os.RemoveAll(testBaseDir)
+
+	if ok, err := store.Check(); err == nil && ok == true {
+		t.Fatalf("check should return an error if directory is not accessable")
+	}
+
+	if err := os.Chmod(testBaseDir, 0755); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if ok, err := store.Check(); err == nil && ok == true {
+		t.Fatalf("check should return an error for an empty directory")
 	}
 }
 

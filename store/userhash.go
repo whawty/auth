@@ -33,18 +33,13 @@ package store
 
 import (
 	"fmt"
-	"gopkg.in/spreadspace/scryptauth.v2"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-)
 
-const (
-	algoID   string = "hmac_sha256_scrypt"
-	adminExt string = ".admin"
-	userExt  string = ".user"
+	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 // fileExists returns whether the given file or directory exists or not

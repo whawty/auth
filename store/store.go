@@ -38,15 +38,26 @@ package store
 
 import (
 	"fmt"
-	"gopkg.in/spreadspace/scryptauth.v2"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
+
+	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 var (
-	wl = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
+	wl         = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
+	userNameRe = regexp.MustCompile("^[-_.@A-Za-z0-9]+$")
+)
+
+const (
+	algoID   string = "hmac_sha256_scrypt"
+	adminExt string = ".admin"
+	userExt  string = ".user"
 )
 
 func init() {
@@ -103,6 +114,56 @@ func isDirEmpty(dir *os.File) bool {
 	return true
 }
 
+func hasSupportedAdminHashes(dir *os.File) (bool, error) {
+	success := false
+	for {
+		last := false
+		names, err := dir.Readdirnames(3)
+		if err != nil {
+			if err == io.EOF {
+				last = true
+			} else {
+				return false, err
+			}
+		}
+
+		for _, name := range names {
+			var user string
+			isAdmin := false
+
+			switch filepath.Ext(name) {
+			case adminExt:
+				user = strings.TrimSuffix(name, adminExt)
+				isAdmin = true
+			case userExt:
+				user = strings.TrimSuffix(name, userExt)
+			default:
+				return false, fmt.Errorf("file '%s' has invalid extension", name)
+			}
+
+			if !userNameRe.MatchString(user) {
+				wl.Printf("ignoring file for invalid username: '%s'", user)
+				continue
+			}
+			if !isAdmin {
+				continue
+			}
+			if exists, _ := fileExists(filepath.Join(dir.Name(), user) + userExt); exists {
+				return false, fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
+			}
+
+			if ok, _ := IsFormatSupported(name); ok {
+				success = true
+			}
+		}
+
+		if last {
+			break
+		}
+	}
+	return success, nil
+}
+
 // Init initalizes the store by creating a password file for an admin user.
 func (d *Dir) Init(admin, password string) error {
 	dir, err := openDir(d.basedir)
@@ -119,12 +180,20 @@ func (d *Dir) Init(admin, password string) error {
 
 // Check tests if the directory is a valid whawty.auth base directory.
 func (d *Dir) Check() (ok bool, err error) {
-	// TODO: implement this
-	return
+	dir, err := openDir(d.basedir)
+	if err != nil {
+		return false, err
+	}
+	defer dir.Close()
+
+	return hasSupportedAdminHashes(dir)
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.
 func (d *Dir) AddUser(user, password string, isAdmin bool) (err error) {
+	if !userNameRe.MatchString(user) {
+		return fmt.Errorf("username '%s' is invalid", user)
+	}
 	return NewUserHash(d, user).Add(password, isAdmin)
 }
 

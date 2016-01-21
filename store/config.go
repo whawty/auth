@@ -35,9 +35,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/spreadspace/scryptauth.v2"
 	"io/ioutil"
 	"os"
+
+	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 type cfgCtx struct {

@@ -114,6 +114,24 @@ func isDirEmpty(dir *os.File) bool {
 	return true
 }
 
+func checkUserFile(filename string) (valid bool, user string, isAdmin bool, err error) {
+	switch filepath.Ext(filename) {
+	case adminExt:
+		user = strings.TrimSuffix(filename, adminExt)
+		isAdmin = true
+	case userExt:
+		user = strings.TrimSuffix(filename, userExt)
+	default:
+		err = fmt.Errorf("file '%s' has invalid extension", filename)
+		return
+	}
+
+	if userNameRe.MatchString(user) {
+		valid = true
+	}
+	return
+}
+
 func hasSupportedAdminHashes(dir *os.File) (bool, error) {
 	success := false
 	for {
@@ -128,22 +146,13 @@ func hasSupportedAdminHashes(dir *os.File) (bool, error) {
 		}
 
 		for _, name := range names {
-			var user string
-			isAdmin := false
-
-			switch filepath.Ext(name) {
-			case adminExt:
-				user = strings.TrimSuffix(name, adminExt)
-				isAdmin = true
-			case userExt:
-				user = strings.TrimSuffix(name, userExt)
-			default:
-				return false, fmt.Errorf("file '%s' has invalid extension", name)
+			valid, user, isAdmin, err := checkUserFile(name)
+			if err != nil {
+				return false, err
 			}
 
-			if !userNameRe.MatchString(user) {
+			if !valid {
 				wl.Printf("ignoring file for invalid username: '%s'", user)
-				continue
 			}
 			if !isAdmin {
 				continue

@@ -218,6 +218,7 @@ func TestCheckDir(t *testing.T) {
 	if ok, err := store.Check(); err == nil && ok == true {
 		t.Fatalf("check should return an error for an empty directory")
 	}
+	// TODO: add more tests
 }
 
 func TestMain(m *testing.M) {

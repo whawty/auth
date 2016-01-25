@@ -37,7 +37,7 @@ import (
 	_ "net/http/pprof"
 )
 
-func handleWebAdd(w http.ResponseWriter, r *http.Request) {
+func handleWebAuthenticate(w http.ResponseWriter, r *http.Request) {
 	//	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
 	// encoder := json.NewEncoder(w)
@@ -45,8 +45,38 @@ func handleWebAdd(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "not implemented")
 }
 
+func handleWebAdd(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "not implemented")
+}
+
+func handleWebRemove(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "not implemented")
+}
+
+func handleWebUpdate(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "not implemented")
+}
+
+func handleWebSetAdmin(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "not implemented")
+}
+
+func handleWebList(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "not implemented")
+}
+
 func startWebApi(addr *string) (err error) {
+	http.HandleFunc("/api/authenticate", handleWebAuthenticate)
 	http.HandleFunc("/api/add", handleWebAdd)
+	http.HandleFunc("/api/remove", handleWebRemove)
+	http.HandleFunc("/api/update", handleWebUpdate)
+	http.HandleFunc("/api/set-admin", handleWebSetAdmin)
+	http.HandleFunc("/api/list", handleWebList)
 
 	wl.Printf("web-api: listening on '%s'", *addr)
 	http.ListenAndServe(*addr, nil)

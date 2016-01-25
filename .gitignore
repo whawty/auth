@@ -1,3 +1,4 @@
+/app/whawty-auth
 /pam/*.o
 /pam/*.d
 /pam/*.d.*

@@ -38,6 +38,8 @@ import (
 )
 
 func handleWebAuthenticate(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got AUTHENTICATE request from %s", r.RemoteAddr)
+
 	//	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
 	// encoder := json.NewEncoder(w)
@@ -46,26 +48,36 @@ func handleWebAuthenticate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleWebAdd(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got ADD request from %s", r.RemoteAddr)
+
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
 func handleWebRemove(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got REMOVE request from %s", r.RemoteAddr)
+
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
 func handleWebUpdate(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got UPDATE request from %s", r.RemoteAddr)
+
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
 func handleWebSetAdmin(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got SET_ADMIN request from %s", r.RemoteAddr)
+
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
 func handleWebList(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got LIST request from %s", r.RemoteAddr)
+
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }

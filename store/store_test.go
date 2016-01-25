@@ -221,6 +221,78 @@ func TestCheckDir(t *testing.T) {
 	// TODO: add more tests
 }
 
+func TestList(t *testing.T) {
+	adminuser := "root"
+	password := "verysecret"
+	user1 := "test"
+	password1 := "secret"
+
+	store := NewDir(testBaseDir)
+
+	if err := os.Mkdir(testBaseDir, 0755); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer os.RemoveAll(testBaseDir)
+
+	if list, err := store.List(); err != nil {
+		t.Fatalf("unexpected error")
+	} else if len(list) != 0 {
+		t.Fatalf("list should return an empty user list for an empty directory")
+	}
+
+	store.DefaultCtxID = 1
+	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+	store.Contexts[store.DefaultCtxID] = ctx
+
+	if err := store.Init(adminuser, password); err != nil {
+		t.Fatalf("unexpected error")
+	}
+
+	if list, err := store.List(); err != nil {
+		t.Fatalf("unexpected error")
+	} else if len(list) != 1 {
+		t.Fatalf("list should return a list of length 1")
+	} else {
+		if isAdmin, ok := list[adminuser]; !ok || !isAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+	}
+
+	if err := store.AddUser(user1, password1, false); err != nil {
+		t.Fatalf("unexpected error")
+	}
+
+	if list, err := store.List(); err != nil {
+		t.Fatalf("unexpected error")
+	} else if len(list) != 2 {
+		t.Fatalf("list should return a list of length 2")
+	} else {
+		if isAdmin, ok := list[adminuser]; !ok || !isAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+		if isAdmin, ok := list[user1]; !ok || isAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+	}
+
+	if err := store.SetAdmin(user1, true); err != nil {
+		t.Fatalf("unexpected error")
+	}
+
+	if list, err := store.List(); err != nil {
+		t.Fatalf("unexpected error")
+	} else if len(list) != 2 {
+		t.Fatalf("list should return a list of length 2")
+	} else {
+		if isAdmin, ok := list[adminuser]; !ok || !isAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+		if isAdmin, ok := list[user1]; !ok || !isAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+	}
+}
+
 func TestMain(m *testing.M) {
 	if err := os.Mkdir(testBaseDirUserHash, 0755); err != nil {
 		fmt.Println("Error creating store base directory:", err)

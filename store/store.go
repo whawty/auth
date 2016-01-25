@@ -161,7 +161,7 @@ func hasSupportedAdminHashes(dir *os.File) (bool, error) {
 				return false, fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
 			}
 
-			if ok, _ := IsFormatSupported(name); ok {
+			if ok, _ := IsFormatSupported(filepath.Join(dir.Name(), name)); ok {
 				success = true
 			}
 		}
@@ -171,6 +171,44 @@ func hasSupportedAdminHashes(dir *os.File) (bool, error) {
 		}
 	}
 	return success, nil
+}
+
+func listSupportedUsers(dir *os.File, list UserList) error {
+	for {
+		last := false
+		names, err := dir.Readdirnames(3)
+		if err != nil {
+			if err == io.EOF {
+				last = true
+			} else {
+				return err
+			}
+		}
+
+		for _, name := range names {
+			valid, user, isAdmin, err := checkUserFile(name)
+			if err != nil {
+				return err
+			}
+
+			if !valid {
+				wl.Printf("ignoring file for invalid username: '%s'", user)
+				continue
+			}
+
+			if ok, _ := IsFormatSupported(filepath.Join(dir.Name(), name)); !ok {
+				wl.Printf("ignoring file with unsupported hash format for username: '%s'", user)
+				continue
+			}
+
+			list[user] = isAdmin
+		}
+
+		if last {
+			break
+		}
+	}
+	return nil
 }
 
 // Init initalizes the store by creating a password file for an admin user.
@@ -228,10 +266,16 @@ func (d *Dir) RemoveUser(user string) {
 type UserList map[string]bool
 
 // List returns a list of all users in the store.
-func (d *Dir) List() (list UserList) {
-	list = make(UserList)
-	// TODO: implement this
-	return
+func (d *Dir) List() (UserList, error) {
+	dir, err := openDir(d.basedir)
+	if err != nil {
+		return nil, err
+	}
+	defer dir.Close()
+
+	list := make(UserList)
+	err = listSupportedUsers(dir, list)
+	return list, err
 }
 
 // Exists checks if user exists. It also returns whether user is an admin.

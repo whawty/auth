@@ -32,7 +32,8 @@
 GOCMD := go
 EXECUTEABLE := whawty-auth
 
-all: $(EXECUTEABLE)
+all: build
+.PHONY: vet format build
 
 vet:
 	$(GOCMD) vet
@@ -40,8 +41,8 @@ vet:
 format:
 	$(GOCMD) fmt
 
-$(EXECUTEABLE):
-	$(GOCMD) build -o $@
+build:
+	$(GOCMD) build -o $(EXECUTEABLE)
 
 clean:
 	rm -f $(EXECUTEABLE)

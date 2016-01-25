@@ -32,34 +32,23 @@
 package main
 
 import (
-	"flag"
-	"io/ioutil"
-	"log"
-	"os"
-
-	//	"github.com/whawty/auth/store"
+	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 )
 
-var (
-	wl  = log.New(os.Stdout, "[whawty.auth]\t", log.LstdFlags)
-	wdl = log.New(ioutil.Discard, "[whawty.auth dbg]\t", log.LstdFlags)
-)
-
-func init() {
-	if _, exists := os.LookupEnv("WHAWTY_AUTH_DEBUG"); exists {
-		wdl.SetOutput(os.Stderr)
-	}
+func handleWebAdd(w http.ResponseWriter, r *http.Request) {
+	//	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
+	// encoder := json.NewEncoder(w)
+	// encoder.Encode(respdata)
+	fmt.Fprintf(w, "not implemented")
 }
 
-func main() {
-	addr := flag.String("addr", ":8888", "addr:port to listen on")
-	help := flag.Bool("help", false, "show usage")
+func startWebApi(addr *string) (err error) {
+	http.HandleFunc("/api/add", handleWebAdd)
 
-	flag.Parse()
-	if *help {
-		flag.Usage()
-		return
-	}
-
-	startWebApi(addr)
+	wl.Printf("web-api: listening on '%s'", *addr)
+	http.ListenAndServe(*addr, nil)
+	return
 }

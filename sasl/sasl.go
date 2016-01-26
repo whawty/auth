@@ -37,24 +37,28 @@ import (
 )
 
 const (
+	// MaxRequestLength is maximum length allowed for login, password
+	// service and realm
 	MaxRequestLength = 256
 )
 
-// SaslRequest contains all values for a saslauthd authentication request.
-type SaslRequest struct {
+// Request contains all values for a saslauthd authentication request.
+type Request struct {
 	Login    string
 	Password string
 	Service  string
 	Realm    string
 }
 
-// SaslResponse holds the result as well as the message as returned by the
+// Response holds the result as well as the message as returned by the
 // authentication provider.
-type SaslResponse struct {
+type Response struct {
 	Result  bool
 	Message string
 }
 
+// AuthCB is the function signature of callbacks as used by the server to
+// handle authentication requests
 type AuthCB func(login, password, service, realm string) (ok bool, msg string, err error)
 
 // Server holds all information needed to run the server. Use NewServer to

@@ -58,7 +58,7 @@ func (r *Request) Marshal() (data []byte, err error) {
 }
 
 // Unmarshal decodes the request values from it's byte representaion.
-func (r *Request) UnMarshal(data []byte) (err error) {
+func (r *Request) Unmarshal(data []byte) (err error) {
 	// TODO: implemente this
 	return
 }
@@ -78,7 +78,7 @@ func (r *Response) Marshal() (data []byte, err error) {
 }
 
 // Unmarshal decodes the response from the it's byte representaion.
-func (r *Response) UnMarshal(data []byte) (err error) {
+func (r *Response) Unmarshal(data []byte) (err error) {
 	// TODO: implemente this
 	return
 }

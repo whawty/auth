@@ -32,11 +32,13 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
+	"github.com/codegangsta/cli"
+	"github.com/howeyc/gopass"
 	//	"github.com/whawty/auth/store"
 )
 
@@ -51,15 +53,72 @@ func init() {
 	}
 }
 
-func main() {
-	addr := flag.String("addr", ":8888", "addr:port to listen on")
-	help := flag.Bool("help", false, "show usage")
+func askPass() (string, error) {
+	fmt.Printf("new password: ")
+	if p1, err := gopass.GetPasswd(); err != nil || len(p1) == 0 {
+		return "", err
+	} else {
+		fmt.Printf("retype password: ")
+		if p2, err := gopass.GetPasswd(); err != nil || len(p2) == 0 {
+			return "", err
+		} else {
+			if string(p1) == string(p2) {
+				return string(p1), nil
+			} else {
+				return "", fmt.Errorf("passwords don't match!")
+			}
+		}
+	}
+}
 
-	flag.Parse()
-	if *help {
-		flag.Usage()
+func cmdInit(basedir string, c *cli.Context) {
+	username := c.Args().First()
+	if username == "" {
+		cli.ShowCommandHelp(c, "init")
 		return
 	}
 
-	startWebApi(addr)
+	password := c.Args().Get(1)
+	if password == "" {
+		pwd, err := askPass()
+		if err != nil {
+			if err != gopass.ErrInterrupted {
+				fmt.Println(err)
+			}
+			return
+		}
+		password = pwd
+	}
+
+	wl.Printf("running cmd INIT with dir='%s', user: '%s', password: '%s'", basedir, username, password)
+}
+
+func main() {
+	var basedir string
+
+	app := cli.NewApp()
+	app.Name = "whawty-auth"
+	app.Version = "0.1"
+	app.Usage = "manage whawty auth stores"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "dir, d",
+			Value:       "/var/lib/whawty-auth/",
+			Usage:       "base directory of the whawty auth store",
+			Destination: &basedir,
+			EnvVar:      "WHAWTY_AUTH_BASEDIR",
+		},
+	}
+	app.Commands = []cli.Command{
+		{
+			Name:      "init",
+			Usage:     "initialize a whawty auth store directory",
+			ArgsUsage: "<username> [ <password> ]",
+			Action: func(c *cli.Context) {
+				cmdInit(basedir, c)
+			},
+		},
+	}
+
+	app.Run(os.Args)
 }

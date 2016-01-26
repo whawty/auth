@@ -6,5 +6,6 @@
 /pam/pam_whawty.so
 /sasl/examples/decode/decode
 /sasl/examples/encode/encode
+/sasl/examples/marshal/marshal
 /sasl/examples/client/client
 /sasl/examples/server/server

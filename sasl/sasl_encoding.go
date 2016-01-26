@@ -170,7 +170,9 @@ func (r *Request) Encode(writer io.Writer) error {
 // Marshal encodes the request values into a byte slice. The format is
 // compatible to the requests as expected by salsauthd.
 func (r *Request) Marshal() (data []byte, err error) {
-	buf := bytes.NewBuffer(data)
+	blen := 2*4 + len(r.Login) + len(r.Password) + len(r.Service) + len(r.Realm)
+	data = make([]byte, blen)
+	buf := bytes.NewBuffer(data[:0])
 	err = r.Encode(buf)
 	return
 }
@@ -232,7 +234,12 @@ func (r *Response) Encode(writer io.Writer) error {
 // Marshal encodes the response into a byte slice. The format is the same
 // as used by salsauthd.
 func (r *Response) Marshal() (data []byte, err error) {
-	buf := bytes.NewBuffer(data)
+	blen := 2 + 2
+	if r.Message != "" {
+		blen += 1 + len(r.Message)
+	}
+	data = make([]byte, blen)
+	buf := bytes.NewBuffer(data[:0])
 	err = r.Encode(buf)
 	return
 }

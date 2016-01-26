@@ -34,7 +34,7 @@
 package sasl
 
 import (
-	//	"fmt"
+	"fmt"
 	"net"
 )
 
@@ -64,11 +64,22 @@ func NewServer(socketpath string, cb AuthCB) (s *Server, err error) {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	// TODO: receive request
-	//       unmarshal request
-	//       call auth callback
-	//       marshal response
-	//       send response
+	defer conn.Close()
+
+	resp := &Response{}
+	req := &Request{}
+	if err := req.Decode(conn); err != nil {
+		resp.Result = false
+		resp.Message = fmt.Sprintf("Error decoding request: %v", err)
+	} else {
+		resp.Result, resp.Message, err = s.cb(req.Login, req.Password, req.Service, req.Realm)
+		if err != nil {
+			resp.Result = false
+			resp.Message = err.Error()
+		}
+	}
+
+	resp.Encode(conn) // silently drop error...
 }
 
 // Run actually runs the server. In calls Accept() on the server socket and

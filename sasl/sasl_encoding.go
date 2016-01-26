@@ -82,11 +82,11 @@ func decodeLengthEncodedStrings(reader io.Reader, parts []string) error {
 
 	var i = 0
 	for scanner.Scan() {
-		if i >= len(parts) {
-			return errors.New("too many parts in message")
-		}
 		parts[i] = string(scanner.Bytes()[2:])
 		i++
+		if i >= len(parts) {
+			break
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return err

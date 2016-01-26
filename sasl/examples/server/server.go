@@ -38,33 +38,30 @@ import (
 	"github.com/whawty/auth/sasl"
 )
 
+func callback(login, password, service, realm string) (ok bool, msg string, err error) {
+	fmt.Printf("go auth request: [user=%s] [service=%s] [realm=%s] with password: %q\n", login, service, realm, password)
+
+	ok = false
+	if login == "equinox" {
+		if password == "test" {
+			ok = true
+			msg = "success"
+		} else {
+			msg = "invalid password"
+		}
+	} else {
+		msg = "unknown user: " + login
+	}
+
+	return ok, msg, nil
+}
+
 func main() {
-	//	c := sasl.NewClient("/var/run/saslauthd/mux")
-	c := sasl.NewClient("/tmp/whawty-sasl.sock")
-
-	var login, password, service, realm string
-
-	switch len(os.Args) {
-	case 5:
-		realm = os.Args[4]
-		fallthrough
-	case 4:
-		service = os.Args[3]
-		fallthrough
-	case 3:
-		password = os.Args[2]
-		fallthrough
-	case 2:
-		login = os.Args[1]
-	default:
-		fmt.Printf("invalid number of arguments\n")
-		return
-	}
-
-	ok, msg, err := c.Auth(login, password, service, realm)
+	os.Remove("/tmp/whawty-sasl.sock")
+	s, err := sasl.NewServer("/tmp/whawty-sasl.sock", callback)
 	if err != nil {
-		fmt.Println("auth() error:", err)
+		fmt.Printf("error initalizing server: %s\n", err)
 		return
 	}
-	fmt.Printf("Authenticated: %v, Message %q\n", ok, msg)
+	s.Run()
 }

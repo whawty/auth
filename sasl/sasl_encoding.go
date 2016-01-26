@@ -38,6 +38,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 )
 
 const (
@@ -45,31 +46,6 @@ const (
 	// service and realm
 	MaxRequestLength = 256
 )
-
-// Request contains all values for a saslauthd authentication request.
-type Request struct {
-	Login    string
-	Password string
-	Service  string
-	Realm    string
-}
-
-// Marshal encodes the request values into a byte slice. The format is
-// compatible to the requests as expected by salsauthd.
-func (r *Request) Marshal() (data []byte, err error) {
-	// TODO: implemente this
-	return
-}
-
-// Unmarshal decodes the request values from it's byte representaion.
-func (r *Request) Unmarshal(data []byte) (err error) {
-	// TODO: implemente this
-	return
-}
-
-type RequestDecoder struct {
-	scanner *bufio.Scanner
-}
 
 func scanLengthEncodedString(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
@@ -85,7 +61,7 @@ func scanLengthEncodedString(data []byte, atEOF bool) (advance int, token []byte
 	strlen := int(binary.BigEndian.Uint16(data[0:2])) // get string length (network-byte-order == big-endian)
 
 	if strlen > MaxRequestLength {
-		return 0, nil, fmt.Errorf("message parameter exceeds maximum length %d > %d", strlen, MaxRequestLength)
+		return 0, nil, fmt.Errorf("message part exceeds maximum length %d > %d", strlen, MaxRequestLength)
 	}
 	if strlen == 0 {
 		return 2, data[0:2], nil // scan will drop empty tokens so keep the length as part of it ???
@@ -100,34 +76,108 @@ func scanLengthEncodedString(data []byte, atEOF bool) (advance int, token []byte
 	return strlen + 2, data[0 : strlen+2], nil // scan will drop empty tokens so keep the length as part of it ???
 }
 
-func NewRequestDecoder(r io.Reader) (d *RequestDecoder) {
-	d = &RequestDecoder{}
-	d.scanner = bufio.NewScanner(r)
-	d.scanner.Split(scanLengthEncodedString)
+func decodeLengthEncodedStrings(reader io.Reader, parts []string) error {
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(scanLengthEncodedString)
+
+	var i = 0
+	for scanner.Scan() {
+		if i >= len(parts) {
+			return errors.New("too many parts in message")
+		}
+		parts[i] = string(scanner.Bytes()[2:])
+		i += 1
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	if i < len(parts) {
+		return errors.New("too few parts in message")
+	}
+	return nil
+}
+
+func encodeLengthEncodedStrings(writer io.Writer, parts []string) error {
+	for _, part := range parts {
+		if len(part) > math.MaxUint16 {
+			return errors.New("part is too long")
+		}
+
+		data := make([]byte, 2+len(part))
+		binary.BigEndian.PutUint16(data, uint16(len(part)))
+		copy(data[2:], []byte(part))
+		if _, err := writer.Write(data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Request contains all values for a saslauthd authentication request.
+type Request struct {
+	Login    string
+	Password string
+	Service  string
+	Realm    string
+}
+
+// Decode reads a request from reader and decodes it.
+func (r *Request) Decode(reader io.Reader) (err error) {
+	parts := make([]string, 4)
+	if err := decodeLengthEncodedStrings(reader, parts); err != nil {
+		return err
+	}
+	if len(parts[0]) == 0 {
+		return errors.New("empty login is not allowed")
+	}
+	if len(parts[1]) == 0 {
+		return errors.New("empty password is not allowed")
+	}
+
+	r.Login = parts[0]
+	r.Password = parts[1]
+	r.Service = parts[2]
+	r.Realm = parts[3]
 	return
 }
 
-func (d *RequestDecoder) Decode(r *Request) error {
-	data := make([]string, 4)
-	var i = 0
-	for d.scanner.Scan() {
-		if i >= len(data) {
-			return errors.New("too many parameters in message")
-		}
-		data[i] = string(d.scanner.Bytes()[2:])
-		i += 1
+// Encode encodes and writes a request to writer.
+func (r *Request) Encode(writer io.Writer) error {
+	parts := make([]string, 4)
+	if len(r.Login) > MaxRequestLength {
+		return errors.New("Login is too long")
 	}
-	if err := d.scanner.Err(); err != nil {
-		return err
+	parts[0] = r.Login
+
+	if len(r.Password) > MaxRequestLength {
+		return errors.New("Password is too long")
 	}
-	if i < len(data) {
-		return errors.New("too few parameters in message")
+	parts[1] = r.Password
+
+	if len(r.Service) > MaxRequestLength {
+		return errors.New("Service is too long")
 	}
-	r.Login = data[0]
-	r.Password = data[1]
-	r.Service = data[2]
-	r.Realm = data[3]
-	return nil
+	parts[2] = r.Service
+
+	if len(r.Realm) > MaxRequestLength {
+		return errors.New("Realm is too long")
+	}
+	parts[3] = r.Realm
+
+	return encodeLengthEncodedStrings(writer, parts)
+}
+
+// Marshal encodes the request values into a byte slice. The format is
+// compatible to the requests as expected by salsauthd.
+func (r *Request) Marshal() (data []byte, err error) {
+	// TODO: implemente this
+	return
+}
+
+// Unmarshal decodes the request values from it's byte representaion.
+func (r *Request) Unmarshal(data []byte) (err error) {
+	// TODO: implemente this
+	return
 }
 
 // Response holds the result as well as the message as returned by the

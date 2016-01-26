@@ -40,10 +40,13 @@ import (
 
 func main() {
 	var req sasl.Request
-	if err := req.Decode(os.Stdin); err != nil {
-		fmt.Println("decoding error:", err)
+	req.Login = "login"
+	req.Password = "password"
+	req.Service = ""
+	req.Realm = "example.com"
+
+	if err := req.Encode(os.Stdout); err != nil {
+		fmt.Println("encoding error:", err)
 		return
 	}
-
-	fmt.Printf("Request: %+v\n", req)
 }

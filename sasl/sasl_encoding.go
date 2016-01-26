@@ -34,6 +34,7 @@ package sasl
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -170,13 +171,15 @@ func (r *Request) Encode(writer io.Writer) error {
 // Marshal encodes the request values into a byte slice. The format is
 // compatible to the requests as expected by salsauthd.
 func (r *Request) Marshal() (data []byte, err error) {
-	// TODO: implemente this
+	buf := bytes.NewBuffer(data)
+	err = r.Encode(buf)
 	return
 }
 
 // Unmarshal decodes the request values from it's byte representaion.
 func (r *Request) Unmarshal(data []byte) (err error) {
-	// TODO: implemente this
+	buf := bytes.NewBuffer(data)
+	err = r.Decode(buf)
 	return
 }
 
@@ -187,15 +190,57 @@ type Response struct {
 	Message string
 }
 
+// Decode reads a response from reader and decodes it.
+func (r *Response) Decode(reader io.Reader) (err error) {
+	r.Result = false
+	parts := make([]string, 1)
+	if err := decodeLengthEncodedStrings(reader, parts); err != nil {
+		return err
+	}
+	if len(parts[0]) == 0 {
+		return errors.New("response is empty")
+	}
+	if len(parts[0]) >= 2 {
+		switch parts[0][0:2] {
+		case "OK":
+			r.Result = true
+		case "NO":
+			r.Result = false
+		default:
+			return errors.New("response is invalid")
+		}
+	}
+	if len(parts[0]) > 3 {
+		r.Message = parts[0][3:]
+	}
+	return
+}
+
+// Encode encodes and writes a response to writer.
+func (r *Response) Encode(writer io.Writer) error {
+	parts := make([]string, 1)
+	if r.Result {
+		parts[0] = "OK"
+	} else {
+		parts[0] = "NO"
+	}
+	if r.Message != "" {
+		parts[0] += " " + r.Message
+	}
+	return encodeLengthEncodedStrings(writer, parts)
+}
+
 // Marshal encodes the response into a byte slice. The format is the same
 // as used by salsauthd.
 func (r *Response) Marshal() (data []byte, err error) {
-	// TODO: implemente this
+	buf := bytes.NewBuffer(data)
+	err = r.Encode(buf)
 	return
 }
 
 // Unmarshal decodes the response from the it's byte representaion.
 func (r *Response) Unmarshal(data []byte) (err error) {
-	// TODO: implemente this
+	buf := bytes.NewBuffer(data)
+	err = r.Decode(buf)
 	return
 }

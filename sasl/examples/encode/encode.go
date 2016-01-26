@@ -39,6 +39,8 @@ import (
 )
 
 func main() {
+	fmt.Println("Request:")
+
 	var req sasl.Request
 	req.Login = "login"
 	req.Password = "password"
@@ -47,6 +49,15 @@ func main() {
 
 	if err := req.Encode(os.Stdout); err != nil {
 		fmt.Println("encoding error:", err)
-		return
+	}
+
+	fmt.Println("\n\nResponse:")
+
+	var resp sasl.Response
+	resp.Result = false
+	resp.Message = "invalid username/password"
+
+	if err := resp.Encode(os.Stdout); err != nil {
+		fmt.Println("encoding error:", err)
 	}
 }

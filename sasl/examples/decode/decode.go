@@ -39,11 +39,19 @@ import (
 )
 
 func main() {
-	var req sasl.Request
-	if err := req.Decode(os.Stdin); err != nil {
+	// var req sasl.Request
+	// if err := req.Decode(os.Stdin); err != nil {
+	// 	fmt.Println("decoding error:", err)
+	// 	return
+	// }
+
+	// fmt.Printf("Request: %+v\n", req)
+
+	var resp sasl.Response
+	if err := resp.Decode(os.Stdin); err != nil {
 		fmt.Println("decoding error:", err)
 		return
 	}
 
-	fmt.Printf("Request: %+v\n", req)
+	fmt.Printf("Response: %+v\n", resp)
 }

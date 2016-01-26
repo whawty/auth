@@ -104,7 +104,7 @@ func cmdInit(configfile string, c *cli.Context) {
 func cmdCheck(configfile string, c *cli.Context) {
 	s, err := NewStore(configfile)
 	if err != nil {
-		fmt.Printf("Error checking whawty store: %s\n", err)
+		fmt.Printf("Error opening whawty store: %s\n", err)
 		return
 	}
 	if ok, err := s.GetInterface().Check(); err != nil {
@@ -121,8 +121,61 @@ func cmdCheck(configfile string, c *cli.Context) {
 	}
 }
 
+func openAndCheck(configfile string, docheck bool) *Store {
+	s, err := NewStore(configfile)
+	if err != nil {
+		fmt.Printf("Error opening whawty store: %s\n", err)
+		return nil
+	}
+
+	if !docheck {
+		return s
+	}
+
+	if ok, err := s.GetInterface().Check(); err != nil {
+		fmt.Printf("Error checking whawty store: %s\n", err)
+		return nil
+	} else if !ok {
+		fmt.Printf("Error whawty store is invalid!\n")
+		return nil
+	}
+	return s
+}
+
+func cmdAdd(configfile string, docheck bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	username := c.Args().First()
+	if username == "" {
+		cli.ShowCommandHelp(c, "add")
+		return
+	}
+
+	password := c.Args().Get(1)
+	if password == "" {
+		pwd, err := askPass()
+		if err != nil {
+			if err != gopass.ErrInterrupted {
+				fmt.Println(err)
+			}
+			return
+		}
+		password = pwd
+	}
+
+	if err := s.GetInterface().Add(username, password, false); err != nil {
+		fmt.Printf("Error adding user '%s': %s\n", username, err)
+	} else {
+		fmt.Printf("user '%s' successfully added!\n", username)
+	}
+}
+
 func main() {
 	var configfile string
+	var docheck bool
 
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
@@ -136,12 +189,18 @@ func main() {
 			Destination: &configfile,
 			EnvVar:      "WHAWTY_AUTH_CONFIG",
 		},
+		cli.BoolTFlag{
+			Name:        "do-check",
+			Usage:       "run check on base directory before executing command",
+			Destination: &docheck,
+			EnvVar:      "WHAWTY_AUTH_DO_CHECK",
+		},
 	}
 	app.Commands = []cli.Command{
 		{
 			Name:      "init",
 			Usage:     "initialize a whawty auth store directory",
-			ArgsUsage: "<username> [ <password> ]",
+			ArgsUsage: "<adminname> [ <password> ]",
 			Action: func(c *cli.Context) {
 				cmdInit(configfile, c)
 			},
@@ -152,6 +211,14 @@ func main() {
 			ArgsUsage: "",
 			Action: func(c *cli.Context) {
 				cmdCheck(configfile, c)
+			},
+		},
+		{
+			Name:      "add",
+			Usage:     "add a user to the store",
+			ArgsUsage: "<username> [ <password> ]",
+			Action: func(c *cli.Context) {
+				cmdAdd(configfile, docheck, c)
 			},
 		},
 	}

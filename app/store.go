@@ -54,10 +54,22 @@ type checkRequest struct {
 	response chan<- checkResult
 }
 
+type addResult struct {
+	err error
+}
+
+type addRequest struct {
+	username string
+	password string
+	isAdmin  bool
+	response chan<- addResult
+}
+
 type Store struct {
 	dir       *store.Dir
 	initChan  chan initRequest
 	checkChan chan checkRequest
+	addChan   chan addRequest
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -70,6 +82,11 @@ func (s *Store) check() (result checkResult) {
 	return
 }
 
+func (s *Store) add(username, password string, isAdmin bool) (result addResult) {
+	result.err = s.dir.AddUser(username, password, isAdmin)
+	return
+}
+
 func (db *Store) dispatchRequests() {
 	for {
 		select {
@@ -77,6 +94,8 @@ func (db *Store) dispatchRequests() {
 			req.response <- db.init(req.username, req.password)
 		case req := <-db.checkChan:
 			req.response <- db.check()
+		case req := <-db.addChan:
+			req.response <- db.add(req.username, req.password, req.isAdmin)
 		}
 	}
 }
@@ -87,6 +106,7 @@ func (db *Store) dispatchRequests() {
 type StoreChan struct {
 	initChan  chan<- initRequest
 	checkChan chan<- checkRequest
+	addChan   chan<- addRequest
 }
 
 func (s *StoreChan) Init(username, password string) error {
@@ -114,10 +134,27 @@ func (s *StoreChan) Check() (bool, error) {
 	return res.ok, res.err
 }
 
+func (s *StoreChan) Add(username, password string, isAdmin bool) error {
+	resCh := make(chan addResult)
+	req := addRequest{}
+	req.username = username
+	req.password = password
+	req.isAdmin = isAdmin
+	req.response = resCh
+	s.addChan <- req
+
+	res := <-resCh
+	if res.err != nil {
+		return res.err
+	}
+	return nil
+}
+
 func (s *Store) GetInterface() *StoreChan {
 	ch := &StoreChan{}
 	ch.initChan = s.initChan
 	ch.checkChan = s.checkChan
+	ch.addChan = s.addChan
 	return ch
 }
 
@@ -128,6 +165,7 @@ func NewStore(configfile string) (s *Store, err error) {
 	}
 	s.initChan = make(chan initRequest, 1)
 	s.checkChan = make(chan checkRequest, 1)
+	s.addChan = make(chan addRequest, 10)
 
 	go s.dispatchRequests()
 	return

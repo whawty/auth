@@ -86,7 +86,7 @@ func decodeLengthEncodedStrings(reader io.Reader, parts []string) error {
 			return errors.New("too many parts in message")
 		}
 		parts[i] = string(scanner.Bytes()[2:])
-		i += 1
+		i++
 	}
 	if err := scanner.Err(); err != nil {
 		return err

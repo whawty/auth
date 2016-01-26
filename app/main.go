@@ -39,7 +39,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/howeyc/gopass"
-	//	"github.com/whawty/auth/store"
 )
 
 var (
@@ -71,7 +70,7 @@ func askPass() (string, error) {
 	}
 }
 
-func cmdInit(basedir string, c *cli.Context) {
+func cmdInit(configfile string, c *cli.Context) {
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "init")
@@ -90,11 +89,40 @@ func cmdInit(basedir string, c *cli.Context) {
 		password = pwd
 	}
 
-	wl.Printf("running cmd INIT with dir='%s', user: '%s', password: '%s'", basedir, username, password)
+	s, err := NewStore(configfile)
+	if err != nil {
+		fmt.Printf("Error initializing whawty store: %s\n", err)
+		return
+	}
+	if err := s.GetInterface().Init(username, password); err != nil {
+		fmt.Printf("Error initializing whawty store: %s\n", err)
+		return
+	}
+	fmt.Printf("whawty store successfully initialized!\n")
+}
+
+func cmdCheck(configfile string, c *cli.Context) {
+	s, err := NewStore(configfile)
+	if err != nil {
+		fmt.Printf("Error checking whawty store: %s\n", err)
+		return
+	}
+	if ok, err := s.GetInterface().Check(); err != nil {
+		fmt.Printf("Error checking whawty store: %s\n", err)
+		return
+	} else {
+		if ok {
+			fmt.Printf("whawty store is ok!\n")
+			os.Exit(0)
+		} else {
+			fmt.Printf("whawty store is invalid!\n")
+			os.Exit(1)
+		}
+	}
 }
 
 func main() {
-	var basedir string
+	var configfile string
 
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
@@ -102,11 +130,11 @@ func main() {
 	app.Usage = "manage whawty auth stores"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:        "dir, d",
-			Value:       "/var/lib/whawty-auth/",
+			Name:        "conf, c",
+			Value:       "/etc/whawty-auth/default.json",
 			Usage:       "base directory of the whawty auth store",
-			Destination: &basedir,
-			EnvVar:      "WHAWTY_AUTH_BASEDIR",
+			Destination: &configfile,
+			EnvVar:      "WHAWTY_AUTH_CONFIG",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -115,7 +143,15 @@ func main() {
 			Usage:     "initialize a whawty auth store directory",
 			ArgsUsage: "<username> [ <password> ]",
 			Action: func(c *cli.Context) {
-				cmdInit(basedir, c)
+				cmdInit(configfile, c)
+			},
+		},
+		{
+			Name:      "check",
+			Usage:     "check a whawty auth store directory",
+			ArgsUsage: "",
+			Action: func(c *cli.Context) {
+				cmdCheck(configfile, c)
 			},
 		},
 	}

@@ -173,6 +173,25 @@ func cmdAdd(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
+func cmdRemove(configfile string, docheck bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	username := c.Args().First()
+	if username == "" {
+		cli.ShowCommandHelp(c, "remove")
+		return
+	}
+
+	if err := s.GetInterface().Remove(username); err != nil {
+		fmt.Printf("Error removing user '%s': %s\n", username, err)
+	} else {
+		fmt.Printf("user '%s' successfully removed!\n", username)
+	}
+}
+
 func main() {
 	var configfile string
 	var docheck bool
@@ -219,6 +238,14 @@ func main() {
 			ArgsUsage: "<username> [ <password> ]",
 			Action: func(c *cli.Context) {
 				cmdAdd(configfile, docheck, c)
+			},
+		},
+		{
+			Name:      "remove",
+			Usage:     "remove a user from the store",
+			ArgsUsage: "<username>",
+			Action: func(c *cli.Context) {
+				cmdRemove(configfile, docheck, c)
 			},
 		},
 	}

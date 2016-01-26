@@ -7,6 +7,7 @@ tba...
 ## golang API
 
 [![GoDoc](https://godoc.org/github.com/whawty/auth/store?status.svg)](https://godoc.org/github.com/whawty/auth/store)
+[![GoDoc](https://godoc.org/github.com/whawty/auth/sasl?status.svg)](https://godoc.org/github.com/whawty/auth/sasl)
 
 ## Licence
 

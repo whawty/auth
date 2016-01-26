@@ -37,53 +37,6 @@ import (
 	"net"
 )
 
-const (
-	// MaxRequestLength is the maximum length allowed for login, password
-	// service and realm
-	MaxRequestLength = 256
-)
-
-// Request contains all values for a saslauthd authentication request.
-type Request struct {
-	Login    string
-	Password string
-	Service  string
-	Realm    string
-}
-
-// Marshal encodes the request values into a byte slice. The format is
-// compatible to the requests as expected by salsauthd.
-func (r *Request) Marshal() (data []byte, err error) {
-	// TODO: implemente this
-	return
-}
-
-// Unmarshal decodes the request values from it's byte representaion.
-func (r *Request) Unmarshal(data []byte) (err error) {
-	// TODO: implemente this
-	return
-}
-
-// Response holds the result as well as the message as returned by the
-// authentication provider.
-type Response struct {
-	Result  bool
-	Message string
-}
-
-// Marshal encodes the response into a byte slice. The format is the same
-// as used by salsauthd.
-func (r *Response) Marshal() (data []byte, err error) {
-	// TODO: implemente this
-	return
-}
-
-// Unmarshal decodes the response from the it's byte representaion.
-func (r *Response) Unmarshal(data []byte) (err error) {
-	// TODO: implemente this
-	return
-}
-
 // AuthCB is the function signature of callbacks as used by the server to
 // handle authentication requests.
 type AuthCB func(login, password, service, realm string) (ok bool, msg string, err error)

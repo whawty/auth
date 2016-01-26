@@ -1,5 +1,7 @@
 /app/whawty-auth
+/app/test/
 /pam/*.o
 /pam/*.d
 /pam/*.d.*
 /pam/pam_whawty.so
+/sasl/examples/decode/decode

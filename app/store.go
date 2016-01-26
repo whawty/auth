@@ -74,12 +74,23 @@ type removeRequest struct {
 	response chan<- removeResult
 }
 
+type updateResult struct {
+	err error
+}
+
+type updateRequest struct {
+	username string
+	password string
+	response chan<- updateResult
+}
+
 type Store struct {
 	dir        *store.Dir
 	initChan   chan initRequest
 	checkChan  chan checkRequest
 	addChan    chan addRequest
 	removeChan chan removeRequest
+	updateChan chan updateRequest
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -103,6 +114,11 @@ func (s *Store) remove(username string) (result removeResult) {
 	return
 }
 
+func (s *Store) update(username, password string) (result updateResult) {
+	result.err = s.dir.UpdateUser(username, password)
+	return
+}
+
 func (s *Store) dispatchRequests() {
 	for {
 		select {
@@ -114,6 +130,8 @@ func (s *Store) dispatchRequests() {
 			req.response <- s.add(req.username, req.password, req.isAdmin)
 		case req := <-s.removeChan:
 			req.response <- s.remove(req.username)
+		case req := <-s.updateChan:
+			req.response <- s.update(req.username, req.password)
 		}
 	}
 }
@@ -126,6 +144,7 @@ type StoreChan struct {
 	checkChan  chan<- checkRequest
 	addChan    chan<- addRequest
 	removeChan chan<- removeRequest
+	updateChan chan<- updateRequest
 }
 
 func (s *StoreChan) Init(username, password string) error {
@@ -183,12 +202,28 @@ func (s *StoreChan) Remove(username string) error {
 	return nil
 }
 
+func (s *StoreChan) Update(username, password string) error {
+	resCh := make(chan updateResult)
+	req := updateRequest{}
+	req.username = username
+	req.password = password
+	req.response = resCh
+	s.updateChan <- req
+
+	res := <-resCh
+	if res.err != nil {
+		return res.err
+	}
+	return nil
+}
+
 func (s *Store) GetInterface() *StoreChan {
 	ch := &StoreChan{}
 	ch.initChan = s.initChan
 	ch.checkChan = s.checkChan
 	ch.addChan = s.addChan
 	ch.removeChan = s.removeChan
+	ch.updateChan = s.updateChan
 	return ch
 }
 
@@ -201,6 +236,7 @@ func NewStore(configfile string) (s *Store, err error) {
 	s.checkChan = make(chan checkRequest, 1)
 	s.addChan = make(chan addRequest, 10)
 	s.removeChan = make(chan removeRequest, 10)
+	s.updateChan = make(chan updateRequest, 10)
 
 	go s.dispatchRequests()
 	return

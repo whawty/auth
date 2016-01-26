@@ -192,6 +192,37 @@ func cmdRemove(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
+func cmdUpdate(configfile string, docheck bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	username := c.Args().First()
+	if username == "" {
+		cli.ShowCommandHelp(c, "update")
+		return
+	}
+
+	password := c.Args().Get(1)
+	if password == "" {
+		pwd, err := askPass()
+		if err != nil {
+			if err != gopass.ErrInterrupted {
+				fmt.Println(err)
+			}
+			return
+		}
+		password = pwd
+	}
+
+	if err := s.GetInterface().Update(username, password); err != nil {
+		fmt.Printf("Error updating user '%s': %s\n", username, err)
+	} else {
+		fmt.Printf("user '%s' successfully updated!\n", username)
+	}
+}
+
 func main() {
 	var configfile string
 	var docheck bool
@@ -246,6 +277,14 @@ func main() {
 			ArgsUsage: "<username>",
 			Action: func(c *cli.Context) {
 				cmdRemove(configfile, docheck, c)
+			},
+		},
+		{
+			Name:      "update",
+			Usage:     "update a users password",
+			ArgsUsage: "<username> [ <password> ]",
+			Action: func(c *cli.Context) {
+				cmdUpdate(configfile, docheck, c)
 			},
 		},
 	}

@@ -103,15 +103,28 @@ type listRequest struct {
 	response chan<- listResult
 }
 
+type authenticateResult struct {
+	ok      bool
+	isAdmin bool
+	err     error
+}
+
+type authenticateRequest struct {
+	username string
+	password string
+	response chan<- authenticateResult
+}
+
 type Store struct {
-	dir          *store.Dir
-	initChan     chan initRequest
-	checkChan    chan checkRequest
-	addChan      chan addRequest
-	removeChan   chan removeRequest
-	updateChan   chan updateRequest
-	setAdminChan chan setAdminRequest
-	listChan     chan listRequest
+	dir              *store.Dir
+	initChan         chan initRequest
+	checkChan        chan checkRequest
+	addChan          chan addRequest
+	removeChan       chan removeRequest
+	updateChan       chan updateRequest
+	setAdminChan     chan setAdminRequest
+	listChan         chan listRequest
+	authenticateChan chan authenticateRequest
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -150,6 +163,11 @@ func (s *Store) list() (result listResult) {
 	return
 }
 
+func (s *Store) authenticate(username, password string) (result authenticateResult) {
+	result.ok, result.isAdmin, result.err = s.dir.Authenticate(username, password)
+	return
+}
+
 func (s *Store) dispatchRequests() {
 	for {
 		select {
@@ -167,6 +185,8 @@ func (s *Store) dispatchRequests() {
 			req.response <- s.setAdmin(req.username, req.isAdmin)
 		case req := <-s.listChan:
 			req.response <- s.list()
+		case req := <-s.authenticateChan:
+			req.response <- s.authenticate(req.username, req.password)
 		}
 	}
 }
@@ -175,13 +195,14 @@ func (s *Store) dispatchRequests() {
 // Public Interface
 
 type StoreChan struct {
-	initChan     chan<- initRequest
-	checkChan    chan<- checkRequest
-	addChan      chan<- addRequest
-	removeChan   chan<- removeRequest
-	updateChan   chan<- updateRequest
-	setAdminChan chan<- setAdminRequest
-	listChan     chan<- listRequest
+	initChan         chan<- initRequest
+	checkChan        chan<- checkRequest
+	addChan          chan<- addRequest
+	removeChan       chan<- removeRequest
+	updateChan       chan<- updateRequest
+	setAdminChan     chan<- setAdminRequest
+	listChan         chan<- listRequest
+	authenticateChan chan<- authenticateRequest
 }
 
 func (s *StoreChan) Init(username, password string) error {
@@ -264,6 +285,18 @@ func (s *StoreChan) List() (store.UserList, error) {
 	return res.list, res.err
 }
 
+func (s *StoreChan) Authenticate(username, password string) (bool, bool, error) {
+	resCh := make(chan authenticateResult)
+	req := authenticateRequest{}
+	req.username = username
+	req.password = password
+	req.response = resCh
+	s.authenticateChan <- req
+
+	res := <-resCh
+	return res.ok, res.isAdmin, res.err
+}
+
 func (s *Store) GetInterface() *StoreChan {
 	ch := &StoreChan{}
 	ch.initChan = s.initChan
@@ -273,6 +306,7 @@ func (s *Store) GetInterface() *StoreChan {
 	ch.updateChan = s.updateChan
 	ch.setAdminChan = s.setAdminChan
 	ch.listChan = s.listChan
+	ch.authenticateChan = s.authenticateChan
 	return ch
 }
 
@@ -288,6 +322,7 @@ func NewStore(configfile string) (s *Store, err error) {
 	s.updateChan = make(chan updateRequest, 10)
 	s.setAdminChan = make(chan setAdminRequest, 10)
 	s.listChan = make(chan listRequest, 10)
+	s.authenticateChan = make(chan authenticateRequest, 10)
 
 	go s.dispatchRequests()
 	return

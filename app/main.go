@@ -286,6 +286,49 @@ func cmdList(configfile string, docheck bool, c *cli.Context) {
 	fmt.Println(table)
 }
 
+func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	username := c.Args().First()
+	if username == "" {
+		cli.ShowCommandHelp(c, "authenticate")
+		return
+	}
+
+	password := c.Args().Get(1)
+	if password == "" {
+		fmt.Printf("password for '%s': ", username)
+		pwd, err := gopass.GetPasswd()
+		if err != nil {
+			if err != gopass.ErrInterrupted {
+				fmt.Println(err)
+			}
+			return
+		}
+		password = string(pwd)
+	}
+
+	ok, isAdmin, err := s.GetInterface().Authenticate(username, password)
+	if err != nil {
+		fmt.Printf("Error authenticating user '%s': %s\n", username, err)
+		os.Exit(2)
+	}
+	if !ok {
+		fmt.Printf("Error wrong password for user '%s'\n", username)
+		os.Exit(1)
+	}
+
+	if isAdmin {
+		fmt.Printf("user '%s' is an admin\n", username)
+	} else {
+		fmt.Printf("user '%s' is a normal user\n", username)
+	}
+	os.Exit(0)
+}
+
 func main() {
 	var configfile string
 	var docheck bool
@@ -364,6 +407,14 @@ func main() {
 			ArgsUsage: "",
 			Action: func(c *cli.Context) {
 				cmdList(configfile, docheck, c)
+			},
+		},
+		{
+			Name:      "authenticate",
+			Usage:     "check if username/password are valid",
+			ArgsUsage: "<username> [ <password> ]",
+			Action: func(c *cli.Context) {
+				cmdAuthenticate(configfile, docheck, c)
 			},
 		},
 	}

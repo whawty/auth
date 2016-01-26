@@ -30,6 +30,7 @@
 //
 
 // Package sasl implements the authentication protocol as used by salsauthd.
+// saslauthd is part of the cyrus imap project: http://cyrusimap.org/
 package sasl
 
 import (

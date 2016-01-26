@@ -36,6 +36,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/codegangsta/cli"
 	"github.com/howeyc/gopass"
@@ -223,6 +224,35 @@ func cmdUpdate(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
+func cmdSetAdmin(configfile string, docheck bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	username := c.Args().First()
+	if username == "" {
+		cli.ShowCommandHelp(c, "set-admin")
+		return
+	}
+
+	isAdmin, err := strconv.ParseBool(c.Args().Get(1))
+	if err != nil {
+		cli.ShowCommandHelp(c, "set-admin")
+		return
+	}
+
+	if err := s.GetInterface().SetAdmin(username, isAdmin); err != nil {
+		fmt.Printf("Error changing admin status of user '%s': %s\n", username, err)
+	} else {
+		if isAdmin {
+			fmt.Printf("user '%s' is now an admin!\n", username)
+		} else {
+			fmt.Printf("user '%s' is now n normal user!\n", username)
+		}
+	}
+}
+
 func main() {
 	var configfile string
 	var docheck bool
@@ -285,6 +315,14 @@ func main() {
 			ArgsUsage: "<username> [ <password> ]",
 			Action: func(c *cli.Context) {
 				cmdUpdate(configfile, docheck, c)
+			},
+		},
+		{
+			Name:      "set-admin",
+			Usage:     "set/clear admin flag of a user",
+			ArgsUsage: "<username> (true|false)",
+			Action: func(c *cli.Context) {
+				cmdSetAdmin(configfile, docheck, c)
 			},
 		},
 	}

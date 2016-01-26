@@ -84,12 +84,18 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 // Run actually runs the server. In calls Accept() on the server socket and
 // runs go-routines for new connections.
-func (s *Server) Run() {
+func (s *Server) Run() error {
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
-			// TODO: handle errors!!!
-			continue
+			operr, ok := err.(*net.OpError)
+			if !ok {
+				return err
+			}
+			if operr.Temporary() {
+				continue
+			}
+			return err
 		}
 		go s.handleConnection(conn)
 	}

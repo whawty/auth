@@ -63,5 +63,7 @@ func main() {
 		fmt.Printf("error initalizing server: %s\n", err)
 		return
 	}
-	s.Run()
+	if err := s.Run(); err != nil {
+		fmt.Printf("go error running server: %s", err)
+	}
 }

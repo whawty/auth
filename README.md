@@ -6,7 +6,12 @@ tba...
 
 ## golang API
 
+### whawty auth store
+
 [![GoDoc](https://godoc.org/github.com/whawty/auth/store?status.svg)](https://godoc.org/github.com/whawty/auth/store)
+
+### saslauthd compatible Client/Server
+
 [![GoDoc](https://godoc.org/github.com/whawty/auth/sasl?status.svg)](https://godoc.org/github.com/whawty/auth/sasl)
 
 ## Licence

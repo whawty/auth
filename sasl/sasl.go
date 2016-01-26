@@ -33,6 +33,7 @@
 package sasl
 
 import (
+	"fmt"
 	"net"
 )
 
@@ -144,10 +145,28 @@ func NewClient(socketpath string) (c *Client, err error) {
 
 // Auth connects to the server socket and sends a authentication request.
 func (c *Client) Auth(login, password, service, realm string) (ok bool, msg string, err error) {
-	// TODO: connect to server
-	//       marshal request
-	//       send request
-	//       receive response
+	var conn net.Conn
+	if conn, err = net.Dial("unix", c.sockPath); err != nil {
+		return
+	}
+	defer conn.Close()
+
+	req := &Request{login, password, service, realm}
+	var reqData []byte
+	if reqData, err = req.Marshal(); err != nil {
+		return
+	}
+
+	var n int
+	if n, err = conn.Write(reqData); err != nil {
+		return
+	}
+	if n != len(reqData) {
+		err = fmt.Errorf("short write")
+		return
+	}
+
+	// TODO: receive response
 	//       unmarshal response
 	return
 }

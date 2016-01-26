@@ -33,7 +33,7 @@
 package sasl
 
 import (
-	"fmt"
+	//	"fmt"
 	"net"
 )
 
@@ -90,13 +90,13 @@ type Client struct {
 }
 
 // NewClient creates a client struct.
-func NewClient(socketpath string) (c *Client, err error) {
+func NewClient(socketpath string) (c *Client) {
 	c = &Client{}
 	c.sockPath = socketpath
 	return
 }
 
-// Auth connects to the server socket and sends a authentication request.
+// Auth connects to the server socket and sends an authentication request.
 func (c *Client) Auth(login, password, service, realm string) (ok bool, msg string, err error) {
 	var conn net.Conn
 	if conn, err = net.Dial("unix", c.sockPath); err != nil {
@@ -105,21 +105,15 @@ func (c *Client) Auth(login, password, service, realm string) (ok bool, msg stri
 	defer conn.Close()
 
 	req := &Request{login, password, service, realm}
-	var reqData []byte
-	if reqData, err = req.Marshal(); err != nil {
+	if err = req.Encode(conn); err != nil {
 		return
 	}
 
-	var n int
-	if n, err = conn.Write(reqData); err != nil {
+	resp := &Response{false, ""}
+	if err = resp.Decode(conn); err != nil {
 		return
 	}
-	if n != len(reqData) {
-		err = fmt.Errorf("short write")
-		return
-	}
-
-	// TODO: receive response
-	//       unmarshal response
+	ok = resp.Result
+	msg = resp.Message
 	return
 }

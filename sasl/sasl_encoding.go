@@ -29,7 +29,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-// Package sasl implements the authentication protocol as used by salsauthd.
 package sasl
 
 import (

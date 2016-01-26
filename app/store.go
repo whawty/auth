@@ -94,6 +94,15 @@ type setAdminRequest struct {
 	response chan<- setAdminResult
 }
 
+type listResult struct {
+	list store.UserList
+	err  error
+}
+
+type listRequest struct {
+	response chan<- listResult
+}
+
 type Store struct {
 	dir          *store.Dir
 	initChan     chan initRequest
@@ -102,6 +111,7 @@ type Store struct {
 	removeChan   chan removeRequest
 	updateChan   chan updateRequest
 	setAdminChan chan setAdminRequest
+	listChan     chan listRequest
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -135,6 +145,11 @@ func (s *Store) setAdmin(username string, isAdmin bool) (result setAdminResult) 
 	return
 }
 
+func (s *Store) list() (result listResult) {
+	result.list, result.err = s.dir.List()
+	return
+}
+
 func (s *Store) dispatchRequests() {
 	for {
 		select {
@@ -150,6 +165,8 @@ func (s *Store) dispatchRequests() {
 			req.response <- s.update(req.username, req.password)
 		case req := <-s.setAdminChan:
 			req.response <- s.setAdmin(req.username, req.isAdmin)
+		case req := <-s.listChan:
+			req.response <- s.list()
 		}
 	}
 }
@@ -164,6 +181,7 @@ type StoreChan struct {
 	removeChan   chan<- removeRequest
 	updateChan   chan<- updateRequest
 	setAdminChan chan<- setAdminRequest
+	listChan     chan<- listRequest
 }
 
 func (s *StoreChan) Init(username, password string) error {
@@ -175,10 +193,7 @@ func (s *StoreChan) Init(username, password string) error {
 	s.initChan <- req
 
 	res := <-resCh
-	if res.err != nil {
-		return res.err
-	}
-	return nil
+	return res.err
 }
 
 func (s *StoreChan) Check() (bool, error) {
@@ -201,10 +216,7 @@ func (s *StoreChan) Add(username, password string, isAdmin bool) error {
 	s.addChan <- req
 
 	res := <-resCh
-	if res.err != nil {
-		return res.err
-	}
-	return nil
+	return res.err
 }
 
 func (s *StoreChan) Remove(username string) error {
@@ -215,10 +227,7 @@ func (s *StoreChan) Remove(username string) error {
 	s.removeChan <- req
 
 	res := <-resCh
-	if res.err != nil {
-		return res.err
-	}
-	return nil
+	return res.err
 }
 
 func (s *StoreChan) Update(username, password string) error {
@@ -230,10 +239,7 @@ func (s *StoreChan) Update(username, password string) error {
 	s.updateChan <- req
 
 	res := <-resCh
-	if res.err != nil {
-		return res.err
-	}
-	return nil
+	return res.err
 }
 
 func (s *StoreChan) SetAdmin(username string, isAdmin bool) error {
@@ -245,10 +251,17 @@ func (s *StoreChan) SetAdmin(username string, isAdmin bool) error {
 	s.setAdminChan <- req
 
 	res := <-resCh
-	if res.err != nil {
-		return res.err
-	}
-	return nil
+	return res.err
+}
+
+func (s *StoreChan) List() (store.UserList, error) {
+	resCh := make(chan listResult)
+	req := listRequest{}
+	req.response = resCh
+	s.listChan <- req
+
+	res := <-resCh
+	return res.list, res.err
 }
 
 func (s *Store) GetInterface() *StoreChan {
@@ -259,6 +272,7 @@ func (s *Store) GetInterface() *StoreChan {
 	ch.removeChan = s.removeChan
 	ch.updateChan = s.updateChan
 	ch.setAdminChan = s.setAdminChan
+	ch.listChan = s.listChan
 	return ch
 }
 
@@ -273,6 +287,7 @@ func NewStore(configfile string) (s *Store, err error) {
 	s.removeChan = make(chan removeRequest, 10)
 	s.updateChan = make(chan updateRequest, 10)
 	s.setAdminChan = make(chan setAdminRequest, 10)
+	s.listChan = make(chan listRequest, 10)
 
 	go s.dispatchRequests()
 	return

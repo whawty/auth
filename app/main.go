@@ -36,9 +36,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 
 	"github.com/codegangsta/cli"
+	"github.com/gosuri/uitable"
 	"github.com/howeyc/gopass"
 )
 
@@ -253,6 +255,37 @@ func cmdSetAdmin(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
+func cmdList(configfile string, docheck bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	lst, err := s.GetInterface().List()
+	if err != nil {
+		fmt.Printf("Error listing user: %s\n", err)
+		return
+	}
+
+	var keys []string
+	for k := range lst {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	table := uitable.New()
+	table.MaxColWidth = 50
+	table.AddRow("NAME", "TYPE")
+	for _, k := range keys {
+		t := "user"
+		if lst[k] {
+			t = "admin"
+		}
+		table.AddRow(k, t)
+	}
+	fmt.Println(table)
+}
+
 func main() {
 	var configfile string
 	var docheck bool
@@ -323,6 +356,14 @@ func main() {
 			ArgsUsage: "<username> (true|false)",
 			Action: func(c *cli.Context) {
 				cmdSetAdmin(configfile, docheck, c)
+			},
+		},
+		{
+			Name:      "list",
+			Usage:     "list all users",
+			ArgsUsage: "",
+			Action: func(c *cli.Context) {
+				cmdList(configfile, docheck, c)
 			},
 		},
 	}

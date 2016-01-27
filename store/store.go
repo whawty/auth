@@ -94,15 +94,16 @@ func openDir(path string) (*os.File, error) {
 		return nil, err
 	}
 
-	if i, err := dir.Stat(); err != nil {
-		defer dir.Close()
+	i, err := dir.Stat()
+	if err != nil {
+		dir.Close()
 		return nil, err
-	} else {
-		if !i.IsDir() {
-			defer dir.Close()
-			return nil, fmt.Errorf("Error: '%s' is not a directory", path)
-		}
 	}
+	if !i.IsDir() {
+		dir.Close()
+		return nil, fmt.Errorf("Error: '%s' is not a directory", path)
+	}
+
 	return dir, nil
 }
 

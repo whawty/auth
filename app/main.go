@@ -329,9 +329,22 @@ func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
 	os.Exit(0)
 }
 
+func cmdRun(configfile string, docheck bool, socks []string, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	if err := runSaslAuthSocket(socks, s.GetInterface()); err != nil {
+		fmt.Printf("error running auth agent: %s\n", err)
+	}
+	fmt.Printf("shutting down since all auth sockets have closed\n")
+}
+
 func main() {
 	var configfile string
 	var docheck bool
+	var socks []string
 
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
@@ -415,6 +428,21 @@ func main() {
 			ArgsUsage: "<username> [ <password> ]",
 			Action: func(c *cli.Context) {
 				cmdAuthenticate(configfile, docheck, c)
+			},
+		},
+		{
+			Name:  "run",
+			Usage: "run the auth agent",
+			Flags: []cli.Flag{
+				cli.StringSliceFlag{
+					Name:   "sock, s",
+					Usage:  "path ",
+					Value:  (*cli.StringSlice)(&socks),
+					EnvVar: "WHAWTY_AUTH_SASL_SOCK",
+				},
+			},
+			Action: func(c *cli.Context) {
+				cmdRun(configfile, docheck, socks, c)
 			},
 		},
 	}

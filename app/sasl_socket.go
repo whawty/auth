@@ -63,8 +63,9 @@ func runSaslAuthSocket(socketpaths []string, store *StoreChan) error {
 	var wg sync.WaitGroup
 	for _, path := range socketpaths {
 		os.Remove(path)
+		p := path // path should be a closure for the function below -> we need p as a new reference to path
 		s, err := sasl.NewServer(path, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
-			return callback(log, pwd, srv, rlm, path, store) // TODO: fix closure - aka what's going on with path here...
+			return callback(log, pwd, srv, rlm, p, store)
 		})
 		if err != nil {
 			return err

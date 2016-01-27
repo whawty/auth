@@ -55,7 +55,6 @@ var (
 )
 
 const (
-	algoID   string = "hmac_sha256_scrypt"
 	adminExt string = ".admin"
 	userExt  string = ".user"
 )

@@ -42,6 +42,10 @@ import (
 	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
+const (
+	scryptauthAlgoID string = "hmac_sha256_scrypt"
+)
+
 // fileExists returns whether the given file or directory exists or not
 // this is from: stackoverflow.com/questions/10510691
 func fileExists(path string) (bool, error) {
@@ -55,7 +59,8 @@ func fileExists(path string) (bool, error) {
 	return true, err
 }
 
-// readHashStr returns the whole contents of the user hash file
+// readHashStr returns the contents of the user hash file seperated into algorithm id
+// string and the whole hash string.
 func readHashStr(filename string) (string, string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -75,22 +80,29 @@ func readHashStr(filename string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-// IsFormatSupported checks if the format of the hash file is supported
-func IsFormatSupported(filename string) (bool, error) {
-	idStr, hashStr, err := readHashStr(filename)
+func readScryptauthHash(filename string) (ctxID uint, hash, salt []byte, err error) {
+	var idStr, hashStr string
+	idStr, hashStr, err = readHashStr(filename)
 	if err != nil {
-		return false, err
+		return
 	}
-	if idStr != algoID {
-		return false, fmt.Errorf("whawty.auth.store: hash file alogrithm ID '%s' is not supported", idStr)
+	if idStr != scryptauthAlgoID {
+		err = fmt.Errorf("whawty.auth.store: hash file alogrithm ID '%s' is not supported", idStr)
+		return
 	}
 
-	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
+	ctxID, hash, salt, err = scryptauth.DecodeBase64(string(hashStr))
+	return
+}
+
+// IsFormatSupported checks if the format of the hash file is supported
+func IsFormatSupported(filename string) (bool, error) {
+	ctxID, hash, salt, err := readScryptauthHash(filename)
 	if err != nil {
 		return false, err
 	}
 	if ctxID == 0 || len(hash) == 0 || len(salt) == 0 {
-		return false, nil
+		return false, fmt.Errorf("whawty.auth.store: hash has invalid format")
 	}
 	return true, nil
 }
@@ -135,7 +147,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error 
 	defer file.Close()
 
 	hashStr := scryptauth.EncodeBase64(u.store.DefaultCtxID, hash, salt)
-	_, err = io.WriteString(file, algoID+":"+hashStr+"\n") // TODO: retry if write was short??
+	_, err = io.WriteString(file, scryptauthAlgoID+":"+hashStr+"\n") // TODO: retry if write was short??
 	return err
 }
 
@@ -223,25 +235,12 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 		return false, false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
-	filename := filepath.Join(u.store.basedir, u.user)
-	if isAdmin {
-		filename += adminExt
-	} else {
-		filename += userExt
-	}
-
-	var idStr, hashStr string
-	if idStr, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
+	var ctxID uint
+	var hash, salt []byte
+	if ctxID, hash, salt, err = readScryptauthHash(u.getFilename(isAdmin)); err != nil {
 		return
 	}
-	if idStr != algoID {
-		return false, false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
-	}
 
-	ctxID, hash, salt, err := scryptauth.DecodeBase64(hashStr)
-	if err != nil {
-		return false, false, err
-	}
 	ctx, ctxExists := u.store.Contexts[ctxID]
 	if !ctxExists {
 		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)

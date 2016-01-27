@@ -70,7 +70,7 @@ func readHashStr(filename string) (string, string, error) {
 
 	parts := strings.SplitN(string(data), ":", 2)
 	if len(parts) != 2 {
-		return "", "", fmt.Errorf("whawty.auth.store: hash file format is invalid")
+		return "", "", fmt.Errorf("whawty.auth.store: hash file is invalid")
 	}
 	return parts[0], parts[1], nil
 }
@@ -82,7 +82,7 @@ func IsFormatSupported(filename string) (bool, error) {
 		return false, err
 	}
 	if idStr != algoID {
-		return false, fmt.Errorf("whawty.auth.store: hash file alogrithm ID is not supported")
+		return false, fmt.Errorf("whawty.auth.store: hash file alogrithm ID '%s' is not supported", idStr)
 	}
 
 	ctxID, hash, salt, err := scryptauth.DecodeBase64(string(hashStr))
@@ -158,6 +158,11 @@ func (u *UserHash) Update(password string) error {
 	} else if !exists {
 		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
+
+	if ok, err := IsFormatSupported(u.getFilename(isAdmin)); err != nil || !ok {
+		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format")
+	}
+
 	return u.writeHashStr(password, isAdmin, os.O_WRONLY|os.O_TRUNC)
 }
 
@@ -194,7 +199,8 @@ func (u *UserHash) Remove() {
 	return
 }
 
-// Exists checks if user exists. It also returns whether user is an admin.
+// Exists checks if user exists. It also returns whether user is an admin. This returns true even if
+// the user's hash file format is not supported
 func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
 	filename := filepath.Join(u.store.basedir, u.user)
 	var ok bool
@@ -224,10 +230,14 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 		filename += userExt
 	}
 
-	var hashStr string
-	if _, hashStr, err = readHashStr(filename); err != nil {
+	var idStr, hashStr string
+	if idStr, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
 		return
 	}
+	if idStr != algoID {
+		return false, false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	}
+
 	ctxID, hash, salt, err := scryptauth.DecodeBase64(hashStr)
 	if err != nil {
 		return false, false, err

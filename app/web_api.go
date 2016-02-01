@@ -50,7 +50,7 @@ type webAuthenticateResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func handleWebAuthenticate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got AUTHENTICATE request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -92,7 +92,7 @@ type webAddResponse struct {
 	Error  string `json:"error,omitempty"`
 }
 
-func handleWebAdd(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got ADD request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -131,7 +131,7 @@ type webRemoveResponse struct {
 	Error  string `json:"error,omitempty"`
 }
 
-func handleWebRemove(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got REMOVE request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -171,7 +171,7 @@ type webUpdateResponse struct {
 	Error  string `json:"error,omitempty"`
 }
 
-func handleWebUpdate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got UPDATE request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -211,7 +211,7 @@ type webSetAdminResponse struct {
 	Error  string `json:"error,omitempty"`
 }
 
-func handleWebSetAdmin(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got SET_ADMIN request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -250,7 +250,7 @@ type webListResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func handleWebList(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -289,7 +289,7 @@ type webListFullResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func handleWebListFull(store *StoreChan, w http.ResponseWriter, r *http.Request) {
+func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST_FULL request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -319,22 +319,28 @@ SendResponse:
 }
 
 type webHandler struct {
-	store *StoreChan
-	H     func(*StoreChan, http.ResponseWriter, *http.Request)
+	store    *StoreChan
+	sessions *webSessionFactory
+	H        func(*StoreChan, *webSessionFactory, http.ResponseWriter, *http.Request)
 }
 
 func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	self.H(self.store, w, r)
+	self.H(self.store, self.sessions, w, r)
 }
 
 func runWebApi(addr string, store *StoreChan) (err error) {
-	http.Handle("/api/authenticate", webHandler{store, handleWebAuthenticate})
-	http.Handle("/api/add", webHandler{store, handleWebAdd})
-	http.Handle("/api/remove", webHandler{store, handleWebRemove})
-	http.Handle("/api/update", webHandler{store, handleWebUpdate})
-	http.Handle("/api/set-admin", webHandler{store, handleWebSetAdmin})
-	http.Handle("/api/list", webHandler{store, handleWebList})
-	http.Handle("/api/list-full", webHandler{store, handleWebListFull})
+	var sessions *webSessionFactory
+	if sessions, err = newWebSessionFactory(); err != nil {
+		return err
+	}
+
+	http.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
+	http.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
+	http.Handle("/api/remove", webHandler{store, sessions, handleWebRemove})
+	http.Handle("/api/update", webHandler{store, sessions, handleWebUpdate})
+	http.Handle("/api/set-admin", webHandler{store, sessions, handleWebSetAdmin})
+	http.Handle("/api/list", webHandler{store, sessions, handleWebList})
+	http.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
 	wl.Printf("web-api: listening on '%s'", addr)
 	server := &http.Server{Addr: addr, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}

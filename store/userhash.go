@@ -78,19 +78,25 @@ func readHashStr(filename string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-// IsFormatSupported checks if the format of the hash file is supported
-func IsFormatSupported(filename string) (supported bool, err error) {
-	var formatID, hashStr string
+func isFormatSupportedFull(filename string) (supported bool, formatID, params string, err error) {
+	var hashStr string
 	if formatID, hashStr, err = readHashStr(filename); err != nil {
 		return
 	}
 
 	switch formatID {
 	case scryptauthFormatID:
-		return scryptauthSupported(hashStr)
+		supported, params, err = scryptauthSupported(hashStr)
+		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file format ID '%s' is not supported", formatID)
 	}
+	return
+}
+
+// IsFormatSupported checks if the format of the hash file is supported
+func IsFormatSupported(filename string) (supported bool, err error) {
+	supported, _, _, err = isFormatSupportedFull(filename)
 	return
 }
 

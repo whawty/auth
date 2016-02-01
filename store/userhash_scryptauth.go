@@ -37,16 +37,17 @@ import (
 	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
-func scryptauthSupported(hashStr string) (bool, error) {
+func scryptauthSupported(hashStr string) (bool, string, error) {
 	ctxID, hash, salt, err := scryptauth.DecodeBase64(hashStr)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	if ctxID == 0 || len(hash) == 0 || len(salt) == 0 {
-		return false, fmt.Errorf("whawty.auth.store: hash has invalid format")
+		return false, "", fmt.Errorf("whawty.auth.store: hash has invalid format")
 	}
-	return true, nil
+	params := fmt.Sprintf("context:%d", ctxID)
+	return true, params, nil
 }
 
 func scryptauthGen(password string, store *Dir) (string, error) {

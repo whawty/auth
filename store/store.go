@@ -235,7 +235,7 @@ func listAllUsers(dir *os.File, list UserListFull) error {
 			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
 				return err
 			}
-			user.IsSupported, _ = IsFormatSupported(filepath.Join(dir.Name(), name))
+			user.IsSupported, user.FormatID, user.FormatParams, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name))
 			list[username] = user
 		}
 
@@ -316,11 +316,11 @@ func (d *Dir) List() (UserList, error) {
 // UserFull holds additional information about a specific user. This is used as the
 // value type for UserListFull.
 type UserFull struct {
-	IsAdmin         bool
-	IsValid         bool
-	IsSupported     bool
-	FormatID        string
-	FormatParameter string
+	IsAdmin      bool
+	IsValid      bool
+	IsSupported  bool
+	FormatID     string
+	FormatParams string
 }
 
 // UserListFull is the return value of ListFull(). The key of the map is the username

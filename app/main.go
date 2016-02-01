@@ -270,13 +270,13 @@ func cmdListFull(s *StoreChan) {
 
 	table := uitable.New()
 	table.MaxColWidth = 50
-	table.AddRow("NAME", "TYPE", "VALID", "SUPPORTED")
+	table.AddRow("NAME", "TYPE", "VALID", "SUPPORTED", "FORMAT", "PARAMS")
 	for _, k := range keys {
 		t := "user"
 		if lst[k].IsAdmin {
 			t = "admin"
 		}
-		table.AddRow(k, t, lst[k].IsValid, lst[k].IsSupported)
+		table.AddRow(k, t, lst[k].IsValid, lst[k].IsSupported, lst[k].FormatID, lst[k].FormatParams)
 	}
 	fmt.Println(table)
 }

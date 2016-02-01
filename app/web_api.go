@@ -63,6 +63,7 @@ func handleWebAuthenticate(store *StoreChan, w http.ResponseWriter, r *http.Requ
 		goto SendResponse
 	}
 
+	respdata.status = http.StatusOK
 	respdata.Session = fmt.Sprintf("hello %s!", reqdata.Username)
 	respdata.Error = fmt.Sprintf("Error: telling me that your password is '%s' was a mistake!", reqdata.Password)
 
@@ -73,46 +74,206 @@ SendResponse:
 	encoder.Encode(respdata)
 }
 
+type webAddRequest struct {
+	Session  string `json:"session"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	IsAdmin  bool   `json:"is-admin"`
+}
+
+type webAddResponse struct {
+	status int
+	Error  string `json:"error,omitempty"`
+}
+
 func handleWebAdd(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got ADD request from %s", r.RemoteAddr)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webAddRequest{}
+	respdata := &webAddResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.status = http.StatusNotImplemented
+	respdata.Error = fmt.Sprintf("Error: ADD is not yet implemented!")
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
+}
+
+type webRemoveRequest struct {
+	Session  string `json:"session"`
+	Username string `json:"username"`
+}
+
+type webRemoveResponse struct {
+	status int
+	Error  string `json:"error,omitempty"`
 }
 
 func handleWebRemove(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got REMOVE request from %s", r.RemoteAddr)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webRemoveRequest{}
+	respdata := &webRemoveResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.status = http.StatusNotImplemented
+	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
+}
+
+type webUpdateRequest struct {
+	Session  string `json:"session"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type webUpdateResponse struct {
+	status int
+	Error  string `json:"error,omitempty"`
 }
 
 func handleWebUpdate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got UPDATE request from %s", r.RemoteAddr)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webUpdateRequest{}
+	respdata := &webUpdateResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.status = http.StatusNotImplemented
+	respdata.Error = fmt.Sprintf("Error: UPDATE is not yet implemented!")
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
+}
+
+type webSetAdminRequest struct {
+	Session  string `json:"session"`
+	Username string `json:"username"`
+	IsAdmin  bool   `json:"is-admin"`
+}
+
+type webSetAdminResponse struct {
+	status int
+	Error  string `json:"error,omitempty"`
 }
 
 func handleWebSetAdmin(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got SET_ADMIN request from %s", r.RemoteAddr)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webSetAdminRequest{}
+	respdata := &webSetAdminResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.status = http.StatusNotImplemented
+	respdata.Error = fmt.Sprintf("Error: SET_ADMIN is not yet implemented!")
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
+}
+
+type webListRequest struct {
+	Session string `json:"session"`
+}
+
+type webListResponse struct {
+	status int
+	// TODO: add List
+	Error string `json:"error,omitempty"`
 }
 
 func handleWebList(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST request from %s", r.RemoteAddr)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webListRequest{}
+	respdata := &webListResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.status = http.StatusNotImplemented
+	respdata.Error = fmt.Sprintf("Error: LIST is not yet implemented!")
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
+}
+
+type webListFullRequest struct {
+	Session string `json:"session"`
+}
+
+type webListFullResponse struct {
+	status int
+	// TODO: add List
+	Error string `json:"error,omitempty"`
 }
 
 func handleWebListFull(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST_FULL request from %s", r.RemoteAddr)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webListFullRequest{}
+	respdata := &webListFullResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.status = http.StatusNotImplemented
+	respdata.Error = fmt.Sprintf("Error: LIST_FULL is not yet implemented!")
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
 }
 
 type webHandler struct {

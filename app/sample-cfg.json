@@ -1,7 +1,9 @@
 {
     "basedir": "test",
-    "defaultctx": 17,
-    "contexts": [
-        { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-    ]
+    "scryptauth": {
+        "defaultctx": 17,
+        "contexts": [
+            { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
+        ]
+    }
 }

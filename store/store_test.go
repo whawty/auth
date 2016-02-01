@@ -58,36 +58,36 @@ func TestNewDirFromConfig(t *testing.T) {
 		{"", false},
 		{"{}", false},
 		{`{ "basedir": "/tmp" }`, true},
-		{`{ "basedir": "/tmp", "defaultctx": 0 }`, true},
-		{`{ "basedir": "/tmp", "defaultctx": 17 }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 0 } }`, true},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17 } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 0, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 13, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "", "pwcost": 12 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA==", "pwcost": 12 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "$$invalid§§", "pwcost": 12 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 33 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 0, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 0, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14 }
-     ] }`, false},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, false},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-     ] }`, true},
-		{`{ "basedir": "/tmp", "defaultctx": 17, "contexts": [
+     ] } }`, true},
+		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 },
          { "ID": 18, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14, "p": 7, "r": 2 }
-     ] }`, true},
+     ] } }`, true},
 	}
 
 	file, err := ioutil.TempFile("", "whawty-auth-config")
@@ -173,9 +173,9 @@ func TestInitDir(t *testing.T) {
 		t.Fatalf("Initializing a directory without a context should give an error")
 	}
 
-	store.DefaultCtxID = 1
+	store.Scryptauth.DefaultCtxID = 1
 	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	store.Contexts[store.DefaultCtxID] = ctx
+	store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID] = ctx
 
 	if err := store.Init(adminuser, password); err != nil {
 		t.Fatalf("unexpected error")
@@ -240,9 +240,9 @@ func TestList(t *testing.T) {
 		t.Fatalf("list should return an empty user list for an empty directory")
 	}
 
-	store.DefaultCtxID = 1
+	store.Scryptauth.DefaultCtxID = 1
 	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	store.Contexts[store.DefaultCtxID] = ctx
+	store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID] = ctx
 
 	if err := store.Init(adminuser, password); err != nil {
 		t.Fatalf("unexpected error")
@@ -300,9 +300,9 @@ func TestMain(m *testing.M) {
 	}
 
 	testStoreUserHash = NewDir(testBaseDirUserHash)
-	testStoreUserHash.DefaultCtxID = 1
+	testStoreUserHash.Scryptauth.DefaultCtxID = 1
 	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	testStoreUserHash.Contexts[testStoreUserHash.DefaultCtxID] = ctx
+	testStoreUserHash.Scryptauth.Contexts[testStoreUserHash.Scryptauth.DefaultCtxID] = ctx
 
 	ret := m.Run()
 

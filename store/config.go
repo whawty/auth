@@ -41,7 +41,7 @@ import (
 	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
-type cfgCtx struct {
+type cfgScryptauthCtx struct {
 	ID            uint   `json:"id"`
 	HmacKeyBase64 string `json:"hmackey"`
 	PwCost        uint   `json:"pwcost"`
@@ -49,10 +49,14 @@ type cfgCtx struct {
 	P             int    `json:"p"`
 }
 
+type cfgScryptauth struct {
+	DefaultCtx uint               `json:"defaultctx"`
+	Contexts   []cfgScryptauthCtx `json:"contexts"`
+}
+
 type config struct {
-	BaseDir    string   `json:"basedir"`
-	DefaultCtx uint     `json:"defaultctx"`
-	Contexts   []cfgCtx `json:"contexts"`
+	BaseDir    string        `json:"basedir"`
+	Scryptauth cfgScryptauth `json:"scryptauth"`
 }
 
 func readConfig(configfile string) (*config, error) {
@@ -74,6 +78,31 @@ func readConfig(configfile string) (*config, error) {
 	return c, nil
 }
 
+func scryptauthContextFromConfig(ctx cfgScryptauthCtx) (*scryptauth.Context, error) {
+	if ctx.ID == 0 {
+		return nil, fmt.Errorf("Error: context ID 0 is not allowed")
+	}
+	hk, err := base64.URLEncoding.DecodeString(ctx.HmacKeyBase64)
+	if err != nil {
+		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
+	}
+	if len(hk) != scryptauth.KeyLength {
+		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", ctx.ID, scryptauth.KeyLength, len(hk))
+	}
+
+	sactx, err := scryptauth.New(ctx.PwCost, hk)
+	if err != nil {
+		return nil, err
+	}
+	if ctx.R > 0 {
+		sactx.R = ctx.R
+	}
+	if ctx.P > 0 {
+		sactx.P = ctx.P
+	}
+	return sactx, nil
+}
+
 func (d *Dir) fromConfig(configfile string) error {
 	c, err := readConfig(configfile)
 	if err != nil {
@@ -83,37 +112,23 @@ func (d *Dir) fromConfig(configfile string) error {
 		return fmt.Errorf("Error: config file does not contain a base directory")
 	}
 	d.basedir = c.BaseDir
-	for _, ctx := range c.Contexts {
-		if ctx.ID == 0 {
-			return fmt.Errorf("Error: context ID 0 is not allowed")
-		}
-		hk, err := base64.URLEncoding.DecodeString(ctx.HmacKeyBase64)
-		if err != nil {
-			return fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
-		}
-		if len(hk) != scryptauth.KeyLength {
-			return fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", ctx.ID, scryptauth.KeyLength, len(hk))
-		}
 
-		sactx, err := scryptauth.New(ctx.PwCost, hk)
+	// Format: scryptauth
+	for _, ctx := range c.Scryptauth.Contexts {
+		sactx, err := scryptauthContextFromConfig(ctx)
 		if err != nil {
 			return err
 		}
-		if ctx.R > 0 {
-			sactx.R = ctx.R
-		}
-		if ctx.P > 0 {
-			sactx.P = ctx.P
-		}
-		d.Contexts[ctx.ID] = sactx
+		d.Scryptauth.Contexts[ctx.ID] = sactx
 	}
-	if c.DefaultCtx == 0 {
-		if len(d.Contexts) != 0 {
+	if c.Scryptauth.DefaultCtx == 0 {
+		if len(d.Scryptauth.Contexts) != 0 {
 			return fmt.Errorf("Error: no default context")
 		}
-	} else if _, exists := d.Contexts[c.DefaultCtx]; !exists {
-		return fmt.Errorf("Error: invalid default context %d", c.DefaultCtx)
+	} else if _, exists := d.Scryptauth.Contexts[c.Scryptauth.DefaultCtx]; !exists {
+		return fmt.Errorf("Error: invalid default context %d", c.Scryptauth.DefaultCtx)
 	}
-	d.DefaultCtxID = c.DefaultCtx
+	d.Scryptauth.DefaultCtxID = c.Scryptauth.DefaultCtx
+
 	return nil
 }

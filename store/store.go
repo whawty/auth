@@ -67,23 +67,28 @@ func init() {
 
 // Dir represents a directoy containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
-	basedir      string
-	Contexts     map[uint]*scryptauth.Context
-	DefaultCtxID uint
+	basedir       string
+	DefaultFormat string
+	Scryptauth    struct {
+		Contexts     map[uint]*scryptauth.Context
+		DefaultCtxID uint
+	}
 }
 
 // NewDir creates a new whawty.auth store using basedir as base directory.
 func NewDir(basedir string) (d *Dir) {
 	d = &Dir{}
 	d.basedir = filepath.Clean(basedir)
-	d.Contexts = make(map[uint]*scryptauth.Context)
+	d.DefaultFormat = scryptauthFormatID
+	d.Scryptauth.Contexts = make(map[uint]*scryptauth.Context)
 	return
 }
 
 // NewDirFromConfig creates a new whawty.auth store from json config file.
 func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d = &Dir{}
-	d.Contexts = make(map[uint]*scryptauth.Context)
+	d.DefaultFormat = scryptauthFormatID
+	d.Scryptauth.Contexts = make(map[uint]*scryptauth.Context)
 	err = d.fromConfig(configfile)
 	return
 }
@@ -311,10 +316,11 @@ func (d *Dir) List() (UserList, error) {
 // UserFull holds additional information about a specific user. This is used as the
 // value type for UserListFull.
 type UserFull struct {
-	IsAdmin     bool
-	IsValid     bool
-	IsSupported bool
-	ContextID   uint
+	IsAdmin         bool
+	IsValid         bool
+	IsSupported     bool
+	FormatID        string
+	FormatParameter string
 }
 
 // UserListFull is the return value of ListFull(). The key of the map is the username

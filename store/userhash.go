@@ -38,12 +38,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 const (
-	scryptauthAlgoID string = "hmac_sha256_scrypt"
+	scryptauthFormatID string = "hmac_sha256_scrypt"
 )
 
 // fileExists returns whether the given file or directory exists or not
@@ -59,7 +57,7 @@ func fileExists(path string) (bool, error) {
 	return true, err
 }
 
-// readHashStr returns the contents of the user hash file seperated into algorithm id
+// readHashStr returns the contents of the user hash file seperated into format id
 // string and the whole hash string.
 func readHashStr(filename string) (string, string, error) {
 	file, err := os.Open(filename)
@@ -80,31 +78,20 @@ func readHashStr(filename string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func readScryptauthHash(filename string) (ctxID uint, hash, salt []byte, err error) {
-	var idStr, hashStr string
-	idStr, hashStr, err = readHashStr(filename)
-	if err != nil {
-		return
-	}
-	if idStr != scryptauthAlgoID {
-		err = fmt.Errorf("whawty.auth.store: hash file alogrithm ID '%s' is not supported", idStr)
-		return
-	}
-
-	ctxID, hash, salt, err = scryptauth.DecodeBase64(string(hashStr))
-	return
-}
-
 // IsFormatSupported checks if the format of the hash file is supported
-func IsFormatSupported(filename string) (bool, error) {
-	ctxID, hash, salt, err := readScryptauthHash(filename)
-	if err != nil {
-		return false, err
+func IsFormatSupported(filename string) (supported bool, err error) {
+	var formatID, hashStr string
+	if formatID, hashStr, err = readHashStr(filename); err != nil {
+		return
 	}
-	if ctxID == 0 || len(hash) == 0 || len(salt) == 0 {
-		return false, fmt.Errorf("whawty.auth.store: hash has invalid format")
+
+	switch formatID {
+	case scryptauthFormatID:
+		return scryptauthSupported(hashStr)
+	default:
+		err = fmt.Errorf("whawty.auth.store: hash file format ID '%s' is not supported", formatID)
 	}
-	return true, nil
+	return
 }
 
 // UserHash is the representation of a single user hash file inside the store.
@@ -131,13 +118,18 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 }
 
 func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error {
-	ctx, ctxExists := u.store.Contexts[u.store.DefaultCtxID]
-	if !ctxExists {
-		return fmt.Errorf("whawty.auth.store: the store has no default context")
-	}
-	hash, salt, err := ctx.Gen([]byte(password))
-	if err != nil {
-		return err
+	formatID := u.store.DefaultFormat
+
+	var hashStr string
+	switch formatID {
+	case scryptauthFormatID:
+		var err error
+		hashStr, err = scryptauthGen(password, u.store)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("whawty.auth.store: default hash file fromat ID '%s' is not supported", formatID)
 	}
 
 	file, err := os.OpenFile(u.getFilename(isAdmin), flags, 0600)
@@ -146,8 +138,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error 
 	}
 	defer file.Close()
 
-	hashStr := scryptauth.EncodeBase64(u.store.DefaultCtxID, hash, salt)
-	_, err = io.WriteString(file, scryptauthAlgoID+":"+hashStr+"\n") // TODO: retry if write was short??
+	_, err = io.WriteString(file, formatID+":"+hashStr+"\n") // TODO: retry if write was short??
 	return err
 }
 
@@ -235,17 +226,18 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool,
 		return false, false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
-	var ctxID uint
-	var hash, salt []byte
-	if ctxID, hash, salt, err = readScryptauthHash(u.getFilename(isAdmin)); err != nil {
+	var formatID, hashStr string
+	if formatID, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
 		return
 	}
 
-	ctx, ctxExists := u.store.Contexts[ctxID]
-	if !ctxExists {
-		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
+	switch formatID {
+	case scryptauthFormatID:
+		isAuthenticated, err = scryptauthCheck(password, hashStr, u.store)
+		return
+	default:
+		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)
 	}
-
-	isAuthenticated, err = ctx.Check(hash, []byte(password), salt)
+	isAuthenticated = false
 	return
 }

@@ -63,6 +63,12 @@ func handleWebAuthenticate(store *StoreChan, w http.ResponseWriter, r *http.Requ
 		goto SendResponse
 	}
 
+	if reqdata.Username == "" || reqdata.Password == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty username or password is not allowed"
+		goto SendResponse
+	}
+
 	respdata.status = http.StatusOK
 	respdata.Session = fmt.Sprintf("hello %s!", reqdata.Username)
 	respdata.Error = fmt.Sprintf("Error: telling me that your password is '%s' was a mistake!", reqdata.Password)
@@ -99,6 +105,12 @@ func handleWebAdd(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 		goto SendResponse
 	}
 
+	if reqdata.Session == "" || reqdata.Username == "" || reqdata.Password == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty session, username or password is not allowed"
+		goto SendResponse
+	}
+
 	respdata.status = http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: ADD is not yet implemented!")
 
@@ -129,6 +141,12 @@ func handleWebRemove(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
 		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	if reqdata.Session == "" || reqdata.Username == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty session or username is not allowed"
 		goto SendResponse
 	}
 
@@ -166,6 +184,12 @@ func handleWebUpdate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 		goto SendResponse
 	}
 
+	if reqdata.Session == "" || reqdata.Username == "" || reqdata.Password == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty session, username or password is not allowed"
+		goto SendResponse
+	}
+
 	respdata.status = http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: UPDATE is not yet implemented!")
 
@@ -197,6 +221,12 @@ func handleWebSetAdmin(store *StoreChan, w http.ResponseWriter, r *http.Request)
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
 		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	if reqdata.Session == "" || reqdata.Username == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty session or username is not allowed"
 		goto SendResponse
 	}
 
@@ -233,6 +263,12 @@ func handleWebList(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 		goto SendResponse
 	}
 
+	if reqdata.Session == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty session is not allowed"
+		goto SendResponse
+	}
+
 	respdata.status = http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: LIST is not yet implemented!")
 
@@ -263,6 +299,12 @@ func handleWebListFull(store *StoreChan, w http.ResponseWriter, r *http.Request)
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
 		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	if reqdata.Session == "" {
+		respdata.status = http.StatusBadRequest
+		respdata.Error = "empty session is not allowed"
 		goto SendResponse
 	}
 

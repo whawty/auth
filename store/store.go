@@ -211,6 +211,36 @@ func listSupportedUsers(dir *os.File, list UserList) error {
 	return nil
 }
 
+func listAllUsers(dir *os.File, list UserListFull) error {
+	for {
+		last := false
+		names, err := dir.Readdirnames(3)
+		if err != nil {
+			if err == io.EOF {
+				last = true
+			} else {
+				return err
+			}
+		}
+
+		for _, name := range names {
+			var user UserFull
+			var err error
+			var username string
+			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
+				return err
+			}
+			user.IsSupported, _ = IsFormatSupported(filepath.Join(dir.Name(), name))
+			list[username] = user
+		}
+
+		if last {
+			break
+		}
+	}
+	return nil
+}
+
 // Init initalizes the store by creating a password file for an admin user.
 func (d *Dir) Init(admin, password string) error {
 	dir, err := openDir(d.basedir)
@@ -265,7 +295,7 @@ func (d *Dir) RemoveUser(user string) {
 // and the value is true if the user is an admin.
 type UserList map[string]bool
 
-// List returns a list of all users in the store.
+// List returns a list of all supported users in the store.
 func (d *Dir) List() (UserList, error) {
 	dir, err := openDir(d.basedir)
 	if err != nil {
@@ -275,6 +305,33 @@ func (d *Dir) List() (UserList, error) {
 
 	list := make(UserList)
 	err = listSupportedUsers(dir, list)
+	return list, err
+}
+
+// UserFull holds additional information about a specific user. This is used as the
+// value type for UserListFull.
+type UserFull struct {
+	IsAdmin     bool
+	IsValid     bool
+	IsSupported bool
+	ContextID   uint
+}
+
+// UserListFull is the return value of ListFull(). The key of the map is the username
+// and the value contains additional information for that specific user.
+type UserListFull map[string]UserFull
+
+// ListFull returns a list of all users in the store. This includes users with
+// unsupported hash formats.
+func (d *Dir) ListFull() (UserListFull, error) {
+	dir, err := openDir(d.basedir)
+	if err != nil {
+		return nil, err
+	}
+	defer dir.Close()
+
+	list := make(UserListFull)
+	err = listAllUsers(dir, list)
 	return list, err
 }
 

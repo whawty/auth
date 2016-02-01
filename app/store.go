@@ -103,6 +103,15 @@ type listRequest struct {
 	response chan<- listResult
 }
 
+type listFullResult struct {
+	list store.UserListFull
+	err  error
+}
+
+type listFullRequest struct {
+	response chan<- listFullResult
+}
+
 type authenticateResult struct {
 	ok      bool
 	isAdmin bool
@@ -124,6 +133,7 @@ type Store struct {
 	updateChan       chan updateRequest
 	setAdminChan     chan setAdminRequest
 	listChan         chan listRequest
+	listFullChan     chan listFullRequest
 	authenticateChan chan authenticateRequest
 }
 
@@ -163,6 +173,11 @@ func (s *Store) list() (result listResult) {
 	return
 }
 
+func (s *Store) listFull() (result listFullResult) {
+	result.list, result.err = s.dir.ListFull()
+	return
+}
+
 func (s *Store) authenticate(username, password string) (result authenticateResult) {
 	result.ok, result.isAdmin, result.err = s.dir.Authenticate(username, password)
 	return
@@ -185,6 +200,8 @@ func (s *Store) dispatchRequests() {
 			req.response <- s.setAdmin(req.username, req.isAdmin)
 		case req := <-s.listChan:
 			req.response <- s.list()
+		case req := <-s.listFullChan:
+			req.response <- s.listFull()
 		case req := <-s.authenticateChan:
 			req.response <- s.authenticate(req.username, req.password)
 		}
@@ -202,6 +219,7 @@ type StoreChan struct {
 	updateChan       chan<- updateRequest
 	setAdminChan     chan<- setAdminRequest
 	listChan         chan<- listRequest
+	listFullChan     chan<- listFullRequest
 	authenticateChan chan<- authenticateRequest
 }
 
@@ -285,6 +303,16 @@ func (s *StoreChan) List() (store.UserList, error) {
 	return res.list, res.err
 }
 
+func (s *StoreChan) ListFull() (store.UserListFull, error) {
+	resCh := make(chan listFullResult)
+	req := listFullRequest{}
+	req.response = resCh
+	s.listFullChan <- req
+
+	res := <-resCh
+	return res.list, res.err
+}
+
 func (s *StoreChan) Authenticate(username, password string) (bool, bool, error) {
 	resCh := make(chan authenticateResult)
 	req := authenticateRequest{}
@@ -306,6 +334,7 @@ func (s *Store) GetInterface() *StoreChan {
 	ch.updateChan = s.updateChan
 	ch.setAdminChan = s.setAdminChan
 	ch.listChan = s.listChan
+	ch.listFullChan = s.listFullChan
 	ch.authenticateChan = s.authenticateChan
 	return ch
 }
@@ -322,6 +351,7 @@ func NewStore(configfile string) (s *Store, err error) {
 	s.updateChan = make(chan updateRequest, 10)
 	s.setAdminChan = make(chan setAdminRequest, 10)
 	s.listChan = make(chan listRequest, 10)
+	s.listFullChan = make(chan listFullRequest, 10)
 	s.authenticateChan = make(chan authenticateRequest, 10)
 
 	go s.dispatchRequests()

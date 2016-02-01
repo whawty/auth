@@ -255,13 +255,34 @@ func cmdSetAdmin(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
-func cmdList(configfile string, docheck bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
-	if s == nil {
+func cmdListFull(s *StoreChan) {
+	lst, err := s.ListFull()
+	if err != nil {
+		fmt.Printf("Error listing user: %s\n", err)
 		return
 	}
 
-	lst, err := s.GetInterface().List()
+	var keys []string
+	for k := range lst {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	table := uitable.New()
+	table.MaxColWidth = 50
+	table.AddRow("NAME", "TYPE", "VALID", "SUPPORTED", "CONTEXT-ID")
+	for _, k := range keys {
+		t := "user"
+		if lst[k].IsAdmin {
+			t = "admin"
+		}
+		table.AddRow(k, t, lst[k].IsValid, lst[k].IsSupported, lst[k].ContextID)
+	}
+	fmt.Println(table)
+}
+
+func cmdListSupported(s *StoreChan) {
+	lst, err := s.List()
 	if err != nil {
 		fmt.Printf("Error listing user: %s\n", err)
 		return
@@ -284,6 +305,19 @@ func cmdList(configfile string, docheck bool, c *cli.Context) {
 		table.AddRow(k, t)
 	}
 	fmt.Println(table)
+}
+
+func cmdList(configfile string, docheck, listFull bool, c *cli.Context) {
+	s := openAndCheck(configfile, docheck)
+	if s == nil {
+		return
+	}
+
+	if listFull {
+		cmdListFull(s.GetInterface())
+	} else {
+		cmdListSupported(s.GetInterface())
+	}
 }
 
 func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
@@ -343,7 +377,7 @@ func cmdRun(configfile string, docheck bool, socks []string, c *cli.Context) {
 
 func main() {
 	var configfile string
-	var docheck bool
+	var docheck, listFull bool
 	var socks []string
 
 	app := cli.NewApp()
@@ -415,11 +449,17 @@ func main() {
 			},
 		},
 		{
-			Name:      "list",
-			Usage:     "list all users",
-			ArgsUsage: "",
+			Name:  "list",
+			Usage: "list all users",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:        "full",
+					Usage:       "show full user list",
+					Destination: &listFull,
+				},
+			},
 			Action: func(c *cli.Context) {
-				cmdList(configfile, docheck, c)
+				cmdList(configfile, docheck, listFull, c)
 			},
 		},
 		{

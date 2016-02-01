@@ -269,7 +269,7 @@ func cmdListFull(s *StoreChan) {
 	sort.Strings(keys)
 
 	table := uitable.New()
-	table.MaxColWidth = 50
+	table.MaxColWidth = 80
 	table.AddRow("NAME", "TYPE", "VALID", "SUPPORTED", "FORMAT", "PARAMS")
 	for _, k := range keys {
 		t := "user"
@@ -363,10 +363,25 @@ func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
 	os.Exit(0)
 }
 
-func cmdRun(configfile string, docheck bool, socks []string, c *cli.Context) {
+func cmdRun(configfile string, docheck bool, socks []string, webAddr string, c *cli.Context) {
 	s := openAndCheck(configfile, docheck)
 	if s == nil {
 		return
+	}
+
+	if webAddr != "" {
+		if len(socks) == 0 {
+			if err := runWebApi(webAddr, s.GetInterface()); err != nil {
+				fmt.Printf("error running web interface: %s\n", err)
+				return
+			}
+		} else {
+			go func() {
+				if err := runWebApi(webAddr, s.GetInterface()); err != nil {
+					fmt.Printf("warning running  web interface failed: %s\n", err)
+				}
+			}()
+		}
 	}
 
 	if err := runSaslAuthSocket(socks, s.GetInterface()); err != nil {
@@ -379,6 +394,7 @@ func main() {
 	var configfile string
 	var docheck, listFull bool
 	var socks []string
+	var webAddr string
 
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
@@ -476,13 +492,19 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringSliceFlag{
 					Name:   "sock, s",
-					Usage:  "path ",
+					Usage:  "path to saslauthd compatible unix socket interface",
 					Value:  (*cli.StringSlice)(&socks),
 					EnvVar: "WHAWTY_AUTH_SASL_SOCK",
 				},
+				cli.StringFlag{
+					Name:        "web-addr",
+					Usage:       "address to listen on for web API",
+					Destination: &webAddr,
+					EnvVar:      "WHAWTY_AUTH_WEB_ADDR",
+				},
 			},
 			Action: func(c *cli.Context) {
-				cmdRun(configfile, docheck, socks, c)
+				cmdRun(configfile, docheck, socks, webAddr, c)
 			},
 		},
 	}

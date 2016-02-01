@@ -82,15 +82,22 @@ func handleWebList(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "not implemented")
 }
 
-func startWebApi(addr *string) (err error) {
+func handleWebListFull(w http.ResponseWriter, r *http.Request) {
+	wdl.Printf("web-api: got LIST_FULL request from %s", r.RemoteAddr)
+
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "not implemented")
+}
+
+func runWebApi(addr string, store *StoreChan) (err error) {
 	http.HandleFunc("/api/authenticate", handleWebAuthenticate)
 	http.HandleFunc("/api/add", handleWebAdd)
 	http.HandleFunc("/api/remove", handleWebRemove)
 	http.HandleFunc("/api/update", handleWebUpdate)
 	http.HandleFunc("/api/set-admin", handleWebSetAdmin)
 	http.HandleFunc("/api/list", handleWebList)
+	http.HandleFunc("/api/list-full", handleWebListFull)
 
-	wl.Printf("web-api: listening on '%s'", *addr)
-	http.ListenAndServe(*addr, nil)
-	return
+	wl.Printf("web-api: listening on '%s'", addr)
+	return http.ListenAndServe(addr, nil)
 }

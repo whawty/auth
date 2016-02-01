@@ -35,9 +35,10 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"time"
 )
 
-func handleWebAuthenticate(w http.ResponseWriter, r *http.Request) {
+func handleWebAuthenticate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got AUTHENTICATE request from %s", r.RemoteAddr)
 
 	//	w.Header().Set("Content-Type", "application/json")
@@ -47,57 +48,67 @@ func handleWebAuthenticate(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "not implemented")
 }
 
-func handleWebAdd(w http.ResponseWriter, r *http.Request) {
+func handleWebAdd(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got ADD request from %s", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
-func handleWebRemove(w http.ResponseWriter, r *http.Request) {
+func handleWebRemove(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got REMOVE request from %s", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
-func handleWebUpdate(w http.ResponseWriter, r *http.Request) {
+func handleWebUpdate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got UPDATE request from %s", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
-func handleWebSetAdmin(w http.ResponseWriter, r *http.Request) {
+func handleWebSetAdmin(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got SET_ADMIN request from %s", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
-func handleWebList(w http.ResponseWriter, r *http.Request) {
+func handleWebList(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST request from %s", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
-func handleWebListFull(w http.ResponseWriter, r *http.Request) {
+func handleWebListFull(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST_FULL request from %s", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNotImplemented)
 	fmt.Fprintf(w, "not implemented")
 }
 
+type webHandler struct {
+	store *StoreChan
+	H     func(*StoreChan, http.ResponseWriter, *http.Request)
+}
+
+func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	self.H(self.store, w, r)
+}
+
 func runWebApi(addr string, store *StoreChan) (err error) {
-	http.HandleFunc("/api/authenticate", handleWebAuthenticate)
-	http.HandleFunc("/api/add", handleWebAdd)
-	http.HandleFunc("/api/remove", handleWebRemove)
-	http.HandleFunc("/api/update", handleWebUpdate)
-	http.HandleFunc("/api/set-admin", handleWebSetAdmin)
-	http.HandleFunc("/api/list", handleWebList)
-	http.HandleFunc("/api/list-full", handleWebListFull)
+	http.Handle("/api/authenticate", webHandler{store, handleWebAuthenticate})
+	http.Handle("/api/add", webHandler{store, handleWebAdd})
+	http.Handle("/api/remove", webHandler{store, handleWebRemove})
+	http.Handle("/api/update", webHandler{store, handleWebUpdate})
+	http.Handle("/api/set-admin", webHandler{store, handleWebSetAdmin})
+	http.Handle("/api/list", webHandler{store, handleWebList})
+	http.Handle("/api/list-full", webHandler{store, handleWebListFull})
 
 	wl.Printf("web-api: listening on '%s'", addr)
-	return http.ListenAndServe(addr, nil)
+	server := &http.Server{Addr: addr, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	return server.ListenAndServe()
 }

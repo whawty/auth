@@ -32,20 +32,45 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
 )
 
+type webAuthenticateRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type webAuthenticateResponse struct {
+	status  int
+	Session string `json:"session,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
 func handleWebAuthenticate(store *StoreChan, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got AUTHENTICATE request from %s", r.RemoteAddr)
 
-	//	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	// encoder := json.NewEncoder(w)
-	// encoder.Encode(respdata)
-	fmt.Fprintf(w, "not implemented")
+	decoder := json.NewDecoder(r.Body)
+	reqdata := &webAuthenticateRequest{}
+	respdata := &webAuthenticateResponse{}
+
+	if err := decoder.Decode(reqdata); err != nil {
+		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
+		respdata.status = http.StatusInternalServerError
+		goto SendResponse
+	}
+
+	respdata.Session = fmt.Sprintf("hello %s!", reqdata.Username)
+	respdata.Error = fmt.Sprintf("Error: telling me that your password is '%s' was a mistake!", reqdata.Password)
+
+SendResponse:
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(respdata.status)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(respdata)
 }
 
 func handleWebAdd(store *StoreChan, w http.ResponseWriter, r *http.Request) {

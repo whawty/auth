@@ -56,6 +56,7 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 	decoder := json.NewDecoder(r.Body)
 	reqdata := &webAuthenticateRequest{}
 	respdata := &webAuthenticateResponse{}
+	isAdmin := false
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
@@ -69,9 +70,8 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 		goto SendResponse
 	}
 
-	respdata.status = http.StatusOK
-	respdata.Session = fmt.Sprintf("hello %s!", reqdata.Username)
-	respdata.Error = fmt.Sprintf("Error: telling me that your password is '%s' was a mistake!", reqdata.Password)
+	// TODO: check password, get admin status
+	respdata.status, respdata.Session, respdata.Error = sessions.generate(reqdata.Username, isAdmin)
 
 SendResponse:
 	w.Header().Set("Content-Type", "application/json")

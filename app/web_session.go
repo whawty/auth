@@ -32,8 +32,13 @@
 package main
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
-	"errors"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+	"net/http"
+	"time"
 )
 
 type webSessionFactory struct {
@@ -42,11 +47,11 @@ type webSessionFactory struct {
 
 func newWebSessionFactory() (w *webSessionFactory, err error) {
 	w = &webSessionFactory{}
-	w.key = make([]byte, 32)
+	w.key = make([]byte, sha256.Size)
 
 	var keylen int
-	if keylen, err = rand.Read(w.key); keylen != 32 {
-		return nil, errors.New("Insufficient random bytes for web session key")
+	if keylen, err = rand.Read(w.key); keylen != len(w.key) {
+		return nil, fmt.Errorf("Insufficient random bytes for web session key")
 	}
 	if err != nil {
 		return
@@ -54,12 +59,22 @@ func newWebSessionFactory() (w *webSessionFactory, err error) {
 	return
 }
 
-func (w *webSessionFactory) generateSession(username string, isAdmin bool) (session string, err error) {
-	// TODO: create session string and sign it using hmac-sha256
+func (w *webSessionFactory) generate(username string, isAdmin bool) (status int, session, errorStr string) {
+	token := fmt.Sprintf("%s:%t:%d", username, isAdmin, time.Now().Unix())
+	mac := hmac.New(sha256.New, w.key)
+	if _, err := mac.Write([]byte(token)); err != nil {
+		status = http.StatusInternalServerError
+		errorStr = err.Error()
+		return
+	}
+
+	b64mac := base64.URLEncoding.EncodeToString(mac.Sum(nil))
+	session = fmt.Sprintf("%s:%s", token, b64mac)
+	status = http.StatusOK
 	return
 }
 
-func (w *webSessionFactory) checkSession(session string) (ok bool, username string, isAdmin bool, err error) {
+func (w *webSessionFactory) check(session string) (status int, ok bool, username string, isAdmin bool, errorStr string) {
 	// TODO: check session and return username, admin status
 	return
 }

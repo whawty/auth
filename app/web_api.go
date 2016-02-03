@@ -87,7 +87,7 @@ type webAddRequest struct {
 	Session  string `json:"session"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	IsAdmin  bool   `json:"is-admin"`
+	IsAdmin  bool   `json:"isadmin"`
 }
 
 type webAddResponse struct {
@@ -188,8 +188,8 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 type webUpdateRequest struct {
 	Session     string `json:"session"`
 	Username    string `json:"username"`
-	OldPassword string `json:"old-password"`
-	NewPassword string `json:"new-password"`
+	OldPassword string `json:"oldpassword"`
+	NewPassword string `json:"newpassword"`
 }
 
 type webUpdateResponse struct {
@@ -256,7 +256,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 type webSetAdminRequest struct {
 	Session  string `json:"session"`
 	Username string `json:"username"`
-	IsAdmin  bool   `json:"is-admin"`
+	IsAdmin  bool   `json:"isadmin"`
 }
 
 type webSetAdminResponse struct {

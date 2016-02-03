@@ -45,7 +45,6 @@ type webAuthenticateRequest struct {
 }
 
 type webAuthenticateResponse struct {
-	status  int
 	Session string `json:"session,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
@@ -56,28 +55,25 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 	decoder := json.NewDecoder(r.Body)
 	reqdata := &webAuthenticateRequest{}
 	respdata := &webAuthenticateResponse{}
-	isAdmin := false
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Username == "" || reqdata.Password == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty username or password is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	// TODO: check password, get admin status
-	respdata.status, respdata.Error, respdata.Session = sessions.Generate(reqdata.Username, isAdmin)
+	// TODO: check password and get admin status
+	isAdmin := false
+	status := http.StatusOK
 
-SendResponse:
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
-	encoder := json.NewEncoder(w)
-	encoder.Encode(respdata)
+	status, respdata.Error, respdata.Session = sessions.Generate(reqdata.Username, isAdmin)
+	sendWebResponse(w, status, respdata)
 }
 
 type webAddRequest struct {
@@ -88,8 +84,7 @@ type webAddRequest struct {
 }
 
 type webAddResponse struct {
-	status int
-	Error  string `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -98,40 +93,35 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 	decoder := json.NewDecoder(r.Body)
 	reqdata := &webAddRequest{}
 	respdata := &webAddResponse{}
-	var username string
-	var isAdmin bool
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Session == "" || reqdata.Username == "" || reqdata.Password == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty session, username or password is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	respdata.status, respdata.Error, username, isAdmin = sessions.Check(reqdata.Session)
-	if respdata.status != http.StatusOK {
-		goto SendResponse
+	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+	if status != http.StatusOK {
+		respdata.Error = errorStr
+		sendWebResponse(w, status, respdata)
+		return
 	}
 
 	if !isAdmin {
-		respdata.status = http.StatusForbidden
 		respdata.Error = "only admins are allowed to add users"
-		goto SendResponse
+		sendWebResponse(w, http.StatusForbidden, respdata)
+		return
 	}
 
 	wdl.Printf("admin '%s' told me to add user '%s' with password '%s' with admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
 	// TODO: add user to store
-
-SendResponse:
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
-	encoder := json.NewEncoder(w)
-	encoder.Encode(respdata)
+	sendWebResponse(w, status, respdata)
 }
 
 type webRemoveRequest struct {
@@ -140,8 +130,7 @@ type webRemoveRequest struct {
 }
 
 type webRemoveResponse struct {
-	status int
-	Error  string `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -153,24 +142,19 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Session == "" || reqdata.Username == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty session or username is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	respdata.status = http.StatusNotImplemented
+	status := http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
-
-SendResponse:
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
-	encoder := json.NewEncoder(w)
-	encoder.Encode(respdata)
+	sendWebResponse(w, status, respdata)
 }
 
 type webUpdateRequest struct {
@@ -180,8 +164,7 @@ type webUpdateRequest struct {
 }
 
 type webUpdateResponse struct {
-	status int
-	Error  string `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -193,24 +176,19 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Session == "" || reqdata.Username == "" || reqdata.Password == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty session, username or password is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	respdata.status = http.StatusNotImplemented
+	status := http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: UPDATE is not yet implemented!")
-
-SendResponse:
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
-	encoder := json.NewEncoder(w)
-	encoder.Encode(respdata)
+	sendWebResponse(w, status, respdata)
 }
 
 type webSetAdminRequest struct {
@@ -220,8 +198,7 @@ type webSetAdminRequest struct {
 }
 
 type webSetAdminResponse struct {
-	status int
-	Error  string `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -233,24 +210,19 @@ func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.Res
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Session == "" || reqdata.Username == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty session or username is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	respdata.status = http.StatusNotImplemented
+	status := http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: SET_ADMIN is not yet implemented!")
-
-SendResponse:
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
-	encoder := json.NewEncoder(w)
-	encoder.Encode(respdata)
+	sendWebResponse(w, status, respdata)
 }
 
 type webListRequest struct {
@@ -258,7 +230,6 @@ type webListRequest struct {
 }
 
 type webListResponse struct {
-	status int
 	// TODO: add List
 	Error string `json:"error,omitempty"`
 }
@@ -272,24 +243,19 @@ func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.Respons
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Session == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty session is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	respdata.status = http.StatusNotImplemented
+	status := http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: LIST is not yet implemented!")
-
-SendResponse:
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
-	encoder := json.NewEncoder(w)
-	encoder.Encode(respdata)
+	sendWebResponse(w, status, respdata)
 }
 
 type webListFullRequest struct {
@@ -297,7 +263,6 @@ type webListFullRequest struct {
 }
 
 type webListFullResponse struct {
-	status int
 	// TODO: add List
 	Error string `json:"error,omitempty"`
 }
@@ -311,22 +276,24 @@ func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.Res
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
-		respdata.status = http.StatusInternalServerError
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
 	if reqdata.Session == "" {
-		respdata.status = http.StatusBadRequest
 		respdata.Error = "empty session is not allowed"
-		goto SendResponse
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 
-	respdata.status = http.StatusNotImplemented
+	status := http.StatusNotImplemented
 	respdata.Error = fmt.Sprintf("Error: LIST_FULL is not yet implemented!")
+	sendWebResponse(w, status, respdata)
+}
 
-SendResponse:
+func sendWebResponse(w http.ResponseWriter, status int, respdata interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(respdata.status)
+	w.WriteHeader(status)
 	encoder := json.NewEncoder(w)
 	encoder.Encode(respdata)
 }

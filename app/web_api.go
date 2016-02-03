@@ -72,7 +72,7 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 	if err != nil || !ok {
 		respdata.Error = "authentication failed"
 		if err != nil {
-			respdata.Error += ": " + err.Error()
+			respdata.Error = err.Error()
 		}
 		sendWebResponse(w, http.StatusUnauthorized, respdata)
 		return
@@ -127,9 +127,12 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 	}
 
 	wdl.Printf("admin '%s' want's to add user '%s' with password '%s' and admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
-	// TODO: add user to store
-	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
-	sendWebResponse(w, http.StatusNotImplemented, respdata)
+
+	if err := store.Add(reqdata.Username, reqdata.Password, reqdata.IsAdmin); err != nil {
+		respdata.Error = err.Error()
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+	}
+	sendWebResponse(w, http.StatusOK, respdata)
 }
 
 type webRemoveRequest struct {
@@ -174,9 +177,12 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 	}
 
 	wdl.Printf("admin '%s' want's to remove user '%s'", username, reqdata.Username)
-	// TODO: remove user from store
-	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
-	sendWebResponse(w, http.StatusNotImplemented, respdata)
+
+	if err := store.Remove(reqdata.Username); err != nil {
+		respdata.Error = err.Error()
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+	}
+	sendWebResponse(w, http.StatusOK, respdata)
 }
 
 type webUpdateRequest struct {
@@ -228,7 +234,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		if err != nil || !ok {
 			respdata.Error = "authentication failed"
 			if err != nil {
-				respdata.Error += ": " + err.Error()
+				respdata.Error = err.Error()
 			}
 			sendWebResponse(w, http.StatusUnauthorized, respdata)
 			return
@@ -240,9 +246,11 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	// TODO: update user to NewPassword
-	respdata.Error = fmt.Sprintf("Error: UPDATE is not yet implemented!")
-	sendWebResponse(w, http.StatusNotImplemented, respdata)
+	if err := store.Update(reqdata.Username, reqdata.NewPassword); err != nil {
+		respdata.Error = err.Error()
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+	}
+	sendWebResponse(w, http.StatusOK, respdata)
 }
 
 type webSetAdminRequest struct {
@@ -288,9 +296,12 @@ func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.Res
 	}
 
 	wdl.Printf("admin '%s' want's to set admin status of user '%s' to %t", username, reqdata.Username, reqdata.IsAdmin)
-	// TODO: update admin status of user
-	respdata.Error = fmt.Sprintf("Error: SET_ADMIN is not yet implemented!")
-	sendWebResponse(w, http.StatusNotImplemented, respdata)
+
+	if err := store.SetAdmin(reqdata.Username, reqdata.IsAdmin); err != nil {
+		respdata.Error = err.Error()
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+	}
+	sendWebResponse(w, http.StatusOK, respdata)
 }
 
 type webListRequest struct {

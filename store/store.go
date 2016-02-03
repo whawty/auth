@@ -316,11 +316,11 @@ func (d *Dir) List() (UserList, error) {
 // UserFull holds additional information about a specific user. This is used as the
 // value type for UserListFull.
 type UserFull struct {
-	IsAdmin      bool
-	IsValid      bool
-	IsSupported  bool
-	FormatID     string
-	FormatParams string
+	IsAdmin      bool   `json:"admin"`
+	IsValid      bool   `json:"valid"`
+	IsSupported  bool   `json:"supported"`
+	FormatID     string `json:"fromatid"`
+	FormatParams string `json:"formatparams"`
 }
 
 // UserListFull is the return value of ListFull(). The key of the map is the username

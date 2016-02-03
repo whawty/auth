@@ -37,6 +37,8 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"time"
+
+	"github.com/whawty/auth/store"
 )
 
 type webAuthenticateRequest struct {
@@ -87,7 +89,7 @@ type webAddRequest struct {
 	Session  string `json:"session"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	IsAdmin  bool   `json:"isadmin"`
+	IsAdmin  bool   `json:"admin"`
 }
 
 type webAddResponse struct {
@@ -256,7 +258,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 type webSetAdminRequest struct {
 	Session  string `json:"session"`
 	Username string `json:"username"`
-	IsAdmin  bool   `json:"isadmin"`
+	IsAdmin  bool   `json:"admin"`
 }
 
 type webSetAdminResponse struct {
@@ -309,8 +311,8 @@ type webListRequest struct {
 }
 
 type webListResponse struct {
-	// TODO: add List
-	Error string `json:"error,omitempty"`
+	List  store.UserList `json:"list"`
+	Error string         `json:"error,omitempty"`
 }
 
 func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -346,9 +348,13 @@ func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.Respons
 	}
 
 	wdl.Printf("admin '%s' want's to list all supported users", username)
-	// TODO: return list of all users
-	respdata.Error = fmt.Sprintf("Error: LIST is not yet implemented!")
-	sendWebResponse(w, http.StatusNotImplemented, respdata)
+
+	var err error
+	if respdata.List, err = store.List(); err != nil {
+		respdata.Error = err.Error()
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+	}
+	sendWebResponse(w, http.StatusOK, respdata)
 }
 
 type webListFullRequest struct {
@@ -356,8 +362,8 @@ type webListFullRequest struct {
 }
 
 type webListFullResponse struct {
-	// TODO: add List
-	Error string `json:"error,omitempty"`
+	List  store.UserListFull `json:"list"`
+	Error string             `json:"error,omitempty"`
 }
 
 func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -393,9 +399,13 @@ func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.Res
 	}
 
 	wdl.Printf("admin '%s' want's to list all users", username)
-	// TODO: return full list of all users
-	respdata.Error = fmt.Sprintf("Error: LIST_FULL is not yet implemented!")
-	sendWebResponse(w, http.StatusNotImplemented, respdata)
+
+	var err error
+	if respdata.List, err = store.ListFull(); err != nil {
+		respdata.Error = err.Error()
+		sendWebResponse(w, http.StatusBadRequest, respdata)
+	}
+	sendWebResponse(w, http.StatusOK, respdata)
 }
 
 func sendWebResponse(w http.ResponseWriter, status int, respdata interface{}) {

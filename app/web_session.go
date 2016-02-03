@@ -32,49 +32,160 @@
 package main
 
 import (
-	"crypto/hmac"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
 type webSessionFactory struct {
-	key []byte
+	aesgcm   cipher.AEAD
+	lifetime time.Duration
 }
 
-func newWebSessionFactory() (w *webSessionFactory, err error) {
+func NewWebSessionFactory(lifetime time.Duration) (w *webSessionFactory, err error) {
 	w = &webSessionFactory{}
-	w.key = make([]byte, sha256.Size)
+	w.lifetime = lifetime
 
+	key := make([]byte, 16) // -> AES-128
 	var keylen int
-	if keylen, err = rand.Read(w.key); keylen != len(w.key) {
-		return nil, fmt.Errorf("Insufficient random bytes for web session key")
-	}
-	if err != nil {
+	if keylen, err = rand.Read(key); keylen != len(key) || err != nil {
+		if err == nil {
+			err = fmt.Errorf("insufficient random bytes for web session key")
+		}
 		return
 	}
+
+	var block cipher.Block
+	if block, err = aes.NewCipher(key); err != nil {
+		return
+	}
+
+	if w.aesgcm, err = cipher.NewGCM(block); err != nil {
+		return
+	}
+
 	return
 }
 
-func (w *webSessionFactory) generate(username string, isAdmin bool) (status int, session, errorStr string) {
-	token := fmt.Sprintf("%s:%t:%d", username, isAdmin, time.Now().Unix())
-	mac := hmac.New(sha256.New, w.key)
-	if _, err := mac.Write([]byte(token)); err != nil {
+func (w *webSessionFactory) sealToken(token string) (status int, errorStr string, nonce, enctoken []byte) {
+	nonce = make([]byte, w.aesgcm.NonceSize())
+	if noncelen, err := rand.Read(nonce); noncelen != len(nonce) || err != nil {
 		status = http.StatusInternalServerError
-		errorStr = err.Error()
+		errorStr = "sealing session data failed"
+		if err != nil {
+			errorStr += ": " + err.Error()
+		}
 		return
 	}
 
-	b64mac := base64.URLEncoding.EncodeToString(mac.Sum(nil))
-	session = fmt.Sprintf("%s:%s", token, b64mac)
+	enctoken = w.aesgcm.Seal(nil, nonce, []byte(token), nil)
 	status = http.StatusOK
 	return
 }
 
-func (w *webSessionFactory) check(session string) (status int, ok bool, username string, isAdmin bool, errorStr string) {
-	// TODO: check session and return username, admin status
+func (w *webSessionFactory) openToken(nonce, enctoken []byte) (status int, errorStr string, token string) {
+	tokendata, err := w.aesgcm.Open(nil, nonce, enctoken, nil)
+	if err != nil {
+		status = http.StatusUnauthorized
+		errorStr = err.Error()
+		return
+	}
+
+	token = string(tokendata)
+	status = http.StatusOK
 	return
+}
+
+func (w *webSessionFactory) splitCheckToken(token string) (status int, errorStr string, username string, isAdmin bool) {
+	tmp := strings.SplitN(token, ":", 3)
+	if len(tmp) != 3 {
+		status = http.StatusBadRequest
+		errorStr = "invalid session token"
+		return
+	}
+
+	username = tmp[0]
+
+	switch tmp[1] {
+	case "true":
+		isAdmin = true
+	case "false":
+		isAdmin = false
+	default:
+		status = http.StatusBadRequest
+		errorStr = "invalid session token"
+		return
+	}
+
+	tmpTime, err := strconv.ParseInt(tmp[2], 10, 64)
+	if err != nil {
+		status = http.StatusBadRequest
+		errorStr = fmt.Sprintf("invalid session token: %v", err)
+		return
+	}
+	st := time.Unix(tmpTime, 0)
+	age := time.Since(st)
+	if age < 0 {
+		status = http.StatusBadRequest
+		errorStr = "session token is from the future."
+		return
+	}
+	if age > w.lifetime {
+		status = http.StatusUnauthorized
+		errorStr = "session timed out."
+		return
+	}
+
+	status = http.StatusOK
+	return
+}
+
+func (w *webSessionFactory) Generate(username string, isAdmin bool) (status int, errorStr, session string) {
+	token := fmt.Sprintf("%s:%t:%d", username, isAdmin, time.Now().Unix())
+
+	var nonce, enctoken []byte
+	status, errorStr, nonce, enctoken = w.sealToken(token)
+	if status != http.StatusOK {
+		return
+	}
+	session = fmt.Sprintf("%s:%s", base64.URLEncoding.EncodeToString(nonce), base64.URLEncoding.EncodeToString(enctoken))
+	status = http.StatusOK
+	return
+}
+
+func (w *webSessionFactory) Check(session string) (status int, errorStr string, username string, isAdmin bool) {
+	tmp := strings.SplitN(session, ":", 2)
+	if len(tmp) != 2 {
+		status = http.StatusBadRequest
+		errorStr = "invalid session token"
+		return
+	}
+
+	nonce, err := base64.URLEncoding.DecodeString(tmp[0])
+	if err != nil {
+		status = http.StatusBadRequest
+		errorStr = fmt.Sprintf("invalid session token: %v", err)
+		return
+	}
+
+	enctoken, err := base64.URLEncoding.DecodeString(tmp[1])
+	if err != nil {
+		status = http.StatusBadRequest
+		errorStr = fmt.Sprintf("invalid session token: %v", err)
+		return
+	}
+
+	var token string
+	status, errorStr, token = w.openToken(nonce, enctoken)
+	if status != http.StatusOK {
+		return
+	}
+
+	return w.splitCheckToken(token)
 }

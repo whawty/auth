@@ -71,7 +71,7 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 	}
 
 	// TODO: check password, get admin status
-	respdata.status, respdata.Session, respdata.Error = sessions.generate(reqdata.Username, isAdmin)
+	respdata.status, respdata.Error, respdata.Session = sessions.Generate(reqdata.Username, isAdmin)
 
 SendResponse:
 	w.Header().Set("Content-Type", "application/json")
@@ -98,6 +98,8 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 	decoder := json.NewDecoder(r.Body)
 	reqdata := &webAddRequest{}
 	respdata := &webAddResponse{}
+	var username string
+	var isAdmin bool
 
 	if err := decoder.Decode(reqdata); err != nil {
 		respdata.Error = fmt.Sprintf("Error parsing JSON response: %s", err)
@@ -111,8 +113,19 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 		goto SendResponse
 	}
 
-	respdata.status = http.StatusNotImplemented
-	respdata.Error = fmt.Sprintf("Error: ADD is not yet implemented!")
+	respdata.status, respdata.Error, username, isAdmin = sessions.Check(reqdata.Session)
+	if respdata.status != http.StatusOK {
+		goto SendResponse
+	}
+
+	if !isAdmin {
+		respdata.status = http.StatusForbidden
+		respdata.Error = "only admins are allowed to add users"
+		goto SendResponse
+	}
+
+	wdl.Printf("admin '%s' told me to add user '%s' with password '%s' with admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
+	// TODO: add user to store
 
 SendResponse:
 	w.Header().Set("Content-Type", "application/json")
@@ -330,7 +343,7 @@ func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func runWebApi(addr string, store *StoreChan) (err error) {
 	var sessions *webSessionFactory
-	if sessions, err = newWebSessionFactory(); err != nil {
+	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil {
 		return err
 	}
 

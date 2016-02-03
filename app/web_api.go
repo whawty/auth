@@ -173,9 +173,10 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 }
 
 type webUpdateRequest struct {
-	Session  string `json:"session"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Session     string `json:"session"`
+	Username    string `json:"username"`
+	OldPassword string `json:"old-password"`
+	NewPassword string `json:"new-password"`
 }
 
 type webUpdateResponse struct {
@@ -195,27 +196,36 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	if reqdata.Session == "" || reqdata.Username == "" || reqdata.Password == "" {
-		respdata.Error = "empty session, username or password is not allowed"
+	if reqdata.Username == "" || reqdata.NewPassword == "" {
+		respdata.Error = "empty username or new-password is not allowed"
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
 
-	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
-	if status != http.StatusOK {
-		respdata.Error = errorStr
-		sendWebResponse(w, status, respdata)
+	if reqdata.Session != "" && reqdata.OldPassword == "" {
+		status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+		if status != http.StatusOK {
+			respdata.Error = errorStr
+			sendWebResponse(w, status, respdata)
+			return
+		}
+
+		if !isAdmin && username != reqdata.Username {
+			respdata.Error = "only admins are allowed to update any users' password"
+			sendWebResponse(w, http.StatusForbidden, respdata)
+			return
+		}
+		wdl.Printf("user '%s' want's to update user '%s' with password '%s', using a valid session", username, reqdata.Username, reqdata.NewPassword)
+	} else if reqdata.Session == "" && reqdata.OldPassword != "" {
+		// TODO: check Username/OldPassword
+		wdl.Printf("update user '%s' with password '%s', using current(old) password", reqdata.Username, reqdata.NewPassword)
+	} else {
+		respdata.Error = "exactly one of session or old-password must be supplied"
+		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
 
-	if !isAdmin && username != reqdata.Username {
-		respdata.Error = "only admins are allowed to update any users' password"
-		sendWebResponse(w, http.StatusForbidden, respdata)
-		return
-	}
-
-	wdl.Printf("user '%s' want's to update user '%s' with password '%s'", username, reqdata.Username, reqdata.Password)
-	// TODO: update user password
+	// TODO: update user to NewPassword
 	respdata.Error = fmt.Sprintf("Error: UPDATE is not yet implemented!")
 	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }

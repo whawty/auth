@@ -119,7 +119,7 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 		return
 	}
 
-	wdl.Printf("admin '%s' told me to add user '%s' with password '%s' and admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
+	wdl.Printf("admin '%s' want's to add user '%s' with password '%s' and admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
 	// TODO: add user to store
 	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
 	sendWebResponse(w, http.StatusNotImplemented, respdata)
@@ -166,7 +166,7 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	wdl.Printf("admin '%s' told me to remove user '%s'", username, reqdata.Username)
+	wdl.Printf("admin '%s' want's to remove user '%s'", username, reqdata.Username)
 	// TODO: remove user from store
 	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
 	sendWebResponse(w, http.StatusNotImplemented, respdata)
@@ -209,7 +209,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 	}
 
 	if !isAdmin && username != reqdata.Username {
-		respdata.Error = "only admins are allowed to any users' password"
+		respdata.Error = "only admins are allowed to update any users' password"
 		sendWebResponse(w, http.StatusForbidden, respdata)
 		return
 	}
@@ -263,7 +263,7 @@ func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.Res
 	}
 
 	wdl.Printf("admin '%s' want's to set admin status of user '%s' to %t", username, reqdata.Username, reqdata.IsAdmin)
-	// TODO: update user password
+	// TODO: update admin status of user
 	respdata.Error = fmt.Sprintf("Error: SET_ADMIN is not yet implemented!")
 	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
@@ -381,7 +381,7 @@ func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func runWebApi(addr string, store *StoreChan) (err error) {
 	var sessions *webSessionFactory
-	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil {
+	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
 	}
 

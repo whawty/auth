@@ -68,10 +68,17 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 		return
 	}
 
-	// TODO: check password and get admin status
-	isAdmin := false
-	status := http.StatusOK
+	ok, isAdmin, err := store.Authenticate(reqdata.Username, reqdata.Password)
+	if err != nil || !ok {
+		respdata.Error = "authentication failed"
+		if err != nil {
+			respdata.Error += ": " + err.Error()
+		}
+		sendWebResponse(w, http.StatusUnauthorized, respdata)
+		return
+	}
 
+	status := http.StatusOK
 	status, respdata.Error, respdata.Session = sessions.Generate(reqdata.Username, isAdmin)
 	sendWebResponse(w, status, respdata)
 }
@@ -217,7 +224,15 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		}
 		wdl.Printf("user '%s' want's to update user '%s' with password '%s', using a valid session", username, reqdata.Username, reqdata.NewPassword)
 	} else if reqdata.Session == "" && reqdata.OldPassword != "" {
-		// TODO: check Username/OldPassword
+		ok, _, err := store.Authenticate(reqdata.Username, reqdata.OldPassword)
+		if err != nil || !ok {
+			respdata.Error = "authentication failed"
+			if err != nil {
+				respdata.Error += ": " + err.Error()
+			}
+			sendWebResponse(w, http.StatusUnauthorized, respdata)
+			return
+		}
 		wdl.Printf("update user '%s' with password '%s', using current(old) password", reqdata.Username, reqdata.NewPassword)
 	} else {
 		respdata.Error = "exactly one of session or old-password must be supplied"

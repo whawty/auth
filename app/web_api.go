@@ -119,9 +119,10 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 		return
 	}
 
-	wdl.Printf("admin '%s' told me to add user '%s' with password '%s' with admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
+	wdl.Printf("admin '%s' told me to add user '%s' with password '%s' and admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
 	// TODO: add user to store
-	sendWebResponse(w, status, respdata)
+	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
+	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
 
 type webRemoveRequest struct {
@@ -152,9 +153,23 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	status := http.StatusNotImplemented
+	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+	if status != http.StatusOK {
+		respdata.Error = errorStr
+		sendWebResponse(w, status, respdata)
+		return
+	}
+
+	if !isAdmin {
+		respdata.Error = "only admins are allowed to remove users"
+		sendWebResponse(w, http.StatusForbidden, respdata)
+		return
+	}
+
+	wdl.Printf("admin '%s' told me to remove user '%s'", username, reqdata.Username)
+	// TODO: remove user from store
 	respdata.Error = fmt.Sprintf("Error: REMOVE is not yet implemented!")
-	sendWebResponse(w, status, respdata)
+	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
 
 type webUpdateRequest struct {
@@ -186,9 +201,23 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	status := http.StatusNotImplemented
+	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+	if status != http.StatusOK {
+		respdata.Error = errorStr
+		sendWebResponse(w, status, respdata)
+		return
+	}
+
+	if !isAdmin && username != reqdata.Username {
+		respdata.Error = "only admins are allowed to any users' password"
+		sendWebResponse(w, http.StatusForbidden, respdata)
+		return
+	}
+
+	wdl.Printf("user '%s' want's to update user '%s' with password '%s'", username, reqdata.Username, reqdata.Password)
+	// TODO: update user password
 	respdata.Error = fmt.Sprintf("Error: UPDATE is not yet implemented!")
-	sendWebResponse(w, status, respdata)
+	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
 
 type webSetAdminRequest struct {
@@ -220,9 +249,23 @@ func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.Res
 		return
 	}
 
-	status := http.StatusNotImplemented
+	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+	if status != http.StatusOK {
+		respdata.Error = errorStr
+		sendWebResponse(w, status, respdata)
+		return
+	}
+
+	if !isAdmin {
+		respdata.Error = "only admins are allowed to change the admin status of users"
+		sendWebResponse(w, http.StatusForbidden, respdata)
+		return
+	}
+
+	wdl.Printf("admin '%s' want's to set admin status of user '%s' to %t", username, reqdata.Username, reqdata.IsAdmin)
+	// TODO: update user password
 	respdata.Error = fmt.Sprintf("Error: SET_ADMIN is not yet implemented!")
-	sendWebResponse(w, status, respdata)
+	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
 
 type webListRequest struct {
@@ -253,9 +296,23 @@ func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.Respons
 		return
 	}
 
-	status := http.StatusNotImplemented
+	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+	if status != http.StatusOK {
+		respdata.Error = errorStr
+		sendWebResponse(w, status, respdata)
+		return
+	}
+
+	if !isAdmin {
+		respdata.Error = "only admins are allowed to list users"
+		sendWebResponse(w, http.StatusForbidden, respdata)
+		return
+	}
+
+	wdl.Printf("admin '%s' want's to list all supported users", username)
+	// TODO: return list of all users
 	respdata.Error = fmt.Sprintf("Error: LIST is not yet implemented!")
-	sendWebResponse(w, status, respdata)
+	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
 
 type webListFullRequest struct {
@@ -286,9 +343,23 @@ func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.Res
 		return
 	}
 
-	status := http.StatusNotImplemented
+	status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
+	if status != http.StatusOK {
+		respdata.Error = errorStr
+		sendWebResponse(w, status, respdata)
+		return
+	}
+
+	if !isAdmin {
+		respdata.Error = "only admins are allowed to list users"
+		sendWebResponse(w, http.StatusForbidden, respdata)
+		return
+	}
+
+	wdl.Printf("admin '%s' want's to list all users", username)
+	// TODO: return full list of all users
 	respdata.Error = fmt.Sprintf("Error: LIST_FULL is not yet implemented!")
-	sendWebResponse(w, status, respdata)
+	sendWebResponse(w, http.StatusNotImplemented, respdata)
 }
 
 func sendWebResponse(w http.ResponseWriter, status int, respdata interface{}) {

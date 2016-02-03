@@ -439,6 +439,16 @@ func runWebApi(addr string, store *StoreChan) (err error) {
 	http.Handle("/api/list", webHandler{store, sessions, handleWebList})
 	http.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
+	http.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.Dir("./html/")))) // TODO: static directory... make this configurable
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
+	})
+
 	wl.Printf("web-api: listening on '%s'", addr)
 	server := &http.Server{Addr: addr, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
 	return server.ListenAndServe()

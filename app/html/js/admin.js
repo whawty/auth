@@ -32,7 +32,7 @@ function auth_loginSuccess(data) {
      auth_session = data.session;
 
      sessionStorage.setItem("auth_username", auth_username);
-     sessionStorage.setItem("auth_admin", auth_admin);
+     sessionStorage.setItem("auth_admin", (auth_admin) ? "true" : "false");
      sessionStorage.setItem("auth_session", auth_session);
 
      $('#username-field').html(auth_username);
@@ -72,7 +72,7 @@ function auth_logout() {
 
 function auth_init() {
   auth_username = sessionStorage.getItem("auth_username");
-  auth_admin = sessionStorage.getItem("auth_admin");
+  auth_admin = (sessionStorage.getItem("auth_admin") == "true") ? true : false;
   auth_session = sessionStorage.getItem("auth_session");
 
   if(auth_session && auth_username) {
@@ -100,7 +100,7 @@ function auth_cleanup() {
   sessionStorage.removeItem("auth_session");
 
   auth_username = null;
-  auth_admin = null;
+  auth_admin = false;
   auth_session = null;
 
   $("#username").val('').focus();

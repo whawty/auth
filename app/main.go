@@ -250,7 +250,7 @@ func cmdSetAdmin(configfile string, docheck bool, c *cli.Context) {
 		if isAdmin {
 			fmt.Printf("user '%s' is now an admin!\n", username)
 		} else {
-			fmt.Printf("user '%s' is now n normal user!\n", username)
+			fmt.Printf("user '%s' is now a normal user!\n", username)
 		}
 	}
 }

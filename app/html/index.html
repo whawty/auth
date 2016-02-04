@@ -31,10 +31,28 @@
       </div>
 
       <div id="mainwindow">
-        <span>logged in as <strong id="username-field">UNKNOWN</strong></span>
-        <button style="margin-top: 0;" type="button" class="btn btn-danger btn-sm" onclick="auth_logout()">
-          <i class="icon-off icon-white"></i> Log Out
-        </button>
+
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+          <div class="container-fluid">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <span class="navbar-brand">WHAWTY auth - Admin Interface</span>
+            </div>
+
+            <div class="collapse navbar-collapse navbar-right" id="navbar-collapse-1">
+              <p class="navbar-text">logged in as <strong id="username-field">UNKNOWN</strong></p>
+              <button type="button" class="btn btn-danger navbar-btn" onclick="auth_logout()">
+                <i class="icon-off icon-white"></i> Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>

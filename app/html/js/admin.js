@@ -50,7 +50,7 @@ function auth_loginSuccess(data) {
 }
 
 function auth_loginError(req, status, error) {
-   var message = req.error + ': ' + error;
+   var message = status + ': ' + error;
    if(req.status == 401) {
      message = "username and/or password are wrong!";
    }

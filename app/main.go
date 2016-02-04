@@ -404,7 +404,7 @@ func main() {
 		cli.StringFlag{
 			Name:        "conf, c",
 			Value:       "/etc/whawty-auth/default.json",
-			Usage:       "base directory of the whawty auth store",
+			Usage:       "path to the configuration file",
 			Destination: &configfile,
 			EnvVar:      "WHAWTY_AUTH_CONFIG",
 		},

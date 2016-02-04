@@ -9,6 +9,9 @@
 
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/admin.css" rel="stylesheet">
+    <script src="jquery/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="js/admin.js"></script>
   </head>
   <body>
 
@@ -22,15 +25,23 @@
           <input id="username" type="text" class="form-control" placeholder="Username" required autofocus>
           <input id="password" type="password" class="form-control" placeholder="Password" required>
           <div class="alertbox"></div>
-          <button class="btn btn-primary btn-large" type="submit"><i class="icon-user icon-white"></i> Anmelden</button>
+          <button class="btn btn-primary btn-large" type="submit"><i class="icon-user icon-white"></i> Log In</button>
         </form>
 
       </div>
 
       <div id="mainwindow">
-
+        <span>logged in as <strong id="username-field">UNKNOWN</strong></span>
+        <button style="margin-top: 0;" type="button" class="btn btn-danger btn-sm" onclick="auth_logout()">
+          <i class="icon-off icon-white"></i> Log Out
+        </button>
       </div>
 
     </div>
+
+    <script type="text/javascript">
+      admin_init();
+    </script>
+
   </body>
 </html>

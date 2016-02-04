@@ -2,11 +2,35 @@
 <html>
   <head>
     <title>whawty auth - admin interface</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="whawty auth admin interface">
+    <meta name="author" content="Christian Pointner <equinox@spreadspace.org>">
+
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/admin.css" rel="stylesheet">
   </head>
   <body>
-    <h1>whawty auth</h1>
-    <p>
-      Welcome to whawty auth admin interface
-    </p>
+
+    <div class="container">
+
+      <div id="loginbox">
+
+        <form id="loginform" class="form-auth" role="form">
+          <img src="img/logo.png" alt="logo" />
+          <h1 class="form-auth-heading">WHAWTY auth</h1>
+          <input id="username" type="text" class="form-control" placeholder="Username" required autofocus>
+          <input id="password" type="password" class="form-control" placeholder="Password" required>
+          <div class="alertbox"></div>
+          <button class="btn btn-primary btn-large" type="submit"><i class="icon-user icon-white"></i> Anmelden</button>
+        </form>
+
+      </div>
+
+      <div id="mainwindow">
+
+      </div>
+
+    </div>
   </body>
 </html>

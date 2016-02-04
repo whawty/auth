@@ -137,6 +137,7 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 	if err := store.Add(reqdata.Username, reqdata.Password, reqdata.IsAdmin); err != nil {
 		respdata.Error = err.Error()
 		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 	sendWebResponse(w, http.StatusOK, respdata)
 }
@@ -187,6 +188,7 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 	if err := store.Remove(reqdata.Username); err != nil {
 		respdata.Error = err.Error()
 		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 	sendWebResponse(w, http.StatusOK, respdata)
 }
@@ -255,6 +257,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 	if err := store.Update(reqdata.Username, reqdata.NewPassword); err != nil {
 		respdata.Error = err.Error()
 		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 	sendWebResponse(w, http.StatusOK, respdata)
 }
@@ -306,6 +309,7 @@ func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.Res
 	if err := store.SetAdmin(reqdata.Username, reqdata.IsAdmin); err != nil {
 		respdata.Error = err.Error()
 		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 	sendWebResponse(w, http.StatusOK, respdata)
 }
@@ -357,6 +361,7 @@ func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.Respons
 	if respdata.List, err = store.List(); err != nil {
 		respdata.Error = err.Error()
 		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 	sendWebResponse(w, http.StatusOK, respdata)
 }
@@ -408,6 +413,7 @@ func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.Res
 	if respdata.List, err = store.ListFull(); err != nil {
 		respdata.Error = err.Error()
 		sendWebResponse(w, http.StatusBadRequest, respdata)
+		return
 	}
 	sendWebResponse(w, http.StatusOK, respdata)
 }

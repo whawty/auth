@@ -14,6 +14,9 @@ alertbox.error = function (dest, heading, message) {
 alertbox.info = function (dest, heading, message) {
   $('#' + dest + ' .alertbox').html('<div class="alert alert-info"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
 }
+alertbox.success = function (dest, heading, message) {
+  $('#' + dest + ' .alertbox').html('<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
+}
 
 /*
  *
@@ -115,11 +118,68 @@ function auth_cleanup() {
  *
  */
 
+function main_updateSuccess(data) {
+  alertbox.success('mainwindow', "password update", "successfully updated password for...");
+  main_updateUserlist()
+}
+
+function getUpdateButton(user) {
+  var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm").text("Update Password")
+  return btn.click(function() {
+      $("#newpassword").val('')
+      $("#newpassword-retype").val('')
+      $('#changepw-userfield').html(user);
+
+      $("#changepwform").submit(function(event) {
+          event.preventDefault();
+          var newpassword = $("#newpassword").val()
+          if (newpassword != $("#newpassword-retype").val()) {
+              alertbox.error('passwordModal', "Error", "Passwords mismatch");
+              $("#newpassword").val('')
+              $("#newpassword-retype").val('')
+              return
+          }
+          var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
+          $.post("/api/update", data, main_updateSuccess, 'json')
+              .fail(main_reqError)
+          $("#passwordModal").modal('hide');
+      });
+      $("#passwordModal").modal('show');
+  });
+}
+
+function main_removeSuccess(data) {
+  main_updateUserlist()
+}
+
+function getRemoveButton(user) {
+  var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm").text("Remove")
+  return btn.click(function() {
+      var data = JSON.stringify({ session: auth_session, username: user })
+      $.post("/api/remove", data, main_removeSuccess, 'json')
+          .fail(main_reqError)
+  });
+}
+
+function main_removeSuccess(data) {
+  main_updateUserlist()
+}
+
+function getSetAdminButton(user, oldstate) {
+  var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm").text("Change Role");
+  var newstate = !oldstate;
+  return btn.click(function() {
+      var data = JSON.stringify({ session: auth_session, username: user, admin: newstate })
+      $.post("/api/set-admin", data, main_removeSuccess, 'json')
+          .fail(main_reqError)
+  });
+}
+
 function getRoleLabel(admin) {
   if (admin == true) {
-    return $('<span>').addClass("label").addClass("label-danger").text("Admin")
+    return $('<span>').addClass("label").addClass("label-primary").text("Admin")
   } else {
-    return $('<span>').addClass("label").addClass("label-success").text("User")
+    return $('<span>').addClass("label").addClass("label-default").text("User")
   }
 }
 
@@ -140,12 +200,20 @@ function main_userlistSuccess(data) {
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].supported)))
         .append($('<td>').text(data.list[user].formatid))
         .append($('<td>').text(data.list[user].formatparams))
-        .append($('<td>').addClass("text-center").text("<here be buttons>"))
+        .append($('<td>').addClass("text-center").append(getSetAdminButton(user, data.list[user].admin))
+                                                 .append(getUpdateButton(user))
+                                                 .append(getRemoveButton(user)));
     $('#user-list > tbody:last').append(row);
   }
 }
 
-function main_userlistError(req, status, error) {
+function main_updateUserlist() {
+  var data = JSON.stringify({ session: auth_session, })
+  $.post("/api/list-full", data, main_userlistSuccess, 'json')
+          .fail(main_reqError)
+}
+
+function main_reqError(req, status, error) {
   var data = JSON.parse(req.responseText);
   var message = status + ': ';
   if (data.error != "") {
@@ -153,13 +221,16 @@ function main_userlistError(req, status, error) {
   } else {
     message += error;
   }
-  alertbox.error('mainwindow', "Error fetching user list", message);
-}
 
-function main_updateUserlist() {
-  var data = JSON.stringify({ session: auth_session, })
-  $.post("/api/list-full", data, main_userlistSuccess, 'json')
-          .fail(main_userlistError)
+  if(req.status == 401) {
+    var user = auth_username
+    auth_logout();
+    $("#username").val(user);
+    $("#password").focus();
+    alertbox.error('loginbox', "Authentication failure", message);
+  } else {
+    alertbox.error('mainwindow', "API Error", message);
+  }
 }
 
 function main_init() {

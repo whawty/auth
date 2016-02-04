@@ -73,3 +73,7 @@ body {
 .text-center {
   text-align: center;
 }
+
+#user-list .btn {
+  margin-left: 1em;
+}

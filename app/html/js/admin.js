@@ -43,6 +43,7 @@ function auth_loginSuccess(data) {
      }
      $('#loginbox').slideUp();
      $('#mainwindow').fadeIn();
+     main_init();
    } else {
      alertbox.error('loginbox', "Error logging in", data.errorstring);
      auth_cleanup();
@@ -83,6 +84,7 @@ function auth_init() {
     } else {
       $('#role-field').html("User");
     }
+    main_init();
   } else {
     $("#mainwindow").hide();
   }
@@ -105,4 +107,69 @@ function auth_cleanup() {
 
   $("#username").val('').focus();
   $("#password").val('');
+}
+
+/*
+ *
+ * Main
+ *
+ */
+
+function getRoleLabel(admin) {
+  if (admin == true) {
+    return $('<span>').addClass("label").addClass("label-danger").text("Admin")
+  } else {
+    return $('<span>').addClass("label").addClass("label-success").text("User")
+  }
+}
+
+function getBoolIcon(flag) {
+  if (flag == true) {
+    return $('<span>').addClass("glyphicon").addClass("glyphicon-ok-sign").css("color", "#5cb85c").css("font-size", "1.4em");
+  } else {
+    return $('<span>').addClass("glyphicon").addClass("glyphicon-remove-sign").css("color", "#d9534f").css("font-size", "1.4em");
+  }
+}
+
+function main_userlistSuccess(data) {
+  $('#user-list tbody').find('tr').remove();
+  for (var user in data.list) {
+    var row = $('<tr>').append($('<td>').text(user))
+        .append($('<td>').addClass("text-center").append(getRoleLabel(data.list[user].admin)))
+        .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].valid)))
+        .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].supported)))
+        .append($('<td>').text(data.list[user].formatid))
+        .append($('<td>').text(data.list[user].formatparams))
+        .append($('<td>').addClass("text-center").text("<here be buttons>"))
+    $('#user-list > tbody:last').append(row);
+  }
+}
+
+function main_userlistError(req, status, error) {
+  var data = JSON.parse(req.responseText);
+  var message = status + ': ';
+  if (data.error != "") {
+    message += data.error;
+  } else {
+    message += error;
+  }
+  alertbox.error('mainwindow', "Error fetching user list", message);
+}
+
+function main_updateUserlist() {
+  var data = JSON.stringify({ session: auth_session, })
+  $.post("/api/list-full", data, main_userlistSuccess, 'json')
+          .fail(main_userlistError)
+}
+
+function main_init() {
+  if (auth_admin == true) {
+    $("#admin-view").show();
+    $("#user-view").hide();
+    main_updateUserlist();
+  } else {
+    $("#admin-view").hide();
+    $("#user-view").show();
+    alertbox.warning('mainwindow', "not yet implemented", "The user view has not been implemented yet");
+  }
 }

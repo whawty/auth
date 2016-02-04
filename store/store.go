@@ -319,7 +319,7 @@ type UserFull struct {
 	IsAdmin      bool   `json:"admin"`
 	IsValid      bool   `json:"valid"`
 	IsSupported  bool   `json:"supported"`
-	FormatID     string `json:"fromatid"`
+	FormatID     string `json:"formatid"`
 	FormatParams string `json:"formatparams"`
 }
 

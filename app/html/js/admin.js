@@ -38,11 +38,11 @@ function auth_loginSuccess(data) {
      sessionStorage.setItem("auth_admin", (auth_admin) ? "true" : "false");
      sessionStorage.setItem("auth_session", auth_session);
 
-     $('#username-field').html(auth_username);
+     $('#username-field').text(auth_username);
      if (auth_admin == true) {
-       $('#role-field').html("Admin");
+       $('#role-field').text("Admin");
      } else {
-       $('#role-field').html("User");
+       $('#role-field').text("User");
      }
      $('#loginbox').slideUp();
      $('#mainwindow').fadeIn();
@@ -69,8 +69,8 @@ function auth_logout() {
   $("#username").val('');
   $("#password").val('');
   $("#mainwindow").fadeOut();
-  $('#username-field').html('');
-  $('#role-field').html('');
+  $('#username-field').text('');
+  $('#role-field').text('');
   $('#loginbox').slideDown();
 }
 
@@ -81,11 +81,11 @@ function auth_init() {
 
   if(auth_session && auth_username) {
     $("#loginbox").hide();
-    $('#username-field').html(auth_username);
+    $('#username-field').text(auth_username);
     if (auth_admin == true) {
-      $('#role-field').html("Admin");
+      $('#role-field').text("Admin");
     } else {
-      $('#role-field').html("User");
+      $('#role-field').text("User");
     }
     main_init();
   } else {
@@ -127,12 +127,9 @@ function getUpdateButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm")
   btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Update Password')
   return btn.click(function() {
-      $("#newpassword").val('')
-      $("#newpassword-retype").val('')
-      $('#passwordModal .alertbox').html('');
-      $('#changepw-userfield').html(user);
+      main_cleanupPasswordModal()
 
-      $("#changepwform").off("submit");
+      $('#changepw-userfield').text(user);
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
@@ -247,13 +244,9 @@ function main_setupAddButton() {
       if ( $('input[name="addrole"]:checked').val()  == "admin") {
         admin = true;
       }
+      main_cleanupPasswordModal()
 
-      $("#newpassword").val('')
-      $("#newpassword-retype").val('')
-      $('#passwordModal .alertbox').html('');
-      $('#changepw-userfield').html(user);
-
-      $("#changepwform").off("submit");
+      $('#changepw-userfield').text(user);
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
@@ -272,12 +265,45 @@ function main_setupAddButton() {
   });
 }
 
+function main_cleanupPasswordModal() {
+  $("#newpassword").val('')
+  $("#newpassword").trigger('keyup')
+  $("#newpassword-retype").val('')
+  $('#passwordModal .alertbox').text('');
+  $("#changepwform").off("submit");
+}
+
+function main_enablePWStrength() {
+  $('#newpassword').pwstrength({
+    common: {
+      minChar: 8,
+      usernameField: '#changepw-userfield',
+      debug: true,
+    },
+    rules: {
+      activated: {
+        wordTwoCharacterClasses: true,
+        wordRepetitions: true,
+      },
+      scores: {
+        wordSimilarToUsername: -500,
+        wordRepetitions: -100,
+      }
+    },
+    ui: {
+      showVerdicts: false,
+      showVerdictsInsideProgressBar: false,
+    }
+  });
+}
+
 function main_init() {
   if (auth_admin == true) {
     $("#admin-view").show();
     $("#user-view").hide();
-    main_updateUserlist();
     main_setupAddButton();
+    main_enablePWStrength();
+    main_updateUserlist();
   } else {
     $("#admin-view").hide();
     $("#user-view").show();

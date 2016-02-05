@@ -82,3 +82,7 @@ body {
   margin-bottom: 2em;
   padding: 0.3em;
 }
+
+#changepwform .progress {
+  margin: 0.5em 1em 1.5em 1em;
+}

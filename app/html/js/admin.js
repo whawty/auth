@@ -124,7 +124,8 @@ function main_updateSuccess(data) {
 }
 
 function getUpdateButton(user) {
-  var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm").text("Update Password")
+  var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm")
+  btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Update Password')
   return btn.click(function() {
       $("#newpassword").val('')
       $("#newpassword-retype").val('')
@@ -156,7 +157,8 @@ function main_removeSuccess(data) {
 }
 
 function getRemoveButton(user) {
-  var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm").text("Remove")
+  var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm")
+  btn.html('<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>&nbsp;&nbsp;Remove')
   return btn.click(function() {
       var data = JSON.stringify({ session: auth_session, username: user })
       $.post("/api/remove", data, main_removeSuccess, 'json')
@@ -169,7 +171,8 @@ function main_setadminSuccess(data) {
 }
 
 function getSetAdminButton(user, oldstate) {
-  var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm").text("Change Role");
+  var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm")
+  btn.html('<span class="glyphicon glyphicon-random" aria-hidden="true"></span>&nbsp;&nbsp;Change Role')
   var newstate = !oldstate;
   return btn.click(function() {
       var data = JSON.stringify({ session: auth_session, username: user, admin: newstate })
@@ -236,11 +239,45 @@ function main_reqError(req, status, error) {
   }
 }
 
+function main_setupAddButton() {
+  $("#adduserform").submit(function(event) {
+      event.preventDefault();
+      var user = $("#addusername").val()
+      var admin = false
+      if ( $('input[name="addrole"]:checked').val()  == "admin") {
+        admin = true;
+      }
+
+      $("#newpassword").val('')
+      $("#newpassword-retype").val('')
+      $('#passwordModal .alertbox').html('');
+      $('#changepw-userfield').html(user);
+
+      $("#changepwform").off("submit");
+      $("#changepwform").submit(function(event) {
+          event.preventDefault();
+          var newpassword = $("#newpassword").val()
+          if (newpassword != $("#newpassword-retype").val()) {
+              alertbox.error('passwordModal', "Error", "Passwords mismatch");
+              $("#newpassword").val('')
+              $("#newpassword-retype").val('')
+              return
+          }
+          var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
+          $.post("/api/add", data, main_updateSuccess, 'json')
+              .fail(main_reqError)
+          $("#passwordModal").modal('hide');
+      });
+      $("#passwordModal").modal('show');
+  });
+}
+
 function main_init() {
   if (auth_admin == true) {
     $("#admin-view").show();
     $("#user-view").hide();
     main_updateUserlist();
+    main_setupAddButton();
   } else {
     $("#admin-view").hide();
     $("#user-view").show();

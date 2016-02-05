@@ -126,7 +126,7 @@ function main_updateSuccess(data) {
 
 function getUpdateButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm")
-  btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Update Password')
+  btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Password')
   return btn.click(function() {
       main_cleanupPasswordModal()
 
@@ -170,7 +170,7 @@ function main_setadminSuccess(data) {
 
 function getSetAdminButton(user, oldstate) {
   var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm")
-  btn.html('<span class="glyphicon glyphicon-random" aria-hidden="true"></span>&nbsp;&nbsp;Change Role')
+  btn.html('<span class="glyphicon glyphicon-random" aria-hidden="true"></span>&nbsp;&nbsp;Role')
   var newstate = !oldstate;
   return btn.click(function() {
       var data = JSON.stringify({ session: auth_session, username: user, admin: newstate })
@@ -220,8 +220,7 @@ function main_userlistSuccess(data) {
         .append($('<td>').append(getLastChange(new Date())))
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].valid)))
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].supported)))
-        .append($('<td>').text(data.list[user].formatid))
-        .append($('<td>').text(data.list[user].formatparams))
+        .append($('<td>').text(data.list[user].formatid + ' (' + data.list[user].formatparams + ')'))
         .append($('<td>').addClass("text-center").append(getSetAdminButton(user, data.list[user].admin))
                                                  .append(getUpdateButton(user))
                                                  .append(getRemoveButton(user)));

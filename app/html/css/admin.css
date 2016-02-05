@@ -92,6 +92,10 @@ body {
   padding: 0.3em;
 }
 
+#adduser-row .btn {
+  width: 100%
+}
+
 #changepwform .progress {
   margin: 0.5em 1em 1.5em 1em;
 }

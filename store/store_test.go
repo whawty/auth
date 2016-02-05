@@ -253,7 +253,7 @@ func TestList(t *testing.T) {
 	} else if len(list) != 1 {
 		t.Fatalf("list should return a list of length 1")
 	} else {
-		if isAdmin, ok := list[adminuser]; !ok || !isAdmin {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin {
 			t.Fatalf("list returned wrong user list")
 		}
 	}
@@ -267,10 +267,10 @@ func TestList(t *testing.T) {
 	} else if len(list) != 2 {
 		t.Fatalf("list should return a list of length 2")
 	} else {
-		if isAdmin, ok := list[adminuser]; !ok || !isAdmin {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin {
 			t.Fatalf("list returned wrong user list")
 		}
-		if isAdmin, ok := list[user1]; !ok || isAdmin {
+		if user, ok := list[user1]; !ok || user.IsAdmin {
 			t.Fatalf("list returned wrong user list")
 		}
 	}
@@ -284,10 +284,10 @@ func TestList(t *testing.T) {
 	} else if len(list) != 2 {
 		t.Fatalf("list should return a list of length 2")
 	} else {
-		if isAdmin, ok := list[adminuser]; !ok || !isAdmin {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin {
 			t.Fatalf("list returned wrong user list")
 		}
-		if isAdmin, ok := list[user1]; !ok || !isAdmin {
+		if user, ok := list[user1]; !ok || !user.IsAdmin {
 			t.Fatalf("list returned wrong user list")
 		}
 	}

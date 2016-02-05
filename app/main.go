@@ -270,13 +270,13 @@ func cmdListFull(s *StoreChan) {
 
 	table := uitable.New()
 	table.MaxColWidth = 80
-	table.AddRow("NAME", "TYPE", "VALID", "SUPPORTED", "FORMAT", "PARAMS")
+	table.AddRow("NAME", "TYPE", "LAST-CHANGED", "VALID", "SUPPORTED", "FORMAT", "PARAMS")
 	for _, k := range keys {
 		t := "user"
 		if lst[k].IsAdmin {
 			t = "admin"
 		}
-		table.AddRow(k, t, lst[k].IsValid, lst[k].IsSupported, lst[k].FormatID, lst[k].FormatParams)
+		table.AddRow(k, t, lst[k].LastChanged.String(), lst[k].IsValid, lst[k].IsSupported, lst[k].FormatID, lst[k].FormatParams)
 	}
 	fmt.Println(table)
 }
@@ -296,13 +296,13 @@ func cmdListSupported(s *StoreChan) {
 
 	table := uitable.New()
 	table.MaxColWidth = 50
-	table.AddRow("NAME", "TYPE")
+	table.AddRow("NAME", "TYPE", "LAST-CHANGED")
 	for _, k := range keys {
 		t := "user"
-		if lst[k] {
+		if lst[k].IsAdmin {
 			t = "admin"
 		}
-		table.AddRow(k, t)
+		table.AddRow(k, t, lst[k].LastChanged.String())
 	}
 	fmt.Println(table)
 }
@@ -345,7 +345,7 @@ func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
 		password = string(pwd)
 	}
 
-	ok, isAdmin, err := s.GetInterface().Authenticate(username, password)
+	ok, isAdmin, _, err := s.GetInterface().Authenticate(username, password)
 	if err != nil {
 		fmt.Printf("Error authenticating user '%s': %s\n", username, err)
 		os.Exit(2)

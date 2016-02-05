@@ -45,6 +45,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"gopkg.in/spreadspace/scryptauth.v2"
 )
@@ -201,12 +202,13 @@ func listSupportedUsers(dir *os.File, list UserList) error {
 				continue
 			}
 
-			if ok, _ := IsFormatSupported(filepath.Join(dir.Name(), name)); !ok {
+			ok, _, lastchanged, _, _ := isFormatSupportedFull(filepath.Join(dir.Name(), name))
+			if !ok {
 				wl.Printf("ignoring file with unsupported hash format for username: '%s'", user)
 				continue
 			}
 
-			list[user] = isAdmin
+			list[user] = User{isAdmin, lastchanged}
 		}
 
 		if last {
@@ -235,7 +237,7 @@ func listAllUsers(dir *os.File, list UserListFull) error {
 			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
 				return err
 			}
-			user.IsSupported, user.FormatID, user.FormatParams, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name))
+			user.IsSupported, user.FormatID, user.LastChanged, user.FormatParams, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name))
 			list[username] = user
 		}
 
@@ -296,9 +298,16 @@ func (d *Dir) RemoveUser(user string) {
 	NewUserHash(d, user).Remove()
 }
 
+// User holds basic information about a specific user. This is used as the
+// value type for UserList.
+type User struct {
+	IsAdmin     bool      `json:"admin"`
+	LastChanged time.Time `json:"lastchanged"`
+}
+
 // UserList is the return value of List(). The key of the map is the username
 // and the value is true if the user is an admin.
-type UserList map[string]bool
+type UserList map[string]User
 
 // List returns a list of all supported users in the store.
 func (d *Dir) List() (UserList, error) {
@@ -316,11 +325,12 @@ func (d *Dir) List() (UserList, error) {
 // UserFull holds additional information about a specific user. This is used as the
 // value type for UserListFull.
 type UserFull struct {
-	IsAdmin      bool   `json:"admin"`
-	IsValid      bool   `json:"valid"`
-	IsSupported  bool   `json:"supported"`
-	FormatID     string `json:"formatid"`
-	FormatParams string `json:"formatparams"`
+	IsAdmin      bool      `json:"admin"`
+	LastChanged  time.Time `json:"lastchanged"`
+	IsValid      bool      `json:"valid"`
+	IsSupported  bool      `json:"supported"`
+	FormatID     string    `json:"formatid"`
+	FormatParams string    `json:"formatparams"`
 }
 
 // UserListFull is the return value of ListFull(). The key of the map is the username
@@ -347,7 +357,7 @@ func (d *Dir) Exists(user string) (exists bool, isAdmin bool, err error) {
 }
 
 // Authenticate checks if user and password are a valid combination. It also returns
-// whether user is an admin.
-func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin bool, err error) {
+// whether user is an admin and when the password was last changed.
+func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin bool, lastchange time.Time, err error) {
 	return NewUserHash(d, user).Authenticate(password)
 }

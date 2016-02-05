@@ -32,6 +32,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/whawty/auth/store"
 )
 
@@ -113,9 +115,10 @@ type listFullRequest struct {
 }
 
 type authenticateResult struct {
-	ok      bool
-	isAdmin bool
-	err     error
+	ok          bool
+	isAdmin     bool
+	lastChanged time.Time
+	err         error
 }
 
 type authenticateRequest struct {
@@ -179,7 +182,7 @@ func (s *Store) listFull() (result listFullResult) {
 }
 
 func (s *Store) authenticate(username, password string) (result authenticateResult) {
-	result.ok, result.isAdmin, result.err = s.dir.Authenticate(username, password)
+	result.ok, result.isAdmin, result.lastChanged, result.err = s.dir.Authenticate(username, password)
 	return
 }
 
@@ -313,7 +316,7 @@ func (s *StoreChan) ListFull() (store.UserListFull, error) {
 	return res.list, res.err
 }
 
-func (s *StoreChan) Authenticate(username, password string) (bool, bool, error) {
+func (s *StoreChan) Authenticate(username, password string) (bool, bool, time.Time, error) {
 	resCh := make(chan authenticateResult)
 	req := authenticateRequest{}
 	req.username = username
@@ -322,7 +325,7 @@ func (s *StoreChan) Authenticate(username, password string) (bool, bool, error) 
 	s.authenticateChan <- req
 
 	res := <-resCh
-	return res.ok, res.isAdmin, res.err
+	return res.ok, res.isAdmin, res.lastChanged, res.err
 }
 
 func (s *Store) GetInterface() *StoreChan {

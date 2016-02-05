@@ -225,18 +225,20 @@ func TestIsFormatSupported(t *testing.T) {
 	}{
 		{"", false},
 		{"hello", false},
+		{"hmac_sha256_scrypt:214", false},
 		{"hmac_sha256_scrypt:42:aGVsbG8=", false},
-		{"hmac_sha256_scrypt:0:aGVsbG8=:d29ybGQ=", false},
-		{"hmac_sha256_scrypt:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", false},
-		{"hmac_sha256_scrypt:17:aGVsbG8=:d29ybGQ=:", false},
-		{"hmac_sha256_scrypt:23:aGVsbG8=:abcd$", false},
-		{"hmac_sha256_scrypt:12::aGVsbG8=", false},
-		{"hmac_sha256_scrypt::d29ybGQ=:aGVsbG8=", false},
-		{"hmac_sha256_scrypt:142:d29ybGQ=:", false},
-		{"hmac_sha1_scrypt:1:aGVsbG8=:d29ybGQ=", false},
+		{"hmac_sha256_scrypt:1454709438:42:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438:0:aGVsbG8=:d29ybGQ=", false},
+		{"hmac_sha256_scrypt:1454709438:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", false},
+		{"hmac_sha256_scrypt:1454709438:17:aGVsbG8=:d29ybGQ=:", false},
+		{"hmac_sha256_scrypt:1454709438:23:aGVsbG8=:abcd$", false},
+		{"hmac_sha256_scrypt:1454709438:12::aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438::d29ybGQ=:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438:142:d29ybGQ=:", false},
+		{"hmac_sha1_scrypt:1:1454709438:aGVsbG8=:d29ybGQ=", false},
 
-		{"hmac_sha256_scrypt:42:aGVsbG8=:d29ybGQ=", true},
-		{"hmac_sha256_scrypt:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
+		{"hmac_sha256_scrypt:124142142:42:aGVsbG8=:d29ybGQ=", true},
+		{"hmac_sha256_scrypt:1454709438:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
 	}
 
 	u := NewUserHash(testStoreUserHash, username)
@@ -294,13 +296,13 @@ func TestAuthenticate(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if isAuthOk, isAdmin, _ := u.Authenticate(password1); !isAuthOk {
+	if isAuthOk, isAdmin, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	} else if !isAdmin {
 		t.Fatal("test user should be an admin")
 	}
 
-	if isAuthOk, isAdmin, _ := u.Authenticate(password2); isAuthOk {
+	if isAuthOk, isAdmin, _, _ := u.Authenticate(password2); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	} else if !isAdmin {
 		t.Fatal("test user should be an admin")
@@ -313,7 +315,7 @@ func TestAuthenticateNonExistent(t *testing.T) {
 
 	u := NewUserHash(testStoreUserHash, username)
 
-	if _, _, err := u.Authenticate(password); err == nil {
+	if _, _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating not exisiting user should be an error")
 	}
 }
@@ -336,7 +338,7 @@ func TestAuthenticateUnkownContext(t *testing.T) {
 
 	u := NewUserHash(testStoreUserHash, username)
 
-	if _, _, err := u.Authenticate(password); err == nil {
+	if _, _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating a password which uses an unkown context should give an error")
 	}
 }
@@ -359,7 +361,7 @@ func TestAuthenticateInvalidHash(t *testing.T) {
 
 	u := NewUserHash(testStoreUserHash, username)
 
-	if _, _, err := u.Authenticate(password); err == nil {
+	if _, _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating a password with an invalid hash string should give an error")
 	}
 }
@@ -376,20 +378,20 @@ func TestUpdateUser(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if isAuthOk, _, _ := u.Authenticate(password1); !isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
-	if isAuthOk, _, _ := u.Authenticate(password2); isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password2); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
 
 	if err := u.Update(password2); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if isAuthOk, _, _ := u.Authenticate(password1); isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password1); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
-	if isAuthOk, _, _ := u.Authenticate(password2); !isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password2); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
 }
@@ -406,20 +408,20 @@ func TestUpdateAdmin(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if isAuthOk, _, _ := u.Authenticate(password1); !isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
-	if isAuthOk, _, _ := u.Authenticate(password2); isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password2); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
 
 	if err := u.Update(password2); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if isAuthOk, _, _ := u.Authenticate(password1); isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password1); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
-	if isAuthOk, _, _ := u.Authenticate(password2); !isAuthOk {
+	if isAuthOk, _, _, _ := u.Authenticate(password2); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
 }

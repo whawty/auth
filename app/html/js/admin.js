@@ -217,7 +217,7 @@ function main_userlistSuccess(data) {
   for (var user in data.list) {
     var row = $('<tr>').append($('<td>').text(user))
         .append($('<td>').addClass("text-center").append(getRoleLabel(data.list[user].admin)))
-        .append($('<td>').append(getLastChange(new Date())))
+        .append($('<td>').append(getLastChange(new Date(data.list[user].lastchanged))))
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].valid)))
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].supported)))
         .append($('<td>').text(data.list[user].formatid + ' (' + data.list[user].formatparams + ')'))

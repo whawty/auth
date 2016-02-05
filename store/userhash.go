@@ -37,7 +37,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -58,29 +60,36 @@ func fileExists(path string) (bool, error) {
 }
 
 // readHashStr returns the contents of the user hash file seperated into format id
-// string and the whole hash string.
-func readHashStr(filename string) (string, string, error) {
+// string, change time and the whole hash string.
+func readHashStr(filename string) (string, time.Time, string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return "", "", err
+		return "", time.Unix(0, 0), "", err
 	}
 	defer file.Close()
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		return "", "", err
+		return "", time.Unix(0, 0), "", err
 	}
 
-	parts := strings.SplitN(string(data), ":", 2)
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("whawty.auth.store: hash file is invalid")
+	parts := strings.SplitN(string(data), ":", 3)
+	if len(parts) != 3 {
+		return "", time.Unix(0, 0), "", fmt.Errorf("whawty.auth.store: hash file is invalid")
 	}
-	return parts[0], parts[1], nil
+
+	tmpTime, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return "", time.Unix(0, 0), "", fmt.Errorf("whawty.auth.store: hash file is invalid, %v", err)
+	}
+	lastchange := time.Unix(tmpTime, 0)
+
+	return parts[0], lastchange, parts[2], nil
 }
 
-func isFormatSupportedFull(filename string) (supported bool, formatID, params string, err error) {
+func isFormatSupportedFull(filename string) (supported bool, formatID string, lastchange time.Time, params string, err error) {
 	var hashStr string
-	if formatID, hashStr, err = readHashStr(filename); err != nil {
+	if formatID, lastchange, hashStr, err = readHashStr(filename); err != nil {
 		return
 	}
 
@@ -96,7 +105,7 @@ func isFormatSupportedFull(filename string) (supported bool, formatID, params st
 
 // IsFormatSupported checks if the format of the hash file is supported
 func IsFormatSupported(filename string) (supported bool, err error) {
-	supported, _, _, err = isFormatSupportedFull(filename)
+	supported, _, _, _, err = isFormatSupportedFull(filename)
 	return
 }
 
@@ -144,7 +153,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error 
 	}
 	defer file.Close()
 
-	_, err = io.WriteString(file, formatID+":"+hashStr+"\n") // TODO: retry if write was short??
+	_, err = io.WriteString(file, fmt.Sprintf("%s:%d:%s\n", formatID, time.Now().Unix(), hashStr)) // TODO: retry if write was short??
 	return err
 }
 
@@ -223,17 +232,18 @@ func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
 	return
 }
 
-// Authenticate checks the user password. It also returns whether user is an admin.
-func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool, err error) {
+// Authenticate checks the user password. It also returns whether user is an admin
+// and when the password was last changed.
+func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin bool, lastchange time.Time, err error) {
 	var exists bool
 	if exists, isAdmin, err = u.Exists(); err != nil {
 		return
 	} else if !exists {
-		return false, false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+		return false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
 	var formatID, hashStr string
-	if formatID, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
+	if formatID, lastchange, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
 		return
 	}
 

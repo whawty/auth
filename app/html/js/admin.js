@@ -2,6 +2,7 @@
 
 function admin_init() {
   auth_init()
+  main_enablePWStrength();
 }
 
 var alertbox = function() {}
@@ -297,16 +298,49 @@ function main_enablePWStrength() {
   });
 }
 
+function main_adminViewInit() {
+  main_setupAddButton();
+  main_updateUserlist();
+}
+
+function main_userUpdateSuccess(data) {
+  alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
+}
+
+function main_userViewInit() {
+  $("#user-view .username").text(auth_username);
+
+  $('#user-view .btn').click(function() {
+      main_cleanupPasswordModal()
+
+      $('#changepw-userfield').text(auth_username);
+      $("#changepwform").submit(function(event) {
+          event.preventDefault();
+          var newpassword = $("#newpassword").val()
+          if (newpassword != $("#newpassword-retype").val()) {
+              alertbox.error('passwordModal', "Error", "Passwords mismatch");
+              $("#newpassword").val('')
+              $("#newpassword-retype").val('')
+              return
+          }
+          var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
+          $.post("/api/update", data, main_userUpdateSuccess, 'json')
+              .fail(main_reqError)
+          $("#passwordModal").modal('hide');
+      });
+      $("#passwordModal").modal('show');
+  });
+
+}
+
 function main_init() {
   if (auth_admin == true) {
     $("#admin-view").show();
     $("#user-view").hide();
-    main_setupAddButton();
-    main_enablePWStrength();
-    main_updateUserlist();
+    main_adminViewInit();
   } else {
     $("#admin-view").hide();
     $("#user-view").show();
-    alertbox.warning('mainwindow', "not yet implemented", "The user view has not been implemented yet");
+    main_userViewInit();
   }
 }

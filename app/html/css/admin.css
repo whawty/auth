@@ -86,3 +86,7 @@ body {
 #changepwform .progress {
   margin: 0.5em 1em 1.5em 1em;
 }
+
+#user-view .btn {
+  margin-top: 2em;
+}

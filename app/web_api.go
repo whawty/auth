@@ -97,7 +97,9 @@ type webAddRequest struct {
 }
 
 type webAddResponse struct {
-	Error string `json:"error,omitempty"`
+	Username string `json:"username"`
+	IsAdmin  bool   `json:"admin"`
+	Error    string `json:"error,omitempty"`
 }
 
 func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -139,6 +141,8 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
+	respdata.Username = reqdata.Username
+	respdata.IsAdmin = reqdata.IsAdmin
 	sendWebResponse(w, http.StatusOK, respdata)
 }
 
@@ -148,7 +152,8 @@ type webRemoveRequest struct {
 }
 
 type webRemoveResponse struct {
-	Error string `json:"error,omitempty"`
+	Username string `json:"username"`
+	Error    string `json:"error,omitempty"`
 }
 
 func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -190,6 +195,7 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
+	respdata.Username = reqdata.Username
 	sendWebResponse(w, http.StatusOK, respdata)
 }
 
@@ -201,7 +207,8 @@ type webUpdateRequest struct {
 }
 
 type webUpdateResponse struct {
-	Error string `json:"error,omitempty"`
+	Username string `json:"username"`
+	Error    string `json:"error,omitempty"`
 }
 
 func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -259,6 +266,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
+	respdata.Username = reqdata.Username
 	sendWebResponse(w, http.StatusOK, respdata)
 }
 
@@ -269,7 +277,9 @@ type webSetAdminRequest struct {
 }
 
 type webSetAdminResponse struct {
-	Error string `json:"error,omitempty"`
+	Username string `json:"username"`
+	IsAdmin  bool   `json:"admin"`
+	Error    string `json:"error,omitempty"`
 }
 
 func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -311,6 +321,8 @@ func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.Res
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
+	respdata.Username = reqdata.Username
+	respdata.IsAdmin = reqdata.IsAdmin
 	sendWebResponse(w, http.StatusOK, respdata)
 }
 

@@ -119,7 +119,7 @@ function auth_cleanup() {
  */
 
 function main_updateSuccess(data) {
-  alertbox.success('mainwindow', "password update", "successfully updated password for...");
+  alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
   main_updateUserlist()
 }
 
@@ -128,8 +128,10 @@ function getUpdateButton(user) {
   return btn.click(function() {
       $("#newpassword").val('')
       $("#newpassword-retype").val('')
+      $('#passwordModal .alertbox').html('');
       $('#changepw-userfield').html(user);
 
+      $("#changepwform").off("submit");
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
@@ -149,6 +151,7 @@ function getUpdateButton(user) {
 }
 
 function main_removeSuccess(data) {
+  alertbox.success('mainwindow', "Remove", "successfully removed user " + data.username);
   main_updateUserlist()
 }
 
@@ -161,7 +164,7 @@ function getRemoveButton(user) {
   });
 }
 
-function main_removeSuccess(data) {
+function main_setadminSuccess(data) {
   main_updateUserlist()
 }
 
@@ -170,7 +173,7 @@ function getSetAdminButton(user, oldstate) {
   var newstate = !oldstate;
   return btn.click(function() {
       var data = JSON.stringify({ session: auth_session, username: user, admin: newstate })
-      $.post("/api/set-admin", data, main_removeSuccess, 'json')
+      $.post("/api/set-admin", data, main_setadminSuccess, 'json')
           .fail(main_reqError)
   });
 }

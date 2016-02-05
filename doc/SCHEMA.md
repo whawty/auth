@@ -39,7 +39,7 @@ However if an agent supports this it must be possible to disable upgrades.
 The contents of the files depend on the hashing algorithm but use the following
 header:
 
-   <format-identifier>:<last-change>:<format specific string>
+  ` <format-identifier>:<last-change>:<format specific string>`
 
 _format-identifier_ is a unique identifier for the hashing format. This id must
 not include a `:`. _last-change_ is a unix time stamp and represents the last
@@ -48,7 +48,7 @@ date/time when the password has been modified.
 For now the only supported algorithm is scrypt inside hmac-sha256 which has the
 following structure:
 
-    hmac_sha256_scrypt:<last-change>:ctxID:base64(salt):base64(hash)
+    `hmac_sha256_scrypt:<last-change>:ctxID:base64(salt):base64(hash)`
 
 _hmac_sha256_scrypt_ is the identifier for this algorithm, _ctxID_ is an
 identifier for a set of parameters which must be stored outside of the base

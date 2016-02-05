@@ -74,8 +74,17 @@ body {
   text-align: center;
 }
 
+#admin-view .col-md-2, .col-md-4 {
+  padding: 0.3em;
+}
+
+#user-list td {
+  padding: 0.3em;
+}
+
 #user-list .btn {
   margin-left: 0.6em;
+  margin-top: 0.3em;
 }
 
 #adduser-row {

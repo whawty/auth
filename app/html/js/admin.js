@@ -195,11 +195,29 @@ function getBoolIcon(flag) {
   }
 }
 
+Number.prototype.pad = function(size) {
+  var s = String(this);
+  while (s.length < (size || 2)) {s = "0" + s;}
+  return s;
+}
+
+function getLastChange(lastchange) {
+  var datetimestr = Number(lastchange.getDate()).pad(2);
+  datetimestr += '.' + Number(lastchange.getMonth() + 1).pad(2);
+  datetimestr += '.' + lastchange.getFullYear();
+  datetimestr += ' ' + Number(lastchange.getHours()).pad(2);
+  datetimestr += ':' + Number(lastchange.getMinutes()).pad(2);
+  datetimestr += ':' + Number(lastchange.getSeconds()).pad(2);
+
+  return $('<string>').addClass("last-change").text(datetimestr)
+}
+
 function main_userlistSuccess(data) {
   $('#user-list tbody').find('tr').remove();
   for (var user in data.list) {
     var row = $('<tr>').append($('<td>').text(user))
         .append($('<td>').addClass("text-center").append(getRoleLabel(data.list[user].admin)))
+        .append($('<td>').append(getLastChange(new Date())))
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].valid)))
         .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].supported)))
         .append($('<td>').text(data.list[user].formatid))

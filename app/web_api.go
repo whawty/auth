@@ -47,10 +47,11 @@ type webAuthenticateRequest struct {
 }
 
 type webAuthenticateResponse struct {
-	Session  string `json:"session,omitempty"`
-	Username string `json:"username"`
-	IsAdmin  bool   `json:"admin"`
-	Error    string `json:"error,omitempty"`
+	Session     string    `json:"session,omitempty"`
+	Username    string    `json:"username"`
+	IsAdmin     bool      `json:"admin"`
+	LastChanged time.Time `json:"lastchanged"`
+	Error       string    `json:"error,omitempty"`
 }
 
 func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -72,7 +73,7 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 		return
 	}
 
-	ok, isAdmin, _, err := store.Authenticate(reqdata.Username, reqdata.Password)
+	ok, isAdmin, lastChanged, err := store.Authenticate(reqdata.Username, reqdata.Password)
 	if err != nil || !ok {
 		respdata.Error = "authentication failed"
 		if err != nil {
@@ -84,6 +85,7 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 
 	respdata.Username = reqdata.Username
 	respdata.IsAdmin = isAdmin
+	respdata.LastChanged = lastChanged
 	status := http.StatusOK
 	status, respdata.Error, respdata.Session = sessions.Generate(reqdata.Username, isAdmin)
 	sendWebResponse(w, status, respdata)

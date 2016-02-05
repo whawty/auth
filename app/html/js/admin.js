@@ -27,16 +27,19 @@ alertbox.success = function (dest, heading, message) {
 
 var auth_username = null;
 var auth_admin = false;
+var auth_lastchanged = new Date();
 var auth_session = null;
 
 function auth_loginSuccess(data) {
    if (data.session) {
      auth_username = data.username;
      auth_admin = data.admin;
+     auth_lastchanged = new Date(data.lastchanged);
      auth_session = data.session;
 
      sessionStorage.setItem("auth_username", auth_username);
      sessionStorage.setItem("auth_admin", (auth_admin) ? "true" : "false");
+     sessionStorage.setItem("auth_lastchanged", auth_lastchanged.toISOString());
      sessionStorage.setItem("auth_session", auth_session);
 
      $('#username-field').text(auth_username);
@@ -78,6 +81,7 @@ function auth_logout() {
 function auth_init() {
   auth_username = sessionStorage.getItem("auth_username");
   auth_admin = (sessionStorage.getItem("auth_admin") == "true") ? true : false;
+  auth_lastchanged = new Date(sessionStorage.getItem("auth_lastchanged"));
   auth_session = sessionStorage.getItem("auth_session");
 
   if(auth_session && auth_username) {
@@ -103,10 +107,12 @@ function auth_init() {
 function auth_cleanup() {
   sessionStorage.removeItem("auth_username");
   sessionStorage.removeItem("auth_admin");
+  sessionStorage.removeItem("auth_lastchanged");
   sessionStorage.removeItem("auth_session");
 
   auth_username = null;
   auth_admin = false;
+  auth_lastchanged = null;
   auth_session = null;
 
   $("#username").val('').focus();
@@ -124,7 +130,7 @@ function main_updateSuccess(data) {
   main_updateUserlist()
 }
 
-function getUpdateButton(user) {
+function main_getUpdateButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm")
   btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Password')
   return btn.click(function() {
@@ -154,7 +160,7 @@ function main_removeSuccess(data) {
   main_updateUserlist()
 }
 
-function getRemoveButton(user) {
+function main_getRemoveButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm")
   btn.html('<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>&nbsp;&nbsp;Remove')
   return btn.click(function() {
@@ -168,7 +174,7 @@ function main_setadminSuccess(data) {
   main_updateUserlist()
 }
 
-function getSetAdminButton(user, oldstate) {
+function main_getSetAdminButton(user, oldstate) {
   var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm")
   btn.html('<span class="glyphicon glyphicon-random" aria-hidden="true"></span>&nbsp;&nbsp;Role')
   var newstate = !oldstate;
@@ -179,7 +185,7 @@ function getSetAdminButton(user, oldstate) {
   });
 }
 
-function getRoleLabel(admin) {
+function main_getRoleLabel(admin) {
   if (admin == true) {
     return $('<span>').addClass("label").addClass("label-primary").text("Admin")
   } else {
@@ -187,7 +193,7 @@ function getRoleLabel(admin) {
   }
 }
 
-function getBoolIcon(flag) {
+function main_getBoolIcon(flag) {
   if (flag == true) {
     return $('<span>').addClass("glyphicon").addClass("glyphicon-ok-sign").css("color", "#5cb85c").css("font-size", "1.4em");
   } else {
@@ -202,28 +208,21 @@ Number.prototype.pad = function(size) {
 }
 
 function getLastChange(lastchange) {
-  var datetimestr = Number(lastchange.getDate()).pad(2);
-  datetimestr += '.' + Number(lastchange.getMonth() + 1).pad(2);
-  datetimestr += '.' + lastchange.getFullYear();
-  datetimestr += ' ' + Number(lastchange.getHours()).pad(2);
-  datetimestr += ':' + Number(lastchange.getMinutes()).pad(2);
-  datetimestr += ':' + Number(lastchange.getSeconds()).pad(2);
-
-  return $('<string>').addClass("last-change").text(datetimestr)
+  return $('<string>').addClass("last-change").text(getDateTimeString(lastchange))
 }
 
 function main_userlistSuccess(data) {
   $('#user-list tbody').find('tr').remove();
   for (var user in data.list) {
     var row = $('<tr>').append($('<td>').text(user))
-        .append($('<td>').addClass("text-center").append(getRoleLabel(data.list[user].admin)))
+        .append($('<td>').addClass("text-center").append(main_getRoleLabel(data.list[user].admin)))
         .append($('<td>').append(getLastChange(new Date(data.list[user].lastchanged))))
-        .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].valid)))
-        .append($('<td>').addClass("text-center").append(getBoolIcon(data.list[user].supported)))
+        .append($('<td>').addClass("text-center").append(main_getBoolIcon(data.list[user].valid)))
+        .append($('<td>').addClass("text-center").append(main_getBoolIcon(data.list[user].supported)))
         .append($('<td>').text(data.list[user].formatid + ' (' + data.list[user].formatparams + ')'))
-        .append($('<td>').addClass("text-center").append(getSetAdminButton(user, data.list[user].admin))
-                                                 .append(getUpdateButton(user))
-                                                 .append(getRemoveButton(user)));
+        .append($('<td>').addClass("text-center").append(main_getSetAdminButton(user, data.list[user].admin))
+                                                 .append(main_getUpdateButton(user))
+                                                 .append(main_getRemoveButton(user)));
     $('#user-list > tbody:last').append(row);
   }
 }
@@ -234,6 +233,7 @@ function main_addSuccess(data) {
 }
 
 function main_setupAddButton() {
+  $("#addusername").val('')
   $("#adduserform").submit(function(event) {
       event.preventDefault();
       var user = $("#addusername").val()
@@ -257,6 +257,7 @@ function main_setupAddButton() {
           $.post("/api/add", data, main_addSuccess, 'json')
               .fail(main_reqError)
           $("#passwordModal").modal('hide');
+          $("#addusername").val('')
       });
       $("#passwordModal").modal('show');
   });
@@ -285,7 +286,7 @@ function main_userUpdateSuccess(data) {
 
 function main_userViewInit() {
   $("#user-view .username").text(auth_username);
-
+  $("#user-view .lastchange").text(getDateTimeString(auth_lastchanged));
   $('#user-view .btn').click(function() {
       main_cleanupPasswordModal()
 
@@ -314,6 +315,16 @@ function main_userViewInit() {
  * Main: global
  *
  */
+
+function getDateTimeString(d) {
+  var datetimestr = Number(d.getDate()).pad(2);
+  datetimestr += '.' + Number(d.getMonth() + 1).pad(2);
+  datetimestr += '.' + d.getFullYear();
+  datetimestr += ' ' + Number(d.getHours()).pad(2);
+  datetimestr += ':' + Number(d.getMinutes()).pad(2);
+  datetimestr += ':' + Number(d.getSeconds()).pad(2);
+  return datetimestr
+}
 
 function main_reqError(req, status, error) {
   var data = JSON.parse(req.responseText);

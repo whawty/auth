@@ -39,7 +39,7 @@ However if an agent supports this it must be possible to disable upgrades.
 The contents of the files depend on the hashing algorithm but use the following
 header:
 
-  ` <format-identifier>:<last-change>:<format specific string>`
+    `<format-identifier>:<last-change>:<format specific string>`
 
 _format-identifier_ is a unique identifier for the hashing format. This id must
 not include a `:`. _last-change_ is a unix time stamp and represents the last

@@ -115,7 +115,7 @@ function auth_cleanup() {
 
 /*
  *
- * Main
+ * Main: admin view
  *
  */
 
@@ -150,7 +150,7 @@ function getUpdateButton(user) {
 }
 
 function main_removeSuccess(data) {
-  alertbox.success('mainwindow', "Remove", "successfully removed user " + data.username);
+  alertbox.success('mainwindow', "Remove User", "successfully removed user " + data.username);
   main_updateUserlist()
 }
 
@@ -229,30 +229,9 @@ function main_userlistSuccess(data) {
   }
 }
 
-function main_updateUserlist() {
-  var data = JSON.stringify({ session: auth_session, })
-  $.post("/api/list-full", data, main_userlistSuccess, 'json')
-          .fail(main_reqError)
-}
-
-function main_reqError(req, status, error) {
-  var data = JSON.parse(req.responseText);
-  var message = status + ': ';
-  if (data.error != "") {
-    message += data.error;
-  } else {
-    message += error;
-  }
-
-  if(req.status == 401) {
-    var user = auth_username
-    auth_logout();
-    $("#username").val(user);
-    $("#password").focus();
-    alertbox.error('loginbox', "Authentication failure", message);
-  } else {
-    alertbox.error('mainwindow', "API Error", message);
-  }
+function main_addSuccess(data) {
+  alertbox.success('mainwindow', "Add User", "successfully added user " + data.username);
+  main_updateUserlist()
 }
 
 function main_setupAddButton() {
@@ -276,12 +255,85 @@ function main_setupAddButton() {
               return
           }
           var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
-          $.post("/api/add", data, main_updateSuccess, 'json')
+          $.post("/api/add", data, main_addSuccess, 'json')
               .fail(main_reqError)
           $("#passwordModal").modal('hide');
       });
       $("#passwordModal").modal('show');
   });
+}
+
+function main_updateUserlist() {
+  var data = JSON.stringify({ session: auth_session, })
+  $.post("/api/list-full", data, main_userlistSuccess, 'json')
+          .fail(main_reqError)
+}
+
+function main_adminViewInit() {
+  main_setupAddButton();
+  main_updateUserlist();
+}
+
+/*
+ *
+ * Main: user view
+ *
+ */
+
+function main_userUpdateSuccess(data) {
+  alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
+}
+
+function main_userViewInit() {
+  $("#user-view .username").text(auth_username);
+
+  $('#user-view .btn').click(function() {
+      main_cleanupPasswordModal()
+
+      $('#changepw-userfield').text(auth_username);
+      $("#changepwform").submit(function(event) {
+          event.preventDefault();
+          var newpassword = $("#newpassword").val()
+          if (newpassword != $("#newpassword-retype").val()) {
+              alertbox.error('passwordModal', "Error", "Passwords mismatch");
+              $("#newpassword").val('')
+              $("#newpassword-retype").val('')
+              return
+          }
+          var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
+          $.post("/api/update", data, main_userUpdateSuccess, 'json')
+              .fail(main_reqError)
+          $("#passwordModal").modal('hide');
+      });
+      $("#passwordModal").modal('show');
+  });
+
+}
+
+/*
+ *
+ * Main: global
+ *
+ */
+
+function main_reqError(req, status, error) {
+  var data = JSON.parse(req.responseText);
+  var message = status + ': ';
+  if (data.error != "") {
+    message += data.error;
+  } else {
+    message += error;
+  }
+
+  if(req.status == 401) {
+    var user = auth_username
+    auth_logout();
+    $("#username").val(user);
+    $("#password").focus();
+    alertbox.error('loginbox', "Authentication failure", message);
+  } else {
+    alertbox.error('mainwindow', "API Error", message);
+  }
 }
 
 function main_cleanupPasswordModal() {
@@ -314,41 +366,6 @@ function main_enablePWStrength() {
       showVerdictsInsideProgressBar: false,
     }
   });
-}
-
-function main_adminViewInit() {
-  main_setupAddButton();
-  main_updateUserlist();
-}
-
-function main_userUpdateSuccess(data) {
-  alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
-}
-
-function main_userViewInit() {
-  $("#user-view .username").text(auth_username);
-
-  $('#user-view .btn').click(function() {
-      main_cleanupPasswordModal()
-
-      $('#changepw-userfield').text(auth_username);
-      $("#changepwform").submit(function(event) {
-          event.preventDefault();
-          var newpassword = $("#newpassword").val()
-          if (newpassword != $("#newpassword-retype").val()) {
-              alertbox.error('passwordModal', "Error", "Passwords mismatch");
-              $("#newpassword").val('')
-              $("#newpassword-retype").val('')
-              return
-          }
-          var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
-          $.post("/api/update", data, main_userUpdateSuccess, 'json')
-              .fail(main_reqError)
-          $("#passwordModal").modal('hide');
-      });
-      $("#passwordModal").modal('show');
-  });
-
 }
 
 function main_init() {

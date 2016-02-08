@@ -38,47 +38,55 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <security/pam_appl.h>
+
+#define PAM_SM_AUTH
+
 #include <security/pam_modules.h>
 
 #define UNUSED(x) (void)(x)
 
-/* expected hook */
-PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv ) {
-  UNUSED(pamh);
-  UNUSED(flags);
-  UNUSED(argc);
-  UNUSED(argv);
-  return PAM_SUCCESS;
-}
+// Authentication management
 
-PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv) {
-  UNUSED(pamh);
-  UNUSED(flags);
-  UNUSED(argc);
-  UNUSED(argv);
-  return PAM_SUCCESS;
-}
-
-/* expected hook, this is where custom stuff happens */
-PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv ) {
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {
   UNUSED(flags);
   UNUSED(argc);
   UNUSED(argv);
 
   int retval;
   const char* pUsername;
-  retval = pam_get_user(pamh, &pUsername, "Username: ");
-
-  printf("Welcome %s\n", pUsername);
-
+  retval = pam_get_user(pamh, &pUsername, NULL);
   if (retval != PAM_SUCCESS) {
     return retval;
   }
 
-  if (strcmp(pUsername, "backdoor") != 0) {
+  printf("whawty welcomes %s\n", pUsername);
+
+  if (strcmp(pUsername, "equinox") != 0) {
     return PAM_AUTH_ERR;
   }
 
   return PAM_SUCCESS;
 }
+
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+  UNUSED(pamh);
+  UNUSED(flags);
+  UNUSED(argc);
+  UNUSED(argv);
+  return PAM_CRED_ERR;
+}
+
+/* static module data */
+#ifdef PAM_STATIC
+
+struct pam_module _pam_whawty_modstruct = {
+    "pam_whawty",
+    pam_sm_authenticate,
+    pam_sm_setcred,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+#endif

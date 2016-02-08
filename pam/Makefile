@@ -30,7 +30,7 @@
 ##
 
 CFLAGS := -Wall -Wextra -fPIC
-LDFLAGS :=
+LDFLAGS := -lpam
 
 PAMLIB := pam_whawty.so
 
@@ -53,7 +53,7 @@ ifneq ($(MAKECMDGOALS),distclean)
 endif
 
 $(PAMLIB): $(C_OBJS)
-	$(CC) $(LDFLAGS) --shared -o $@ $(C_OBJS)
+	$(CC) $(LDFLAGS) -shared -o $@ $(C_OBJS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<

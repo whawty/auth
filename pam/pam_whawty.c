@@ -45,30 +45,55 @@
 
 #define UNUSED(x) (void)(x)
 
-// Authentication management
+/* internal functions */
 
-PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+#define WHAWTY_CONF_SILENT         0x01
+#define WHAWTY_CONF_DEBUG          0x02
+#define WHAWTY_CONF_USE_FIRST_PASS 0x04
+#define WHAWTY_CONF_TRY_FIRST_PASS 0x08
+
+typedef struct {
+  int flags_;
+  pam_handle_t* pamh_;
+  const char* username_;
+  char* password_;
+} whawty_ctx_t;
+
+int whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, const char **argv)
+{
   UNUSED(flags);
   UNUSED(argc);
   UNUSED(argv);
 
-  int retval;
-  const char* pUsername;
-  retval = pam_get_user(pamh, &pUsername, NULL);
-  if (retval != PAM_SUCCESS) {
-    return retval;
-  }
+  ctx->flags_ = 0;
+  ctx->pamh_ = pamh;
+  ctx->password_ = NULL;
 
-  printf("whawty welcomes %s\n", pUsername);
+      // TODO: parse flags and arguments
 
-  if (strcmp(pUsername, "equinox") != 0) {
+  return pam_get_user(pamh, &(ctx->username_), NULL);
+}
+
+/* PAM Interface */
+
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
+{
+  whawty_ctx_t ctx;
+  int ret = whawty_ctx_init(&ctx, pamh, flags, argc, argv);
+  if(ret != PAM_SUCCESS)
+    return ret;
+
+  printf("whawty welcomes %s\n", ctx.username_);
+
+  if (strcmp(ctx.username_, "equinox") != 0) {
     return PAM_AUTH_ERR;
   }
 
   return PAM_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv)
+{
   UNUSED(pamh);
   UNUSED(flags);
   UNUSED(argc);

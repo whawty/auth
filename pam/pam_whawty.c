@@ -62,25 +62,7 @@ typedef struct {
   char* password_;
 } whawty_ctx_t;
 
-int whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, const char **argv)
-{
-  UNUSED(argc);
-  UNUSED(argv);
-
-  ctx->flags_ = 0;
-  ctx->pamh_ = pamh;
-  ctx->password_ = NULL;
-
-  if(flags & PAM_SILENT)
-    ctx->flags_ |= WHAWTY_CONF_SILENT;
-  // flag PAM_DISALLOW_NULL_AUTHTOK is not applicable and will therefore be ignored
-
-// TODO: parse arguments
-
-  return pam_get_user(pamh, &(ctx->username_), NULL);
-}
-
-void whawty_printf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
+void _whawty_logf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
 {
   if(ctx->flags_ & WHAWTY_CONF_SILENT)
     return;
@@ -95,22 +77,54 @@ void whawty_printf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
   va_end(args);
 }
 
+int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, const char **argv)
+{
+  ctx->flags_ = 0;
+  ctx->pamh_ = pamh;
+  ctx->username_ = NULL;
+  ctx->password_ = NULL;
+
+  if(flags & PAM_SILENT)
+    ctx->flags_ |= WHAWTY_CONF_SILENT;
+  // flag PAM_DISALLOW_NULL_AUTHTOK is not applicable and will therefore be ignored
+
+  int i;
+  for(i = 0; i < argc; ++i) {
+    if(!strcmp(argv[i], "debug"))
+      ctx->flags_ |= WHAWTY_CONF_DEBUG;
+    else if(!strcmp(argv[i], "try_first_pass"))
+      ctx->flags_ |= WHAWTY_CONF_TRY_FIRST_PASS;
+    else if(!strcmp(argv[i], "use_first_pass"))
+      ctx->flags_ |= WHAWTY_CONF_USE_FIRST_PASS;
+    else
+      _whawty_logf(ctx, LOG_WARNING, "ignoring unknown argument: %s", argv[i]);
+  }
+
+  return pam_get_user(pamh, &(ctx->username_), NULL);
+}
+
+int _whawty_check_password(whawty_ctx_t* ctx)
+{
+  if (strcmp(ctx->username_, "equinox") != 0) {
+    return PAM_AUTH_ERR;
+  }
+
+  _whawty_logf(ctx, LOG_NOTICE, "pam_whawty: user %s successfully authenticated", ctx->username_);
+  return PAM_SUCCESS;
+}
+
 /* PAM Interface */
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
   whawty_ctx_t ctx;
-  int ret = whawty_ctx_init(&ctx, pamh, flags, argc, argv);
+  int ret = _whawty_ctx_init(&ctx, pamh, flags, argc, argv);
   if(ret != PAM_SUCCESS)
     return ret;
 
-  whawty_printf(&ctx, LOG_INFO, "whawty welcomes %s", ctx.username_);
+  _whawty_logf(&ctx, LOG_DEBUG, "pam_whawty successfully initialized (user='%s')", ctx.username_);
 
-  if (strcmp(ctx.username_, "equinox") != 0) {
-    return PAM_AUTH_ERR;
-  }
-
-  return PAM_SUCCESS;
+  return _whawty_check_password(&ctx);
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv)

@@ -38,10 +38,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define PAM_SM_AUTH
 
 #include <security/pam_modules.h>
+#include <security/pam_ext.h>
+#include <syslog.h>
 
 #define UNUSED(x) (void)(x)
 
@@ -61,7 +64,6 @@ typedef struct {
 
 int whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
-  UNUSED(flags);
   UNUSED(argc);
   UNUSED(argv);
 
@@ -69,9 +71,28 @@ int whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, 
   ctx->pamh_ = pamh;
   ctx->password_ = NULL;
 
-      // TODO: parse flags and arguments
+  if(flags & PAM_SILENT)
+    ctx->flags_ |= WHAWTY_CONF_SILENT;
+  // flag PAM_DISALLOW_NULL_AUTHTOK is not applicable and will therefore be ignored
+
+// TODO: parse arguments
 
   return pam_get_user(pamh, &(ctx->username_), NULL);
+}
+
+void whawty_printf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
+{
+  if(ctx->flags_ & WHAWTY_CONF_SILENT)
+    return;
+
+  if(priority == LOG_DEBUG && !(ctx->flags_ & WHAWTY_CONF_DEBUG))
+    return;
+
+  va_list args;
+
+  va_start(args, fmt);
+  pam_vsyslog(ctx->pamh_, priority, fmt, args);
+  va_end(args);
 }
 
 /* PAM Interface */
@@ -83,7 +104,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   if(ret != PAM_SUCCESS)
     return ret;
 
-  printf("whawty welcomes %s\n", ctx.username_);
+  whawty_printf(&ctx, LOG_INFO, "whawty welcomes %s", ctx.username_);
 
   if (strcmp(ctx.username_, "equinox") != 0) {
     return PAM_AUTH_ERR;

@@ -60,7 +60,7 @@ typedef struct {
   unsigned int flags_;
   pam_handle_t* pamh_;
   const char* username_;
-  char* password_;
+  const char* password_;
 } whawty_ctx_t;
 
 void PAM_FORMAT((printf, 3, 4)) _whawty_logf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
@@ -107,25 +107,48 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
   if(ret == PAM_SUCCESS) {
     _whawty_logf(ctx, LOG_DEBUG, "successfully initialized [user=%s]", ctx->username_);
   } else {
-    _whawty_logf(ctx, LOG_ERR, "pam_get_user failed [%s]", pam_strerror(ctx->pamh_, ret));
+    _whawty_logf(ctx, LOG_ERR, "pam_get_user() failed [%s]", pam_strerror(ctx->pamh_, ret));
   }
   return ret;
 }
 
 int _whawty_get_password(whawty_ctx_t* ctx)
 {
+  if(ctx->flags_ & WHAWTY_CONF_USE_FIRST_PASS || ctx->flags_ & WHAWTY_CONF_TRY_FIRST_PASS) {
+    int ret = pam_get_item(ctx->pamh_, PAM_AUTHTOK, (const void**)(&(ctx->password_)));
+    if(ret != PAM_SUCCESS) {
+      _whawty_logf(ctx, LOG_ERR, "pam_get_item() returned an error reading the password [%s]", pam_strerror(ctx->pamh_, ret));
+      return ret;
+    }
+    if(ctx->password_ != NULL) {
+      _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [from stack]");
+      return PAM_SUCCESS;
+    }
+
+    if(ctx->flags_ & WHAWTY_CONF_USE_FIRST_PASS) {
+      _whawty_logf(ctx, LOG_DEBUG, "no/empty password on stack and use_first_pass is set");
+      return PAM_AUTHTOK_RECOVERY_ERR;
+    }
+  }
+
+      // TODO: fetch password using pam_conv()
   ctx->password_ = "secret";
   _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [compiled-in static]");
+
+      // TODO: set PAM_AUTHTOK item unless WHAWTY_CONF_NOT_SET_PASS is set
+
   return PAM_SUCCESS;
 }
 
 int _whawty_check_password(whawty_ctx_t* ctx)
 {
-  if (strcmp(ctx->username_, "equinox") != 0) {
+      // TODO: open socket to whawty_auth and check password
+  if (strcmp(ctx->username_, "equinox") != 0 || strcmp(ctx->password_, "test") != 0) {
+    _whawty_logf(ctx, LOG_DEBUG, "authentication failure [user=%s]", ctx->username_);
     return PAM_AUTH_ERR;
   }
 
-  _whawty_logf(ctx, LOG_NOTICE, "user %s successfully authenticated", ctx->username_);
+  _whawty_logf(ctx, LOG_NOTICE, "successfully authenticated [user=%s]", ctx->username_);
   return PAM_SUCCESS;
 }
 

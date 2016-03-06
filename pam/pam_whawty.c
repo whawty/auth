@@ -62,7 +62,7 @@ typedef struct {
   char* password_;
 } whawty_ctx_t;
 
-void _whawty_logf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
+void PAM_FORMAT((printf, 3, 4)) _whawty_logf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
 {
   if(ctx->flags_ & WHAWTY_CONF_SILENT)
     return;

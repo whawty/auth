@@ -40,6 +40,12 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 #define PAM_SM_AUTH
 
 #include <security/pam_modules.h>
@@ -49,7 +55,9 @@
 
 #define UNUSED(x) (void)(x)
 
-/* internal functions */
+/************************/
+/*  internal functions  */
+/************************/
 
 #define WHAWTY_CONF_SILENT         0x01
 #define WHAWTY_CONF_DEBUG          0x02
@@ -62,7 +70,11 @@ typedef struct {
   pam_handle_t* pamh_;
   const char* username_;
   char* password_;
+  const char* sockpath_;
+  int sock_;
 } whawty_ctx_t;
+
+/* init/fetch password */
 
 void PAM_FORMAT((printf, 3, 4)) _whawty_logf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
 {
@@ -85,6 +97,8 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
   ctx->pamh_ = pamh;
   ctx->username_ = NULL;
   ctx->password_ = NULL;
+  ctx->sockpath_ = "/var/run/whawty/auth.sock"; // TODO: make this configurable
+  ctx->sock_ = -1;
 
   if(flags & PAM_SILENT)
     ctx->flags_ |= WHAWTY_CONF_SILENT;
@@ -111,17 +125,6 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
     _whawty_logf(ctx, LOG_ERR, "pam_get_user() failed [%s]", pam_strerror(ctx->pamh_, ret));
   }
   return ret;
-}
-
-int _whawty_set_authtok_item(whawty_ctx_t* ctx) {
-      // set PAM_AUTHTOK item to ctx->password_
-  int ret = pam_set_item(ctx->pamh_, PAM_AUTHTOK, ctx->password_);
-  if(ret != PAM_SUCCESS) {
-    _pam_overwrite(ctx->password_);
-    _pam_drop(ctx->password_);
-    return ret;
-  }
-  return PAM_SUCCESS;
 }
 
 int _whawty_get_password(whawty_ctx_t* ctx)
@@ -163,16 +166,57 @@ int _whawty_get_password(whawty_ctx_t* ctx)
   _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [from conversation function]");
 
   if(!(ctx->flags_ & WHAWTY_CONF_NOT_SET_PASS)) {
-    return _whawty_set_authtok_item(ctx);
+        // set PAM_AUTHTOK item to ctx->password_
+    return pam_set_item(ctx->pamh_, PAM_AUTHTOK, ctx->password_);
   }
 
   return PAM_SUCCESS;
 }
 
+void _whawty_cleanup(whawty_ctx_t* ctx)
+{
+  if(ctx->password_ != NULL) {
+    _pam_overwrite(ctx->password_);
+    _pam_drop(ctx->password_);
+  }
+
+  if(ctx->sock_ >= 0) {
+    close(ctx->sock_);
+  }
+}
+
+/* actual authentication */
+
+int _whawty_open_socket(whawty_ctx_t* ctx)
+{
+  struct sockaddr_un addr;
+
+  ctx->sock_ = socket(PF_UNIX, SOCK_STREAM, 0);
+  if(ctx->sock_ < 0) {
+        // TODO: should be use a thread safe version of strerror?
+    _whawty_logf(ctx, LOG_ERR, "unable to open socket for authentication [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  memset(&addr, 0, sizeof(addr));
+  addr.sun_family = AF_UNIX;
+  snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", ctx->sockpath_);
+
+  if(connect(ctx->sock_, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
+        // TODO: should be use a thread safe version of strerror?
+    _whawty_logf(ctx, LOG_ERR, "unable to connect to whawty [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+  return PAM_SUCCESS;
+}
+
 int _whawty_check_password(whawty_ctx_t* ctx)
 {
-      // TODO: open socket to whawty_auth and check password
-  if (strcmp(ctx->username_, "equinox") != 0 || strcmp(ctx->password_, "test") != 0) {
+  int ret = _whawty_open_socket(ctx);
+  if(ret != PAM_SUCCESS)
+    return ret;
+
+  if(strcmp(ctx->username_, "equinox") != 0 || strcmp(ctx->password_, "test") != 0) {
     _whawty_logf(ctx, LOG_DEBUG, "authentication failure [user=%s]", ctx->username_);
     return PAM_AUTH_ERR;
   }
@@ -181,20 +225,28 @@ int _whawty_check_password(whawty_ctx_t* ctx)
   return PAM_SUCCESS;
 }
 
-/* PAM Interface */
+/***********************/
+/*    PAM Interfac     */
+/***********************/
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
   whawty_ctx_t ctx;
   int ret = _whawty_ctx_init(&ctx, pamh, flags, argc, argv);
-  if(ret != PAM_SUCCESS)
+  if(ret != PAM_SUCCESS) {
+    _whawty_cleanup(&ctx);
     return ret;
+  }
 
   ret = _whawty_get_password(&ctx);
-  if(ret != PAM_SUCCESS)
+  if(ret != PAM_SUCCESS) {
+    _whawty_cleanup(&ctx);
     return ret;
+  }
 
-  return _whawty_check_password(&ctx);
+  ret = _whawty_check_password(&ctx);
+  _whawty_cleanup(&ctx);
+  return ret;
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv)

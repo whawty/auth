@@ -103,7 +103,20 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
       _whawty_logf(ctx, LOG_WARNING, "ignoring unknown argument: %s", argv[i]);
   }
 
-  return pam_get_user(pamh, &(ctx->username_), NULL);
+  int ret = pam_get_user(pamh, &(ctx->username_), NULL);
+  if(ret == PAM_SUCCESS) {
+    _whawty_logf(ctx, LOG_DEBUG, "successfully initialized [user=%s]", ctx->username_);
+  } else {
+    _whawty_logf(ctx, LOG_ERR, "pam_get_user failed [%s]", pam_strerror(ctx->pamh_, ret));
+  }
+  return ret;
+}
+
+int _whawty_get_password(whawty_ctx_t* ctx)
+{
+  ctx->password_ = "secret";
+  _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [compiled-in static]");
+  return PAM_SUCCESS;
 }
 
 int _whawty_check_password(whawty_ctx_t* ctx)
@@ -112,7 +125,7 @@ int _whawty_check_password(whawty_ctx_t* ctx)
     return PAM_AUTH_ERR;
   }
 
-  _whawty_logf(ctx, LOG_NOTICE, "pam_whawty: user %s successfully authenticated", ctx->username_);
+  _whawty_logf(ctx, LOG_NOTICE, "user %s successfully authenticated", ctx->username_);
   return PAM_SUCCESS;
 }
 
@@ -125,7 +138,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   if(ret != PAM_SUCCESS)
     return ret;
 
-  _whawty_logf(&ctx, LOG_DEBUG, "pam_whawty successfully initialized (user='%s')", ctx.username_);
+  ret = _whawty_get_password(&ctx);
+  if(ret != PAM_SUCCESS)
+    return ret;
 
   return _whawty_check_password(&ctx);
 }

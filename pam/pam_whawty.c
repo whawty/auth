@@ -45,6 +45,7 @@
 #include <security/pam_modules.h>
 #include <security/pam_ext.h>
 #include <syslog.h>
+#include <security/_pam_macros.h>
 
 #define UNUSED(x) (void)(x)
 
@@ -113,8 +114,13 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
 }
 
 int _whawty_set_authtok_item(whawty_ctx_t* ctx) {
-  UNUSED(ctx);
-      // TODO: set PAM_AUTHTOK item to ctx->password_
+      // set PAM_AUTHTOK item to ctx->password_
+  int ret = pam_set_item(ctx->pamh_, PAM_AUTHTOK, ctx->password_);
+  if(ret != PAM_SUCCESS) {
+    _pam_overwrite(ctx->password_);
+    _pam_drop(ctx->password_);
+    return ret;
+  }
   return PAM_SUCCESS;
 }
 

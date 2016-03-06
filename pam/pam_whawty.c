@@ -54,9 +54,10 @@
 #define WHAWTY_CONF_DEBUG          0x02
 #define WHAWTY_CONF_USE_FIRST_PASS 0x04
 #define WHAWTY_CONF_TRY_FIRST_PASS 0x08
+#define WHAWTY_CONF_NOT_SET_PASS   0x10
 
 typedef struct {
-  int flags_;
+  unsigned int flags_;
   pam_handle_t* pamh_;
   const char* username_;
   char* password_;
@@ -96,6 +97,8 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
       ctx->flags_ |= WHAWTY_CONF_TRY_FIRST_PASS;
     else if(!strcmp(argv[i], "use_first_pass"))
       ctx->flags_ |= WHAWTY_CONF_USE_FIRST_PASS;
+    else if(!strcmp(argv[i], "not_set_pass"))
+      ctx->flags_ |= WHAWTY_CONF_NOT_SET_PASS;
     else
       _whawty_logf(ctx, LOG_WARNING, "ignoring unknown argument: %s", argv[i]);
   }

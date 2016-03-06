@@ -60,7 +60,7 @@ typedef struct {
   unsigned int flags_;
   pam_handle_t* pamh_;
   const char* username_;
-  const char* password_;
+  char* password_;
 } whawty_ctx_t;
 
 void PAM_FORMAT((printf, 3, 4)) _whawty_logf(whawty_ctx_t* ctx, int priority, const char* fmt, ...)
@@ -112,9 +112,16 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
   return ret;
 }
 
+int _whawty_set_authtok_item(whawty_ctx_t* ctx) {
+  UNUSED(ctx);
+      // TODO: set PAM_AUTHTOK item to ctx->password_
+  return PAM_SUCCESS;
+}
+
 int _whawty_get_password(whawty_ctx_t* ctx)
 {
   if(ctx->flags_ & WHAWTY_CONF_USE_FIRST_PASS || ctx->flags_ & WHAWTY_CONF_TRY_FIRST_PASS) {
+        // fetch password from stack
     int ret = pam_get_item(ctx->pamh_, PAM_AUTHTOK, (const void**)(&(ctx->password_)));
     if(ret != PAM_SUCCESS) {
       _whawty_logf(ctx, LOG_ERR, "pam_get_item() returned an error reading the password [%s]", pam_strerror(ctx->pamh_, ret));
@@ -126,16 +133,32 @@ int _whawty_get_password(whawty_ctx_t* ctx)
     }
 
     if(ctx->flags_ & WHAWTY_CONF_USE_FIRST_PASS) {
-      _whawty_logf(ctx, LOG_DEBUG, "no/empty password on stack and use_first_pass is set");
+      _whawty_logf(ctx, LOG_ERR, "no password on stack and use_first_pass is set");
       return PAM_AUTHTOK_RECOVERY_ERR;
     }
   }
 
-      // TODO: fetch password using pam_conv()
-  ctx->password_ = "secret";
-  _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [compiled-in static]");
+      // fetch password using the conversation function
+  int ret = pam_prompt(ctx->pamh_, PAM_PROMPT_ECHO_OFF, &(ctx->password_), "Password: ");
+  if(ret != PAM_SUCCESS) {
+    if(ret == PAM_CONV_AGAIN) {
+      _whawty_logf(ctx, LOG_DEBUG, "conversation function is not ready yet");
+      return PAM_INCOMPLETE;
+    }
 
-      // TODO: set PAM_AUTHTOK item unless WHAWTY_CONF_NOT_SET_PASS is set
+    _whawty_logf(ctx, LOG_ERR, "pam_prompt() returned an error reading the password [%s]", pam_strerror(ctx->pamh_, ret));
+    return ret;
+  }
+  if(ctx->password_ == NULL) {
+    _whawty_logf(ctx, LOG_ERR, "conversation function returned no password");
+    return PAM_AUTHTOK_RECOVERY_ERR;
+  }
+
+  _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [from conversation function]");
+
+  if(!(ctx->flags_ & WHAWTY_CONF_NOT_SET_PASS)) {
+    return _whawty_set_authtok_item(ctx);
+  }
 
   return PAM_SUCCESS;
 }

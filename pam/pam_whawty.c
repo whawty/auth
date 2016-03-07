@@ -96,20 +96,8 @@ void PAM_FORMAT((printf, 3, 4)) _whawty_logf(whawty_ctx_t* ctx, int priority, co
   va_end(args);
 }
 
-int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, const char **argv)
+int _whawty_parse_args(whawty_ctx_t* ctx, int argc, const char **argv)
 {
-  ctx->flags_ = 0;
-  ctx->pamh_ = pamh;
-  ctx->username_ = NULL;
-  ctx->password_ = NULL;
-  ctx->sockpath_ = NULL;
-  ctx->sock_ = -1;
-  ctx->timeout_ = 3;
-
-  if(flags & PAM_SILENT)
-    ctx->flags_ |= WHAWTY_CONF_SILENT;
-  // flag PAM_DISALLOW_NULL_AUTHTOK is not applicable and will therefore be ignored
-
   int i;
   for(i = 0; i < argc; ++i) {
     if(!strcmp(argv[i], "debug"))
@@ -123,8 +111,12 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
     else if(!strncmp(argv[i], "sock=", 5)) {
       if(strlen(argv[i]) < 6)
         _whawty_logf(ctx, LOG_WARNING, "ignoring invalid argument [%s]", argv[i]);
-      else
+      else {
         ctx->sockpath_ = strdup(&(argv[i][8]));
+        if(ctx->sockpath_ == NULL) {
+          return PAM_BUF_ERR;
+        }
+      }
     }
     else if(!strncmp(argv[i], "timeout=", 8)) {
       if(strlen(argv[i]) < 9) {
@@ -142,8 +134,32 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
   }
   if(ctx->sockpath_ == NULL)
     ctx->sockpath_ = strdup("/var/run/whawty/auth.sock");
+  if(ctx->sockpath_ == NULL) {
+    return PAM_BUF_ERR;
+  }
 
-  int ret = pam_get_user(pamh, &(ctx->username_), NULL);
+  return PAM_SUCCESS;
+}
+
+int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc, const char **argv)
+{
+  ctx->flags_ = 0;
+  ctx->pamh_ = pamh;
+  ctx->username_ = NULL;
+  ctx->password_ = NULL;
+  ctx->sockpath_ = NULL;
+  ctx->sock_ = -1;
+  ctx->timeout_ = 3;
+
+  if(flags & PAM_SILENT)
+    ctx->flags_ |= WHAWTY_CONF_SILENT;
+  // flag PAM_DISALLOW_NULL_AUTHTOK is not applicable and will therefore be ignored
+
+  int ret = _whawty_parse_args(ctx, argc, argv);
+  if(ret != PAM_SUCCESS)
+    return ret;
+
+  ret = pam_get_user(pamh, &(ctx->username_), NULL);
   if(ret == PAM_SUCCESS) {
     _whawty_logf(ctx, LOG_DEBUG, "successfully initialized [sock=%s]", ctx->sockpath_);
   } else {

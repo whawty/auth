@@ -224,12 +224,12 @@ ssize_t _whawty_write_data(int sock, const void* data, size_t len, int timeout)
   size_t offset = 0;
   for(;;) {
     FD_ZERO(&wfds);
-    FD_SET(0, &wfds);
+    FD_SET(sock, &wfds);
 
     tv.tv_sec = timeout;
     tv.tv_usec = 0;
 
-    int ret = select(1, NULL, &wfds, NULL, &tv);
+    int ret = select(sock+1, NULL, &wfds, NULL, &tv);
     if(ret < 0 && errno != EINTR)
       return ret;
     if(!ret) {
@@ -306,12 +306,12 @@ ssize_t _whawty_read_data(int sock, const void* data, size_t len, int timeout)
   size_t offset = 0;
   for(;;) {
     FD_ZERO(&rfds);
-    FD_SET(0, &rfds);
+    FD_SET(sock, &rfds);
 
     tv.tv_sec = timeout;
     tv.tv_usec = 0;
 
-    int ret = select(1, &rfds, NULL, NULL, &tv);
+    int ret = select(sock+1, &rfds, NULL, NULL, &tv);
     if(ret < 0 && errno != EINTR)
       return ret;
     if(!ret) {

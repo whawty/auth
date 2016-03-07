@@ -74,9 +74,9 @@ typedef struct {
   pam_handle_t* pamh_;
   const char* username_;
   char* password_;
-  const char* sockpath_;
+  char* sockpath_;
   int sock_;
-  int timeout_;
+  unsigned int timeout_;
 } whawty_ctx_t;
 
 /* init/fetch password */
@@ -102,9 +102,9 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
   ctx->pamh_ = pamh;
   ctx->username_ = NULL;
   ctx->password_ = NULL;
-  ctx->sockpath_ = "/var/run/whawty/auth.sock"; // TODO: make this configurable
+  ctx->sockpath_ = NULL;
   ctx->sock_ = -1;
-  ctx->timeout_ = 3; // TODO: make this configurable
+  ctx->timeout_ = 3;
 
   if(flags & PAM_SILENT)
     ctx->flags_ |= WHAWTY_CONF_SILENT;
@@ -120,9 +120,28 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
       ctx->flags_ |= WHAWTY_CONF_USE_FIRST_PASS;
     else if(!strcmp(argv[i], "not_set_pass"))
       ctx->flags_ |= WHAWTY_CONF_NOT_SET_PASS;
+    else if(!strncmp(argv[i], "sock=", 5)) {
+      if(strlen(argv[i]) < 6)
+        _whawty_logf(ctx, LOG_WARNING, "ignoring invalid argument [%s]", argv[i]);
+      else
+        ctx->sockpath_ = strdup(&(argv[i][8]));
+    }
+    else if(!strncmp(argv[i], "timeout=", 8)) {
+      if(strlen(argv[i]) < 9) {
+        _whawty_logf(ctx, LOG_WARNING, "ignoring invalid argument [%s]", argv[i]);
+      } else {
+        int t = atoi(&(argv[i][8]));
+        if(t <= 0)
+          _whawty_logf(ctx, LOG_WARNING, "ignoring invalid timeout [%d]", t);
+        else
+          ctx->timeout_ = t;
+      }
+    }
     else
-      _whawty_logf(ctx, LOG_WARNING, "ignoring unknown argument: %s", argv[i]);
+      _whawty_logf(ctx, LOG_WARNING, "ignoring unknown argument [%s]", argv[i]);
   }
+  if(ctx->sockpath_ == NULL)
+    ctx->sockpath_ = strdup("/var/run/whawty/auth.sock");
 
   int ret = pam_get_user(pamh, &(ctx->username_), NULL);
   if(ret == PAM_SUCCESS) {
@@ -181,14 +200,16 @@ int _whawty_get_password(whawty_ctx_t* ctx)
 
 void _whawty_cleanup(whawty_ctx_t* ctx)
 {
-  if(ctx->password_ != NULL) {
-    _pam_overwrite(ctx->password_);
-    _pam_drop(ctx->password_);
-  }
+  _pam_overwrite(ctx->password_);
+  _pam_drop(ctx->password_);
+
+  _pam_drop(ctx->sockpath_);
 
   if(ctx->sock_ >= 0) {
     close(ctx->sock_);
   }
+
+  _whawty_logf(ctx, LOG_DEBUG, "cleanup called");
 }
 
 /* actual authentication */

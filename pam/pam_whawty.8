@@ -2,12 +2,12 @@
 .\"     Title: pam_whawty
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 03/07/2016
+.\"      Date: 03/08/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "PAM_WHAWTY" "8" "03/07/2016" "\ \&" "\ \&"
+.TH "PAM_WHAWTY" "8" "03/08/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-pam_whawty \- PAM module for whawty\&.auth
+pam_whawty \- PAM module for \*(Aqwhawty\&.auth\*(Aq
 .SH "SYNOPSIS"
 .sp
 .nf
@@ -42,10 +42,10 @@ pam_whawty\&.so
 .fi
 .SH "DESCRIPTION"
 .sp
-\fBpam_whawty\fR is a pam module which uses whawty\&.auth as authentication backend\&. In order for \fBpam_whawty\fR to work the whawty\&.auth app must be running on the machine\&. Since whawty\&.auth uses the same protocol as saslauthd \fBpam_whawty\fR might as well be used to authenticate against saslauthd\&.
+\fBpam_whawty\fR is a pam module which uses \fIwhawty\&.auth\fR as authentication backend\&. In order for \fBpam_whawty\fR to work the \fIwhawty\&.auth\fR app must be running on the machine\&. Since \fIwhawty\&.auth\fR uses the same protocol as \fIsaslauthd\fR \fBpam_whawty\fR might as well be used to authenticate against \fIsaslauthd\fR\&.
 .SH "OPTIONS"
 .sp
-The following options can be passed to the \fBpam_whawty\fR module:
+The following options can be passed to the \fBpam_whawty\fR module\&.
 .PP
 \fBdebug\fR
 .RS 4
@@ -76,14 +76,14 @@ By default
 pushes a fetched password onto the stack for other modules to be used\&. If this option is set the password is not pushed onto the stack\&.
 .RE
 .PP
-\fBsock=</path/to/whawty/socket>\fR
+\fBsock=\fR\fI</path/to/whawty/socket>\fR
 .RS 4
 This option can be used to configure the path to the whawty\&.auth unix socket\&. By default
-\fB/var/run/whawty/auth\&.sock\fR
+\fI/var/run/whawty/auth\&.sock\fR
 is used\&.
 .RE
 .PP
-\fBtimeout=<seconds>\fR
+\fBtimeout=\fR\fI<seconds>\fR
 .RS 4
 In case the authentication daemon does not respond to authentication requests by default
 \fBpam_whawty\fR

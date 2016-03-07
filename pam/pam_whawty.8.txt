@@ -4,7 +4,7 @@ pam_whawty(8)
 NAME
 ----
 
-pam_whawty - PAM module for whawty.auth
+pam_whawty - PAM module for 'whawty.auth'
 
 
 SYNOPSIS
@@ -24,16 +24,16 @@ pam_whawty.so
 DESCRIPTION
 -----------
 
-*pam_whawty* is a pam module which uses whawty.auth as authentication backend.
-In order for *pam_whawty* to work the whawty.auth app must be running on the
-machine. Since whawty.auth uses the same protocol as saslauthd *pam_whawty* might
-as well be used to authenticate against saslauthd.
+*pam_whawty* is a pam module which uses 'whawty.auth' as authentication backend.
+In order for *pam_whawty* to work the 'whawty.auth' app must be running on the
+machine. Since 'whawty.auth' uses the same protocol as 'saslauthd' *pam_whawty* might
+as well be used to authenticate against 'saslauthd'.
 
 
 OPTIONS
 -------
 
-The following options can be passed to the *pam_whawty* module:
+The following options can be passed to the *pam_whawty* module.
 
 *debug*::
    This turns on additional logging using *syslog*(3).
@@ -51,11 +51,11 @@ The following options can be passed to the *pam_whawty* module:
    modules to be used. If this option is set the password is not pushed onto the
    stack.
 
-*sock=</path/to/whawty/socket>*::
+*sock=*'</path/to/whawty/socket>'::
    This option can be used to configure the path to the whawty.auth unix socket.
-   By default */var/run/whawty/auth.sock* is used.
+   By default '/var/run/whawty/auth.sock' is used.
 
-*timeout=<seconds>*::
+*timeout=*'<seconds>'::
    In case the authentication daemon does not respond to authentication requests
    by default *pam_whawty* will report an authentication failure after 3 seconds.
    This option makes this period configurable.

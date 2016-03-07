@@ -46,6 +46,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 #define PAM_SM_AUTH
 
@@ -75,6 +76,7 @@ typedef struct {
   char* password_;
   const char* sockpath_;
   int sock_;
+  int timeout_;
 } whawty_ctx_t;
 
 /* init/fetch password */
@@ -102,6 +104,7 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
   ctx->password_ = NULL;
   ctx->sockpath_ = "/var/run/whawty/auth.sock"; // TODO: make this configurable
   ctx->sock_ = -1;
+  ctx->timeout_ = 3; // TODO: make this configurable
 
   if(flags & PAM_SILENT)
     ctx->flags_ |= WHAWTY_CONF_SILENT;
@@ -213,10 +216,27 @@ int _whawty_open_socket(whawty_ctx_t* ctx)
   return PAM_SUCCESS;
 }
 
-ssize_t _whawty_write_data(int sock, const void* data, size_t len)
+ssize_t _whawty_write_data(int sock, const void* data, size_t len, int timeout)
 {
+  fd_set wfds;
+  struct timeval tv;
+
   size_t offset = 0;
   for(;;) {
+    FD_ZERO(&wfds);
+    FD_SET(0, &wfds);
+
+    tv.tv_sec = timeout;
+    tv.tv_usec = 0;
+
+    int ret = select(1, NULL, &wfds, NULL, &tv);
+    if(ret < 0 && errno != EINTR)
+      return ret;
+    if(!ret) {
+      errno = ETIMEDOUT;
+      return ret;
+    }
+
     ssize_t nwritten = write(sock, (void*)(data + offset), len - offset);
     if(nwritten < 0 || (nwritten == 0 && errno != EINTR)) {
       return offset;
@@ -228,17 +248,17 @@ ssize_t _whawty_write_data(int sock, const void* data, size_t len)
   return offset;
 }
 
-ssize_t _whawty_send_request_part(int sock, const char* part)
+ssize_t _whawty_send_request_part(int sock, const char* part, int timeout)
 {
   ssize_t l = strlen(part);
   l = l > WHAWTY_REQUEST_MAX_PARTLEN ? WHAWTY_REQUEST_MAX_PARTLEN : l;
 
   u_int16_t len = htons(l);
-  ssize_t ret = _whawty_write_data(sock, (const void*)(&len), sizeof(len));
+  ssize_t ret = _whawty_write_data(sock, (const void*)(&len), sizeof(len), timeout);
   if(ret != sizeof(len))
     return -1;
 
-  ret = _whawty_write_data(sock, (const void*)(part), l);
+  ret = _whawty_write_data(sock, (const void*)(part), l, timeout);
   if(ret != l)
     return -1;
 
@@ -247,28 +267,28 @@ ssize_t _whawty_send_request_part(int sock, const char* part)
 
 int _whawty_send_request(whawty_ctx_t* ctx)
 {
-  int ret = _whawty_send_request_part(ctx->sock_, ctx->username_);
+  int ret = _whawty_send_request_part(ctx->sock_, ctx->username_, ctx->timeout_);
   if(ret) {
         // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;
   }
 
-  ret = _whawty_send_request_part(ctx->sock_, ctx->password_);
+  ret = _whawty_send_request_part(ctx->sock_, ctx->password_, ctx->timeout_);
   if(ret) {
         // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;
   }
 
-  ret = _whawty_send_request_part(ctx->sock_, ""); // service
+  ret = _whawty_send_request_part(ctx->sock_, "", ctx->timeout_); // service
   if(ret) {
         // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;
   }
 
-  ret = _whawty_send_request_part(ctx->sock_, ""); // realm
+  ret = _whawty_send_request_part(ctx->sock_, "", ctx->timeout_); // realm
   if(ret) {
         // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
@@ -278,11 +298,27 @@ int _whawty_send_request(whawty_ctx_t* ctx)
   return PAM_SUCCESS;
 }
 
-ssize_t _whawty_read_data(int sock, const void* data, size_t len)
+ssize_t _whawty_read_data(int sock, const void* data, size_t len, int timeout)
 {
-      // TODO: use select() with timeout
+  fd_set rfds;
+  struct timeval tv;
+
   size_t offset = 0;
   for(;;) {
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds);
+
+    tv.tv_sec = timeout;
+    tv.tv_usec = 0;
+
+    int ret = select(1, &rfds, NULL, NULL, &tv);
+    if(ret < 0 && errno != EINTR)
+      return ret;
+    if(!ret) {
+      errno = ETIMEDOUT;
+      return ret;
+    }
+
     ssize_t nread = read(sock, (void*)(data + offset), len - offset);
     if(nread < 0 || (nread == 0 && errno != EINTR)) {
       return offset;
@@ -297,7 +333,7 @@ ssize_t _whawty_read_data(int sock, const void* data, size_t len)
 int _whawty_recv_response(whawty_ctx_t* ctx, char* buf)
 {
   u_int16_t len = 0;
-  ssize_t ret = _whawty_read_data(ctx->sock_, (const void*)(&len), sizeof(len));
+  ssize_t ret = _whawty_read_data(ctx->sock_, (const void*)(&len), sizeof(len), ctx->timeout_);
   if(ret != sizeof(len)) {
     _whawty_logf(ctx, LOG_ERR, "unable to read from whawty socket [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;
@@ -306,7 +342,7 @@ int _whawty_recv_response(whawty_ctx_t* ctx, char* buf)
   ssize_t l = ntohs(len);
   l = l > WHAWTY_REQUEST_MAX_PARTLEN ? WHAWTY_REQUEST_MAX_PARTLEN : l;
 
-  ret = _whawty_read_data(ctx->sock_, (const void*)(buf), l);
+  ret = _whawty_read_data(ctx->sock_, (const void*)(buf), l, ctx->timeout_);
   if(ret != l) {
     _whawty_logf(ctx, LOG_ERR, "unable to read from whawty socket [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;

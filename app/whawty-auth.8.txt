@@ -1,0 +1,84 @@
+whawty-auth(8)
+==============
+
+NAME
+----
+
+whawty-auth - manage whawty auth stores
+
+
+SYNOPSIS
+--------
+
+whawty-auth [global options] command [command options] [arguments...]
+
+
+DESCRIPTION
+-----------
+
+*whawty-auth* implements everything which is needed to run a whawty auth service.
+This tool can be used to initialize and manage whawty auth stores. When used as a
+daemon it can be used to offer a saslauthd compatible authentication service and
+or a small web interface to manage users and passwords. Together with *pam_whawty*
+this can also be used with PAM.
+
+
+GLOBAL OPTIONS
+--------------
+
+The following options can be passed to *whawty-auth*:
+
+*-c | --conf </path/to/config.json>*::
+    This sets the path to main configuration file. By default *whawty-auth* uses
+    the file */etc/whawty-auth/default.json*. This may also be configured using
+    the environment variable: WHAWTY_AUTH_CONFIG. If both the environment variable
+    and the command line option are supplied the latter is used.
+
+*--do-check[=(true|false)]*::
+    Run basic consistency check on the whawty store on startup. By default checks
+    are enabled. This can also be configured using the environment variable:
+    WHAWTY_AUTH_DO_CHECK. If both the environment variable and the command line
+    option are supplied the latter is used.
+
+*-h | --help*::
+    Show help text and exit.
+
+*-v | --version*::
+    Print version information and exit.
+
+COMMANDS
+--------
+
+init
+~~~~
+
+...
+
+check
+~~~~~
+
+...
+
+
+BUGS
+----
+Most likely there are some bugs in *whawty-auth*. If you find a bug, please let
+the developers know at http://github.com/whawty/auth. Of course, pull requests
+are preferred.
+
+
+SEE ALSO
+--------
+*pam-whawty*(8)
+
+
+AUTHORS
+-------
+
+Christian Pointner <equinox@spreadspace.org>
+
+
+RESOURCES
+---------
+
+Main web site: http://github.com/whawty/auth

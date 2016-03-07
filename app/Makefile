@@ -33,7 +33,7 @@ GOCMD := go
 EXECUTEABLE := whawty-auth
 
 all: build
-.PHONY: vet format build
+.PHONY: vet format build clean distclean
 
 vet:
 	$(GOCMD) vet
@@ -44,6 +44,13 @@ format:
 build:
 	$(GOCMD) build -o $(EXECUTEABLE)
 
+distclean: clean
+	rm -f $(EXECUTABLE).8
+
 clean:
 	rm -f $(EXECUTEABLE)
 
+manpage: $(EXECUTEABLE).8
+
+$(EXECUTEABLE).8: $(EXECUTEABLE).8.txt
+	a2x -f manpage $<

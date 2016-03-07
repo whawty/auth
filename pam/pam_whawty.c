@@ -217,11 +217,11 @@ ssize_t _whawty_write_data(int sock, const void* data, size_t len)
 {
   size_t offset = 0;
   for(;;) {
-    ssize_t written = write(sock, (void*)(data + offset), len - offset);
-    if(written < 0 || (written == 0 && errno != EINTR)) {
+    ssize_t nwritten = write(sock, (void*)(data + offset), len - offset);
+    if(nwritten < 0 || (nwritten == 0 && errno != EINTR)) {
       return offset;
     }
-    offset += written;
+    offset += nwritten;
     if(offset >= len)
       break;
   }
@@ -278,6 +278,43 @@ int _whawty_send_request(whawty_ctx_t* ctx)
   return PAM_SUCCESS;
 }
 
+ssize_t _whawty_read_data(int sock, const void* data, size_t len)
+{
+      // TODO: use select() with timeout
+  size_t offset = 0;
+  for(;;) {
+    ssize_t nread = read(sock, (void*)(data + offset), len - offset);
+    if(nread < 0 || (nread == 0 && errno != EINTR)) {
+      return offset;
+    }
+    offset += nread;
+    if(offset >= len)
+      break;
+  }
+  return offset;
+}
+
+int _whawty_recv_response(whawty_ctx_t* ctx, char* buf)
+{
+  u_int16_t len = 0;
+  ssize_t ret = _whawty_read_data(ctx->sock_, (const void*)(&len), sizeof(len));
+  if(ret != sizeof(len)) {
+    _whawty_logf(ctx, LOG_ERR, "unable to read from whawty socket [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  ssize_t l = ntohs(len);
+  l = l > WHAWTY_REQUEST_MAX_PARTLEN ? WHAWTY_REQUEST_MAX_PARTLEN : l;
+
+  ret = _whawty_read_data(ctx->sock_, (const void*)(buf), l);
+  if(ret != l) {
+    _whawty_logf(ctx, LOG_ERR, "unable to read from whawty socket [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  return PAM_SUCCESS;
+}
+
 int _whawty_check_password(whawty_ctx_t* ctx)
 {
   int ret = _whawty_open_socket(ctx);
@@ -290,9 +327,9 @@ int _whawty_check_password(whawty_ctx_t* ctx)
 
   char response[WHAWTY_REQUEST_MAX_PARTLEN + 1];
   memset(response, 0, sizeof(response));
-  /* ret = _whawty_recv_response(ctx, response, sizeof(response)); */
-  /* if(ret != PAM_SUCCESS) */
-  /*   return ret; */
+  ret = _whawty_recv_response(ctx, response);
+  if(ret != PAM_SUCCESS)
+    return ret;
 
   if(strncmp("OK", response, 2)) {
     _whawty_logf(ctx, LOG_DEBUG, "authentication failure [%s]", response);

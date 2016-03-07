@@ -123,7 +123,7 @@ int _whawty_ctx_init(whawty_ctx_t* ctx, pam_handle_t *pamh, int flags, int argc,
 
   int ret = pam_get_user(pamh, &(ctx->username_), NULL);
   if(ret == PAM_SUCCESS) {
-    _whawty_logf(ctx, LOG_DEBUG, "successfully initialized [user=%s]", ctx->username_);
+    _whawty_logf(ctx, LOG_DEBUG, "successfully initialized [sock=%s]", ctx->sockpath_);
   } else {
     _whawty_logf(ctx, LOG_ERR, "pam_get_user() failed [%s]", pam_strerror(ctx->pamh_, ret));
   }
@@ -254,7 +254,7 @@ int _whawty_send_request(whawty_ctx_t* ctx)
     return PAM_AUTHINFO_UNAVAIL;
   }
 
-  ret = _whawty_send_request_part(ctx->sock_, ctx->username_);
+  ret = _whawty_send_request_part(ctx->sock_, ctx->password_);
   if(ret) {
         // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
@@ -288,8 +288,14 @@ int _whawty_check_password(whawty_ctx_t* ctx)
   if(ret != PAM_SUCCESS)
     return ret;
 
-  if(strcmp(ctx->username_, "equinox") != 0 || strcmp(ctx->password_, "test") != 0) {
-    _whawty_logf(ctx, LOG_DEBUG, "authentication failure [user=%s]", ctx->username_);
+  char response[WHAWTY_REQUEST_MAX_PARTLEN + 1];
+  memset(response, 0, sizeof(response));
+  /* ret = _whawty_recv_response(ctx, response, sizeof(response)); */
+  /* if(ret != PAM_SUCCESS) */
+  /*   return ret; */
+
+  if(strncmp("OK", response, 2)) {
+    _whawty_logf(ctx, LOG_DEBUG, "authentication failure [%s]", response);
     return PAM_AUTH_ERR;
   }
 

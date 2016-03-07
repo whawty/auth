@@ -64,9 +64,16 @@ strip: $(PAMLIB)
 distclean: clean
 	find . -name *.o -exec rm -f {} \;
 	find . -name "*.\~*" -exec rm -rf {} \;
+	rm -f pam_whawty.8
 
 clean:
 	rm -f *.o
 	rm -f *.d
 	rm -f *.d.*
 	rm -f $(PAMLIB)
+
+manpage: pam_whawty.8
+
+pam_whawty.8: pam_whawty.8.txt
+	a2x -f manpage $<
+	@ sed -i -e 's/^  \[ \([^ ]*\)/  [ \\fB\1\\fR/' $@

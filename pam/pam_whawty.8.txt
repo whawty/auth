@@ -1,0 +1,92 @@
+pam_whawty(8)
+=============
+
+NAME
+----
+
+pam_whawty - PAM module for whawty.auth
+
+
+SYNOPSIS
+--------
+
+....
+pam_whawty.so
+  [ debug ]
+  [ try_first_pass ]
+  [ use_first_pass ]
+  [ not_set_pass ]
+  [ sock=</path/to/whawty/socket> ]
+  [ timeout=<seconds> ]
+....
+
+
+DESCRIPTION
+-----------
+
+*pam_whawty* is a pam module which uses whawty.auth as authentication backend.
+In order for *pam_whawty* to work the whawty.auth app must be running on the
+machine. Since whawty.auth uses the same protocol as saslauthd *pam_whawty* might
+as well be used to authenticate against saslauthd.
+
+
+OPTIONS
+-------
+
+The following options can be passed to the *pam_whawty* module:
+
+*debug*::
+   This turns on additional logging using *syslog*(3).
+
+*try_first_pass*::
+   This instructs *pam_whawty* to try the password of a previous module from the
+   stack. Only if there is no password found it will ask the user for a password.
+
+*use_first_pass*::
+   This is similar to *try_first_pass* but if no password is found on the stack
+   the module fails. *pam_whawty* will not try to get the password from the user.
+
+*not_set_pass*::
+   By default *pam_whawty* pushes a fetched password onto the stack for other
+   modules to be used. If this option is set the password is not pushed onto the
+   stack.
+
+*sock=</path/to/whawty/socket>*::
+   This option can be used to configure the path to the whawty.auth unix socket.
+   By default */var/run/whawty/auth.sock* is used.
+
+*timeout=<seconds>*::
+   In case the authentication daemon does not respond to authentication requests
+   by default *pam_whawty* will report an authentication failure after 3 seconds.
+   This option makes this period configurable.
+
+
+MODULE TYPES PROVIDED
+---------------------
+
+Only module type *auth* is provided however it is not possible to change passwords
+using this module.
+
+
+BUGS
+----
+Most likely there are some bugs in *pam_whawty*. If you find a bug, please let
+the developers know at http://github.com/whawty/auth. Of course, pull requests
+are preferred.
+
+
+SEE ALSO
+--------
+*pam.conf*(5), *pamd.d*(5), *pam*(7)
+
+
+AUTHORS
+-------
+
+Christian Pointner <equinox@spreadspace.org>
+
+
+RESOURCES
+---------
+
+Main web site: http://github.com/whawty/auth

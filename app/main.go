@@ -509,5 +509,6 @@ func main() {
 		},
 	}
 
+	wdl.Printf("calling app.Run()")
 	app.Run(os.Args)
 }

@@ -45,6 +45,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #define PAM_SM_AUTH
 
@@ -64,6 +65,8 @@
 #define WHAWTY_CONF_USE_FIRST_PASS 0x04
 #define WHAWTY_CONF_TRY_FIRST_PASS 0x08
 #define WHAWTY_CONF_NOT_SET_PASS   0x10
+
+#define WHAWTY_REQUEST_MAX_PARTLEN 256
 
 typedef struct {
   unsigned int flags_;
@@ -193,7 +196,7 @@ int _whawty_open_socket(whawty_ctx_t* ctx)
 
   ctx->sock_ = socket(PF_UNIX, SOCK_STREAM, 0);
   if(ctx->sock_ < 0) {
-        // TODO: should be use a thread safe version of strerror?
+        // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to open socket for authentication [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;
   }
@@ -203,16 +206,85 @@ int _whawty_open_socket(whawty_ctx_t* ctx)
   snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", ctx->sockpath_);
 
   if(connect(ctx->sock_, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
-        // TODO: should be use a thread safe version of strerror?
+        // TODO: should we use a thread safe version of strerror?
     _whawty_logf(ctx, LOG_ERR, "unable to connect to whawty [%s]", strerror(errno));
     return PAM_AUTHINFO_UNAVAIL;
   }
   return PAM_SUCCESS;
 }
 
+ssize_t _whawty_write_data(int sock, const void* data, size_t len)
+{
+  size_t offset = 0;
+  for(;;) {
+    ssize_t written = write(sock, (void*)(data + offset), len - offset);
+    if(written < 0 || (written == 0 && errno != EINTR)) {
+      return offset;
+    }
+    offset += written;
+    if(offset >= len)
+      break;
+  }
+  return offset;
+}
+
+ssize_t _whawty_send_request_part(int sock, const char* part)
+{
+  ssize_t l = strlen(part);
+  l = l > WHAWTY_REQUEST_MAX_PARTLEN ? WHAWTY_REQUEST_MAX_PARTLEN : l;
+
+  u_int16_t len = htons(l);
+  ssize_t ret = _whawty_write_data(sock, (const void*)(&len), sizeof(len));
+  if(ret != sizeof(len))
+    return -1;
+
+  ret = _whawty_write_data(sock, (const void*)(part), l);
+  if(ret != l)
+    return -1;
+
+  return 0;
+}
+
+int _whawty_send_request(whawty_ctx_t* ctx)
+{
+  int ret = _whawty_send_request_part(ctx->sock_, ctx->username_);
+  if(ret) {
+        // TODO: should we use a thread safe version of strerror?
+    _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  ret = _whawty_send_request_part(ctx->sock_, ctx->username_);
+  if(ret) {
+        // TODO: should we use a thread safe version of strerror?
+    _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  ret = _whawty_send_request_part(ctx->sock_, ""); // service
+  if(ret) {
+        // TODO: should we use a thread safe version of strerror?
+    _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  ret = _whawty_send_request_part(ctx->sock_, ""); // realm
+  if(ret) {
+        // TODO: should we use a thread safe version of strerror?
+    _whawty_logf(ctx, LOG_ERR, "unable to write to whawty socket [%s]", strerror(errno));
+    return PAM_AUTHINFO_UNAVAIL;
+  }
+
+  return PAM_SUCCESS;
+}
+
 int _whawty_check_password(whawty_ctx_t* ctx)
 {
   int ret = _whawty_open_socket(ctx);
+  if(ret != PAM_SUCCESS)
+    return ret;
+
+  ret = _whawty_send_request(ctx);
   if(ret != PAM_SUCCESS)
     return ret;
 

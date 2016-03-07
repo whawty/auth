@@ -10,7 +10,7 @@ whawty-auth - manage whawty auth stores
 SYNOPSIS
 --------
 
-whawty-auth [global options] command [command options] [arguments...]
+*whawty-auth* '[global options]' *command* '[command options]' [arguments...]
 
 
 DESCRIPTION
@@ -20,24 +20,24 @@ DESCRIPTION
 This tool can be used to initialize and manage whawty auth stores. When used as a
 daemon it can be used to offer a saslauthd compatible authentication service and
 or a small web interface to manage users and passwords. Together with *pam_whawty*
-this can also be used with PAM.
+authentication can also be done using PAM.
 
 
 GLOBAL OPTIONS
 --------------
 
-The following options can be passed to *whawty-auth*:
+The following global options can be passed to *whawty-auth*.
 
-*-c | --conf </path/to/config.json>*::
+*--conf* '</path/to/config.json>'::
     This sets the path to main configuration file. By default *whawty-auth* uses
-    the file */etc/whawty-auth/default.json*. This may also be configured using
-    the environment variable: WHAWTY_AUTH_CONFIG. If both the environment variable
+    the file '/etc/whawty-auth/default.json'. This may also be configured using
+    the environment variable 'WHAWTY_AUTH_CONFIG'. If both the environment variable
     and the command line option are supplied the latter is used.
 
-*--do-check[=(true|false)]*::
+*--do-check*'[=(true|false)]'::
     Run basic consistency check on the whawty store on startup. By default checks
-    are enabled. This can also be configured using the environment variable:
-    WHAWTY_AUTH_DO_CHECK. If both the environment variable and the command line
+    are enabled. This can also be configured using the environment variable
+    'WHAWTY_AUTH_DO_CHECK'. If both the environment variable and the command line
     option are supplied the latter is used.
 
 *-h | --help*::
@@ -124,12 +124,18 @@ run
 
 This instructs *whawty-auth* to run as an authentication service.
 
-*-s | --sock </path/to/whawty/sock>*::
+*--sock* '</path/to/whawty/sock>'::
      Open a saslauthd compatible unix socket. This option might be supplied several times.
-     *whawty-auth* will listen on all sockets for authentication requests.
+     *whawty-auth* will listen on all sockets for authentication requests. In addition
+     to this pats may be specified using the environment variable 'WHAWTY_AUTH_SASL_SOCK'
+     as a comma-seperated list. All sockets defined on command line and via the environment
+     are merged and *whawty-auth* will listen on all sockets simultaneously.
 
-*-web-addr (<addr>|+++*+++):<port>*::
-     Also start a small web interface on the specified address.
+*-web-addr* '[<addr>]:<port>'::
+     Also start a small web interface on the specified address. This can also be specified
+     using the environment variable 'WHAWTY_AUTH_WEB_ADDR'. If both the command line option
+     as well as the environment variable are supplied the value of the command line option
+     will be used.
 
 
 BUGS

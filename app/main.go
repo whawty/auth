@@ -73,7 +73,7 @@ func askPass() (string, error) {
 	}
 }
 
-func cmdInit(configfile string, c *cli.Context) {
+func cmdInit(c *cli.Context) {
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "init")
@@ -92,7 +92,7 @@ func cmdInit(configfile string, c *cli.Context) {
 		password = pwd
 	}
 
-	s, err := NewStore(configfile)
+	s, err := NewStore(c.GlobalString("conf"))
 	if err != nil {
 		fmt.Printf("Error initializing whawty store: %s\n", err)
 		return
@@ -104,8 +104,8 @@ func cmdInit(configfile string, c *cli.Context) {
 	fmt.Printf("whawty store successfully initialized!\n")
 }
 
-func cmdCheck(configfile string, c *cli.Context) {
-	s, err := NewStore(configfile)
+func cmdCheck(c *cli.Context) {
+	s, err := NewStore(c.GlobalString("conf"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return
@@ -124,14 +124,14 @@ func cmdCheck(configfile string, c *cli.Context) {
 	}
 }
 
-func openAndCheck(configfile string, docheck bool) *Store {
-	s, err := NewStore(configfile)
+func openAndCheck(c *cli.Context) *Store {
+	s, err := NewStore(c.GlobalString("conf"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return nil
 	}
 
-	if !docheck {
+	if !c.GlobalBool("do-check") {
 		return s
 	}
 
@@ -145,8 +145,8 @@ func openAndCheck(configfile string, docheck bool) *Store {
 	return s
 }
 
-func cmdAdd(configfile string, docheck bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdAdd(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
@@ -176,8 +176,8 @@ func cmdAdd(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
-func cmdRemove(configfile string, docheck bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdRemove(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
@@ -195,8 +195,8 @@ func cmdRemove(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
-func cmdUpdate(configfile string, docheck bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdUpdate(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
@@ -226,8 +226,8 @@ func cmdUpdate(configfile string, docheck bool, c *cli.Context) {
 	}
 }
 
-func cmdSetAdmin(configfile string, docheck bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdSetAdmin(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
@@ -307,21 +307,21 @@ func cmdListSupported(s *StoreChan) {
 	fmt.Println(table)
 }
 
-func cmdList(configfile string, docheck, listFull bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdList(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
 
-	if listFull {
+	if c.Bool("full") {
 		cmdListFull(s.GetInterface())
 	} else {
 		cmdListSupported(s.GetInterface())
 	}
 }
 
-func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdAuthenticate(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
@@ -363,11 +363,14 @@ func cmdAuthenticate(configfile string, docheck bool, c *cli.Context) {
 	os.Exit(0)
 }
 
-func cmdRun(configfile string, docheck bool, socks []string, webAddr string, c *cli.Context) {
-	s := openAndCheck(configfile, docheck)
+func cmdRun(c *cli.Context) {
+	s := openAndCheck(c)
 	if s == nil {
 		return
 	}
+
+	webAddr := c.String("web-addr")
+	socks := c.StringSlice("sock")
 
 	if webAddr != "" {
 		if len(socks) == 0 {
@@ -378,7 +381,7 @@ func cmdRun(configfile string, docheck bool, socks []string, webAddr string, c *
 		} else {
 			go func() {
 				if err := runWebApi(webAddr, s.GetInterface()); err != nil {
-					fmt.Printf("warning running  web interface failed: %s\n", err)
+					fmt.Printf("warning running web interface failed: %s\n", err)
 				}
 			}()
 		}
@@ -391,28 +394,21 @@ func cmdRun(configfile string, docheck bool, socks []string, webAddr string, c *
 }
 
 func main() {
-	var configfile string
-	var docheck, listFull bool
-	var socks []string
-	var webAddr string
-
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
 	app.Version = "0.1"
 	app.Usage = "manage whawty auth stores"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:        "conf, c",
-			Value:       "/etc/whawty-auth/default.json",
-			Usage:       "path to the configuration file",
-			Destination: &configfile,
-			EnvVar:      "WHAWTY_AUTH_CONFIG",
+			Name:   "conf",
+			Value:  "/etc/whawty-auth/default.json",
+			Usage:  "path to the configuration file",
+			EnvVar: "WHAWTY_AUTH_CONFIG",
 		},
 		cli.BoolTFlag{
-			Name:        "do-check",
-			Usage:       "run check on base directory before executing command",
-			Destination: &docheck,
-			EnvVar:      "WHAWTY_AUTH_DO_CHECK",
+			Name:   "do-check",
+			Usage:  "run check on base directory before executing command",
+			EnvVar: "WHAWTY_AUTH_DO_CHECK",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -420,92 +416,71 @@ func main() {
 			Name:      "init",
 			Usage:     "initialize a whawty auth store directory",
 			ArgsUsage: "<adminname> [ <password> ]",
-			Action: func(c *cli.Context) {
-				cmdInit(configfile, c)
-			},
+			Action:    cmdInit,
 		},
 		{
 			Name:      "check",
 			Usage:     "check a whawty auth store directory",
 			ArgsUsage: "",
-			Action: func(c *cli.Context) {
-				cmdCheck(configfile, c)
-			},
+			Action:    cmdCheck,
 		},
 		{
 			Name:      "add",
 			Usage:     "add a user to the store",
 			ArgsUsage: "<username> [ <password> ]",
-			Action: func(c *cli.Context) {
-				cmdAdd(configfile, docheck, c)
-			},
+			Action:    cmdAdd,
 		},
 		{
 			Name:      "remove",
 			Usage:     "remove a user from the store",
 			ArgsUsage: "<username>",
-			Action: func(c *cli.Context) {
-				cmdRemove(configfile, docheck, c)
-			},
+			Action:    cmdRemove,
 		},
 		{
 			Name:      "update",
 			Usage:     "update a users password",
 			ArgsUsage: "<username> [ <password> ]",
-			Action: func(c *cli.Context) {
-				cmdUpdate(configfile, docheck, c)
-			},
+			Action:    cmdUpdate,
 		},
 		{
 			Name:      "set-admin",
 			Usage:     "set/clear admin flag of a user",
 			ArgsUsage: "<username> (true|false)",
-			Action: func(c *cli.Context) {
-				cmdSetAdmin(configfile, docheck, c)
-			},
+			Action:    cmdSetAdmin,
 		},
 		{
 			Name:  "list",
 			Usage: "list all users",
 			Flags: []cli.Flag{
 				cli.BoolFlag{
-					Name:        "full",
-					Usage:       "show full user list",
-					Destination: &listFull,
+					Name:  "full",
+					Usage: "show full user list",
 				},
 			},
-			Action: func(c *cli.Context) {
-				cmdList(configfile, docheck, listFull, c)
-			},
+			Action: cmdList,
 		},
 		{
 			Name:      "authenticate",
 			Usage:     "check if username/password are valid",
 			ArgsUsage: "<username> [ <password> ]",
-			Action: func(c *cli.Context) {
-				cmdAuthenticate(configfile, docheck, c)
-			},
+			Action:    cmdAuthenticate,
 		},
 		{
 			Name:  "run",
 			Usage: "run the auth agent",
 			Flags: []cli.Flag{
 				cli.StringSliceFlag{
-					Name:   "sock, s",
+					Name:   "sock",
 					Usage:  "path to saslauthd compatible unix socket interface",
-					Value:  (*cli.StringSlice)(&socks),
 					EnvVar: "WHAWTY_AUTH_SASL_SOCK",
 				},
 				cli.StringFlag{
-					Name:        "web-addr",
-					Usage:       "address to listen on for web API",
-					Destination: &webAddr,
-					EnvVar:      "WHAWTY_AUTH_WEB_ADDR",
+					Name:   "web-addr",
+					Usage:  "address to listen on for web API",
+					EnvVar: "WHAWTY_AUTH_WEB_ADDR",
 				},
 			},
-			Action: func(c *cli.Context) {
-				cmdRun(configfile, docheck, socks, webAddr, c)
-			},
+			Action: cmdRun,
 		},
 	}
 

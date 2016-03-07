@@ -113,9 +113,8 @@ int _whawty_parse_args(whawty_ctx_t* ctx, int argc, const char **argv)
         _whawty_logf(ctx, LOG_WARNING, "ignoring invalid argument [%s]", argv[i]);
       else {
         ctx->sockpath_ = strdup(&(argv[i][8]));
-        if(ctx->sockpath_ == NULL) {
+        if(ctx->sockpath_ == NULL)
           return PAM_BUF_ERR;
-        }
       }
     }
     else if(!strncmp(argv[i], "timeout=", 8)) {
@@ -134,9 +133,8 @@ int _whawty_parse_args(whawty_ctx_t* ctx, int argc, const char **argv)
   }
   if(ctx->sockpath_ == NULL)
     ctx->sockpath_ = strdup("/var/run/whawty/auth.sock");
-  if(ctx->sockpath_ == NULL) {
+  if(ctx->sockpath_ == NULL)
     return PAM_BUF_ERR;
-  }
 
   return PAM_SUCCESS;
 }
@@ -225,7 +223,7 @@ void _whawty_cleanup(whawty_ctx_t* ctx)
     close(ctx->sock_);
   }
 
-  _whawty_logf(ctx, LOG_DEBUG, "cleanup called");
+  _whawty_logf(ctx, LOG_DEBUG, "done cleaning up");
 }
 
 /* actual authentication */
@@ -414,7 +412,7 @@ int _whawty_check_password(whawty_ctx_t* ctx)
 }
 
 /***********************/
-/*    PAM Interfac     */
+/*    PAM Interface    */
 /***********************/
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)

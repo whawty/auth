@@ -265,8 +265,12 @@ ssize_t _whawty_write_data(int sock, const void* data, size_t len, int timeout)
     tv.tv_usec = 0;
 
     int ret = select(sock+1, NULL, &wfds, NULL, &tv);
-    if(ret < 0 && errno != EINTR)
+    if(ret < 0) {
+      if(errno != EINTR)
+        continue;
+
       return ret;
+    }
     if(!ret) {
       errno = ETIMEDOUT;
       return ret;
@@ -347,8 +351,12 @@ ssize_t _whawty_read_data(int sock, const void* data, size_t len, int timeout)
     tv.tv_usec = 0;
 
     int ret = select(sock+1, &rfds, NULL, NULL, &tv);
-    if(ret < 0 && errno != EINTR)
+    if(ret < 0) {
+      if(errno != EINTR)
+        continue;
+
       return ret;
+    }
     if(!ret) {
       errno = ETIMEDOUT;
       return ret;

@@ -1,0 +1,22 @@
+language: go
+go:
+  - 1.5
+  - 1.6
+
+addons:
+  apt:
+    packages:
+      libpam0g-dev
+      pamtester
+
+sudo: required
+dist: trusty
+
+install:
+  - go get -v -t ./...
+script:
+  - go test -v ./store
+
+branches:
+  only:
+    - master

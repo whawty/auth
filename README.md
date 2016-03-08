@@ -1,5 +1,7 @@
 # whawty.auth
 
+[![Build Status](https://travis-ci.org/whawty/auth.svg?branch=master)](https://travis-ci.org/whawty/auth)
+
 simple file based authentication suite
 
 tba...

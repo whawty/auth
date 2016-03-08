@@ -16,6 +16,7 @@ install:
   - go get -v -t ./...
 script:
   - go test -v ./store
+  - go test -v ./sasl
 
 branches:
   only:

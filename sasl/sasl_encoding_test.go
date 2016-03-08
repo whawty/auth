@@ -104,7 +104,23 @@ func TestRequestDecode(t *testing.T) {
 	}{
 		{
 			Request{}, false,
+			[]byte{},
+		},
+		{
+			Request{}, false,
+			[]byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		},
+		{
+			Request{}, false,
 			[]byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		},
+		{
+			Request{}, false,
+			[]byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		},
+		{
+			Request{}, false,
+			[]byte{0x0, 0x20, 0x01, 0x02, 0x03, 0x04},
 		},
 		{
 			Request{Login: "seppi"}, false,
@@ -133,11 +149,110 @@ func TestRequestDecode(t *testing.T) {
 			}
 			if vector.result.Login != result.Login || vector.result.Password != result.Password ||
 				vector.result.Service != result.Service || vector.result.Realm != result.Realm {
-				t.Fatal("decoded request is wrong: is '%+v', should be '%+v'", result, vector.result)
+				t.Fatalf("decoded request is wrong: is '%+v', should be '%+v'", result, vector.result)
 			}
 		} else {
 			if err == nil {
 				t.Fatalf("decoding '%+v' should give an error", vector.reqdata)
+			}
+		}
+	}
+}
+
+func TestResponseEncode(t *testing.T) {
+	testvectors := []struct {
+		resp   Response
+		valid  bool
+		result []byte
+	}{
+		{
+			Response{}, true,
+			[]byte{0x0, 0x2, 0x4e, 0x4f},
+		},
+		{
+			Response{Result: true}, true,
+			[]byte{0x0, 0x2, 0x4f, 0x4b},
+		},
+		{
+			Response{Result: false, Message: "you outta luck!"}, true,
+			[]byte{0x0, 0x12, 0x4e, 0x4f, 0x20, 0x79, 0x6f, 0x75, 0x20, 0x6f, 0x75, 0x74, 0x74, 0x61, 0x20, 0x6c, 0x75, 0x63, 0x6b, 0x21},
+		},
+		{
+			Response{Result: true, Message: "congratulations"}, true,
+			[]byte{0x0, 0x12, 0x4f, 0x4b, 0x20, 0x63, 0x6f, 0x6e, 0x67, 0x72, 0x61, 0x74, 0x75, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73},
+		},
+	}
+
+	for _, vector := range testvectors {
+		result, err := vector.resp.Marshal()
+		if vector.valid {
+			if err != nil {
+				t.Fatal("unexpected error:", err)
+			}
+			if bytes.Compare(vector.result, result) != 0 {
+				t.Fatalf("resulting message is invalid is: '%v', should be '%v'", result, vector.result)
+			}
+		} else {
+			if err == nil {
+				t.Fatalf("encoding '%+v' should give an error", vector.resp)
+			}
+		}
+	}
+}
+
+func TestResponseDecode(t *testing.T) {
+	testvectors := []struct {
+		result   Response
+		valid    bool
+		respdata []byte
+	}{
+		{
+			Response{}, false,
+			[]byte{},
+		},
+		{
+			Response{}, false,
+			[]byte{0x0, 0x0},
+		},
+		{
+			Response{}, false,
+			[]byte{0x0, 0x0, 0x4e, 0x04f},
+		},
+		{
+			Response{}, true,
+			[]byte{0x0, 0x2, 0x4e, 0x04f},
+		},
+		{
+			Response{Result: true}, false,
+			[]byte{0x0, 0x2, 0x4f, 0x4f},
+		},
+		{
+			Response{Result: true}, true,
+			[]byte{0x0, 0x2, 0x4f, 0x4b},
+		},
+		{
+			Response{Result: true, Message: "!"}, true,
+			[]byte{0x0, 0x4, 0x4f, 0x4b, 0x20, 0x21},
+		},
+		{
+			Response{Result: true, Message: "hello"}, true,
+			[]byte{0x0, 0x8, 0x4f, 0x4b, 0x20, 0x68, 0x65, 0x6c, 0x6c, 0x6f},
+		},
+	}
+
+	for _, vector := range testvectors {
+		var result Response
+		err := result.Unmarshal(vector.respdata)
+		if vector.valid {
+			if err != nil {
+				t.Fatal("unexpected error:", err)
+			}
+			if vector.result.Result != result.Result || vector.result.Message != result.Message {
+				t.Fatalf("decoded response is wrong: is '%+v', should be '%+v'", result, vector.result)
+			}
+		} else {
+			if err == nil {
+				t.Fatalf("decoding '%+v' should give an error", vector.respdata)
 			}
 		}
 	}

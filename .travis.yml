@@ -6,8 +6,7 @@ go:
 addons:
   apt:
     packages:
-      libpam0g-dev
-      pamtester
+      - libpam0g-dev
 
 sudo: required
 dist: trusty
@@ -17,6 +16,8 @@ install:
 script:
   - go test -v ./store
   - go test -v ./sasl
+  - make -C app
+  - make -C pam
 
 branches:
   only:

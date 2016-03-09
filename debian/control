@@ -18,7 +18,7 @@ Description: simple file based authentication suite. (common files)
 
 Package: whawty-auth-app
 Architecture: amd64 i386 armhf arm64
-Depends: ${misc:Depends}, whawty-auth-app-common
+Depends: ${shlibs:Depends}, ${misc:Depends}, whawty-auth-app-common
 Description: simple file based authentication suite. (app)
  whawty-auth is an authentication suite which is based on flat files
  containing scrypt password hashes. It can be used as a replacement

@@ -449,7 +449,7 @@ func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	self.H(self.store, self.sessions, w, r)
 }
 
-func runWebApi(addr string, store *StoreChan) (err error) {
+func runWebApi(addr string, store *StoreChan, staticDir string) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -463,7 +463,7 @@ func runWebApi(addr string, store *StoreChan) (err error) {
 	http.Handle("/api/list", webHandler{store, sessions, handleWebList})
 	http.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
-	http.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.Dir("./html/")))) // TODO: static directory... make this configurable
+	http.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.Dir(staticDir))))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

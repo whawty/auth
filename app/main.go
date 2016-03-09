@@ -374,13 +374,13 @@ func cmdRun(c *cli.Context) {
 
 	if webAddr != "" {
 		if len(socks) == 0 {
-			if err := runWebApi(webAddr, s.GetInterface()); err != nil {
+			if err := runWebApi(webAddr, s.GetInterface(), c.String("web-static-dir")); err != nil {
 				fmt.Printf("error running web interface: %s\n", err)
 				return
 			}
 		} else {
 			go func() {
-				if err := runWebApi(webAddr, s.GetInterface()); err != nil {
+				if err := runWebApi(webAddr, s.GetInterface(), c.String("web-static-dir")); err != nil {
 					fmt.Printf("warning running web interface failed: %s\n", err)
 				}
 			}()
@@ -478,6 +478,12 @@ func main() {
 					Name:   "web-addr",
 					Usage:  "address to listen on for web API",
 					EnvVar: "WHAWTY_AUTH_WEB_ADDR",
+				},
+				cli.StringFlag{
+					Name:   "web-static-dir",
+					Value:  "/usr/share/whawty/admin/",
+					Usage:  "path to static files for the web API",
+					EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
 				},
 			},
 			Action: cmdRun,

@@ -137,6 +137,12 @@ This instructs *whawty-auth* to run as an authentication service.
      as well as the environment variable are supplied the value of the command line option
      will be used.
 
+*--web-static-dir* '</path/to/whawty/admin/interface>'::
+     This sets the path to the static files of the admin web-interface. By default the path
+     '/usr/share/whawty/admin/' will be used. This can also be specified using the environment
+     variable 'WHAWTY_AUTH_WEB_ADDR'. If both the command line option as well as the
+     environment variable are supplied the value of the command line option will be used.
+
 
 BUGS
 ----

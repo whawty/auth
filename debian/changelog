@@ -1,5 +1,5 @@
-whawty-auth (0.1~alpha.1-1) UNRELEASED; urgency=medium
+whawty-auth (0.1~alpha.1-1) unstable; urgency=medium
 
   * Initial release.
 
- -- Christian Pointner <equinox@spreadspace.org>  Wed, 09 Mar 2016 04:16:36 +0100
+ -- Christian Pointner <equinox@spreadspace.org>  Wed, 09 Mar 2016 07:21:02 +0100

@@ -74,10 +74,10 @@ func runSaslAuthSocket(socketpaths []string, store *StoreChan) error {
 
 		wg.Add(1)
 		go func() {
-			defer os.Remove(path)
+			defer os.Remove(p)
 			defer wg.Done()
 			if err := s.Run(); err != nil {
-				wl.Printf("error on sasl socket '%s': %s", path, err)
+				wl.Printf("error on sasl socket '%s': %s", p, err)
 			}
 		}()
 	}

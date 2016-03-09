@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+%:
+	dh $@  --with=systemd
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+	$(MAKE) -C app
+	$(MAKE) -C pam
+
+override_dh_auto_clean:
+	$(MAKE) -C app distclean
+	$(MAKE) -C pam distclean
+
+override_dh_auto_install:
+	install -d $$(pwd)/debian/tmp/usr/bin/
+	install -m 755 $$(pwd)/app/whawty-auth $$(pwd)/debian/tmp/usr/bin/

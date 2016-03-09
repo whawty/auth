@@ -1,0 +1,17 @@
+#!/bin/sh
+# postrm script for whawty-auth-app
+
+set -e
+
+if [ "$1" = "purge" ] ; then
+   if [ -x "$(command -v deluser)" -a -x "$(command -v delgroup)" ]; then
+      deluser  --quiet --system whawty-auth || true
+      delgroup --quiet --system whawty-auth || true
+   else
+      echo "Not removing whawty-auth user and group: adduser package not found." >&2
+   fi
+fi
+
+#DEBHELPER#
+
+exit 0

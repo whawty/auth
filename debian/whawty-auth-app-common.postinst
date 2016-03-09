@@ -1,0 +1,12 @@
+#!/bin/sh
+# postinst script for whawty-auth-app
+
+set -e
+
+if [ "$1" = "configure" ]; then
+  adduser --quiet --system --group --home /var/lib/whawty-auth whawty-auth
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 9), dh-systemd, golang-go (>=2:1.5), git, ca-certif
 
 Package: whawty-auth-app-common
 Architecture: all
-Depends: ${misc:Depends}, adduser
+Depends: ${misc:Depends}, adduser, libjs-jquery, libjs-bootstrap
 Description: simple file based authentication suite. (common files)
  whawty-auth is an authentication suite which is based on flat files
  containing scrypt password hashes. It can be used as a replacement
@@ -28,7 +28,7 @@ Description: simple file based authentication suite. (app)
  This package contains the app which can be used to create/manage
  password stores.
 
-Package: whawty-auth-server
+Package: libpam-whawty
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, whawty-auth-app
 Description: simple file based authentication suite. (PAM module)

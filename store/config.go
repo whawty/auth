@@ -82,7 +82,7 @@ func scryptauthContextFromConfig(ctx cfgScryptauthCtx) (*scryptauth.Context, err
 	if ctx.ID == 0 {
 		return nil, fmt.Errorf("Error: context ID 0 is not allowed")
 	}
-	hk, err := base64.URLEncoding.DecodeString(ctx.HmacKeyBase64)
+	hk, err := base64.StdEncoding.DecodeString(ctx.HmacKeyBase64)
 	if err != nil {
 		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
 	}

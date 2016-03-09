@@ -1,0 +1,22 @@
+From: Christian Pointner <equinox@spreadspace.org>
+Date: Wed, 9 Mar 2016 20:57:38 +0100
+Subject: switched from URKEncoding to StdEncoding for base64 hmac key in
+ config file
+
+---
+ store/config.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/store/config.go b/store/config.go
+index 8f848d1..2e28433 100644
+--- a/store/config.go
++++ b/store/config.go
+@@ -82,7 +82,7 @@ func scryptauthContextFromConfig(ctx cfgScryptauthCtx) (*scryptauth.Context, err
+ 	if ctx.ID == 0 {
+ 		return nil, fmt.Errorf("Error: context ID 0 is not allowed")
+ 	}
+-	hk, err := base64.URLEncoding.DecodeString(ctx.HmacKeyBase64)
++	hk, err := base64.StdEncoding.DecodeString(ctx.HmacKeyBase64)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
+ 	}

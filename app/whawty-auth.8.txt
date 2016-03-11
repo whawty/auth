@@ -30,7 +30,7 @@ The following global options can be passed to *whawty-auth*.
 
 *--conf* '</path/to/config.json>'::
     This sets the path to main configuration file. By default *whawty-auth* uses
-    the file '/etc/whawty-auth/default.json'. This may also be configured using
+    the file '/etc/whawty/auth.json'. This may also be configured using
     the environment variable 'WHAWTY_AUTH_CONFIG'. If both the environment variable
     and the command line option are supplied the latter is used.
 
@@ -127,7 +127,7 @@ This instructs *whawty-auth* to run as an authentication service.
 *--sock* '</path/to/whawty/sock>'::
      Open a saslauthd compatible unix socket. This option might be supplied several times.
      *whawty-auth* will listen on all sockets for authentication requests. In addition
-     to this pats may be specified using the environment variable 'WHAWTY_AUTH_SASL_SOCK'
+     to this, paths may be specified using the environment variable 'WHAWTY_AUTH_SASL_SOCK'
      as a comma-seperated list. All sockets defined on command line and via the environment
      are merged and *whawty-auth* will listen on all sockets simultaneously.
 
@@ -139,9 +139,10 @@ This instructs *whawty-auth* to run as an authentication service.
 
 *--web-static-dir* '</path/to/whawty/admin/interface>'::
      This sets the path to the static files of the admin web-interface. By default the path
-     '/usr/share/whawty/admin/' will be used. This can also be specified using the environment
-     variable 'WHAWTY_AUTH_WEB_ADDR'. If both the command line option as well as the
-     environment variable are supplied the value of the command line option will be used.
+     '/usr/share/whawty/auth-admin/' will be used. This can also be specified using the
+     environment variable 'WHAWTY_AUTH_WEB_ADDR'. If both the command line option as well
+     as the environment variable are supplied the value of the command line option will be
+     used.
 
 
 BUGS

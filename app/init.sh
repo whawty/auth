@@ -1,10 +1,10 @@
 #!/bin/sh
 
-WHAWTY_AUTH_STORE="/var/lib/whawty-auth/"
+WHAWTY_AUTH_STORE="/var/lib/whawty/auth/"
 WHAWTY_AUTH_USER="whawty-auth"
 WHAWTY_AUTH_GROUP="whawty-auth"
 
-WHAWTY_AUTH_CONF="/etc/whawty-auth/default.json"
+WHAWTY_AUTH_CONF="/etc/whawty/auth.json"
 
 ###########################################
 
@@ -13,8 +13,8 @@ set -e
 HMAC_KEY=`dd if=/dev/random bs=32 count=1 2> /dev/null | base64`
 
 /bin/touch "$WHAWTY_AUTH_CONF"
-/bin/chown root:$WHAWTY_AUTH_GROUP "$WHAWTY_AUTH_CONF"
-/bin/chmod 640 "$WHAWTY_AUTH_CONF"
+/bin/chown $WHAWTY_AUTH_USER:root "$WHAWTY_AUTH_CONF"
+/bin/chmod 400 "$WHAWTY_AUTH_CONF"
 /bin/cat <<EOF > "$WHAWTY_AUTH_CONF"
 {
     "basedir": "$WHAWTY_AUTH_STORE",

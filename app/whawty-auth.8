@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 03/09/2016
+.\"      Date: 03/11/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "03/09/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "03/11/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -44,7 +44,7 @@ The following global options can be passed to \fBwhawty\-auth\fR\&.
 This sets the path to main configuration file\&. By default
 \fBwhawty\-auth\fR
 uses the file
-\fI/etc/whawty\-auth/default\&.json\fR\&. This may also be configured using the environment variable
+\fI/etc/whawty/auth\&.json\fR\&. This may also be configured using the environment variable
 \fIWHAWTY_AUTH_CONFIG\fR\&. If both the environment variable and the command line option are supplied the latter is used\&.
 .RE
 .PP
@@ -105,7 +105,7 @@ This instructs \fBwhawty\-auth\fR to run as an authentication service\&.
 .RS 4
 Open a saslauthd compatible unix socket\&. This option might be supplied several times\&.
 \fBwhawty\-auth\fR
-will listen on all sockets for authentication requests\&. In addition to this pats may be specified using the environment variable
+will listen on all sockets for authentication requests\&. In addition to this, paths may be specified using the environment variable
 \fIWHAWTY_AUTH_SASL_SOCK\fR
 as a comma\-seperated list\&. All sockets defined on command line and via the environment are merged and
 \fBwhawty\-auth\fR
@@ -121,7 +121,7 @@ Also start a small web interface on the specified address\&. This can also be sp
 \fB\-\-web\-static\-dir\fR \fI</path/to/whawty/admin/interface>\fR
 .RS 4
 This sets the path to the static files of the admin web\-interface\&. By default the path
-\fI/usr/share/whawty/admin/\fR
+\fI/usr/share/whawty/auth\-admin/\fR
 will be used\&. This can also be specified using the environment variable
 \fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE

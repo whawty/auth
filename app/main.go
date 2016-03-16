@@ -401,7 +401,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "conf",
-			Value:  "/etc/whawty-auth/default.json",
+			Value:  "/etc/whawty/auth.json",
 			Usage:  "path to the configuration file",
 			EnvVar: "WHAWTY_AUTH_CONFIG",
 		},
@@ -481,7 +481,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:   "web-static-dir",
-					Value:  "/usr/share/whawty/admin/",
+					Value:  "/usr/share/whawty/auth-admin/",
 					Usage:  "path to static files for the web API",
 					EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
 				},

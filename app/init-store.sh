@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WHAWTY_AUTH_STORE="/var/lib/whawty/auth/"
+WHAWTY_AUTH_STORE="/var/lib/whawty/auth/store"
 WHAWTY_AUTH_USER="whawty-auth"
 WHAWTY_AUTH_GROUP="whawty-auth"
 
@@ -31,7 +31,7 @@ EOF
 /bin/chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_GROUP "$WHAWTY_AUTH_STORE"
 /bin/chmod 700 "$WHAWTY_AUTH_STORE"
 
-echo -n "name of first admin user: "
+echo -n "name of admin user: "
 read admin_user
 /usr/bin/whawty-auth --conf "$WHAWTY_AUTH_CONF" init "$admin_user"
 /bin/chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_GROUP "$WHAWTY_AUTH_STORE/$admin_user.admin"

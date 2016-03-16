@@ -15,10 +15,10 @@ override_dh_auto_clean:
 override_dh_auto_install:
 	install -d $$(pwd)/debian/tmp/usr/bin/
 	install -m 755 $$(pwd)/app/whawty-auth $$(pwd)/debian/tmp/usr/bin/
-	install -d $$(pwd)/debian/tmp/usr/share/whawty-auth/admin
-	install -m 644 $$(pwd)/app/html/index.html $$(pwd)/debian/tmp/usr/share/whawty-auth/admin
-	cp -r $$(pwd)/app/html/css/ $$(pwd)/debian/tmp/usr/share/whawty-auth/admin/
-	cp -r $$(pwd)/app/html/img/ $$(pwd)/debian/tmp/usr/share/whawty-auth/admin/
-	cp -r $$(pwd)/app/html/js/ $$(pwd)/debian/tmp/usr/share/whawty-auth/admin/
+	install -d $$(pwd)/debian/tmp/usr/share/whawty/auth-admin
+	install -m 644 $$(pwd)/app/html/index.html $$(pwd)/debian/tmp/usr/share/whawty/auth-admin
+	cp -r $$(pwd)/app/html/css/ $$(pwd)/debian/tmp/usr/share/whawty/auth-admin/
+	cp -r $$(pwd)/app/html/img/ $$(pwd)/debian/tmp/usr/share/whawty/auth-admin/
+	cp -r $$(pwd)/app/html/js/ $$(pwd)/debian/tmp/usr/share/whawty/auth-admin/
 	install -d $$(pwd)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/security/
 	install -m 644 $$(pwd)/pam/pam_whawty.so $$(pwd)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/security/

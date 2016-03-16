@@ -6,7 +6,7 @@ Description: New password for the whawty.auth "admin" user:
  .
  If this field is left blank, the auth store will not be initialized.
  This makes sense for hosts which sync the password hash files from
- other hosts. You may as well initalize the store manually.
+ other hosts. You may as well initialize the store manually.
 
 Template: whawty-auth-app/admin_password_again
 Type: password

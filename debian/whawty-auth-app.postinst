@@ -41,7 +41,7 @@ EOF
     chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_USER "$WHAWTY_AUTH_STORE"
     chmod 700 "$WHAWTY_AUTH_STORE"
 
-    whawty-auth --conf "$WHAWTY_AUTH_CONF" init "$admin_user"
+    whawty-auth --conf "$WHAWTY_AUTH_CONF" init "$admin_user" "$admin_password"
     if [ $? -ne 0 ]; then
       db_input high whawty-auth-app/error_initializing_store || true
       db_go

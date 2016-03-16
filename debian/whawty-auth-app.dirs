@@ -1,1 +1,2 @@
-etc/whawty-auth/
+etc/whawty/
+var/lib/whawty/auth/

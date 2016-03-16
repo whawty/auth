@@ -3,13 +3,21 @@
 
 set -e
 
-if [ "$1" = "purge" ] ; then
-   if [ -x "$(command -v deluser)" -a -x "$(command -v delgroup)" ]; then
-      deluser  --quiet --system whawty-auth || true
-      delgroup --quiet --system whawty-auth || true
-   else
-      echo "Not removing whawty-auth user and group: adduser package not found." >&2
-   fi
+if [ "$1" = "purge" ]; then
+  if [ -x "$(command -v deluser)" -a -x "$(command -v delgroup)" ]; then
+    deluser  --quiet --system whawty-auth || true
+    delgroup --quiet --system whawty-auth || true
+  else
+    echo "Not removing whawty-auth user and group: adduser package not found." >&2
+  fi
+
+  if [ -d "/var/lib/whawty/auth/store" ]; then
+    echo "*********************************************************************************"
+    echo "*   the whawty.auth store will be kept, if you want to really delete all your   *"
+    echo "*   passwords and users you need to remove it manually using the following      *"
+    echo "*   command:       rm -rf /var/lib/whawty/auth/store                            *"
+    echo "*********************************************************************************"
+  fi
 fi
 
 #DEBHELPER#

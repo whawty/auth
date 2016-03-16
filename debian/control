@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 9), dh-systemd, golang-go (>=2:1.5), git, ca-certif
 
 Package: whawty-auth-app-common
 Architecture: all
-Depends: ${misc:Depends}, adduser, libjs-jquery, libjs-bootstrap
+Depends: ${misc:Depends}, libjs-jquery, libjs-bootstrap
 Description: simple file based authentication suite. (common files)
  whawty-auth is an authentication suite which is based on flat files
  containing scrypt password hashes. It can be used as a replacement
@@ -18,7 +18,7 @@ Description: simple file based authentication suite. (common files)
 
 Package: whawty-auth-app
 Architecture: amd64 i386 armhf arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}, whawty-auth-app-common
+Depends: ${shlibs:Depends}, ${misc:Depends}, whawty-auth-app-common, adduser
 Description: simple file based authentication suite. (app)
  whawty-auth is an authentication suite which is based on flat files
  containing scrypt password hashes. It can be used as a replacement

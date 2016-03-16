@@ -3,6 +3,8 @@
 
 set -e
 
+. /usr/share/debconf/confmodule
+
 # only do this on fresh installs.
 if [ "$1" = "configure" ] && [ -z "$2" ]; then
   WHAWTY_AUTH_HOME="/var/lib/whawty/auth"

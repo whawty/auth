@@ -32,6 +32,12 @@
 GOCMD := go
 EXECUTEABLE := whawty-auth
 
+LIBS := "github.com/whawty/auth/store" \
+        "github.com/whawty/auth/sasl" \
+        "github.com/codegangsta/cli" \
+        "github.com/gosuri/uitable" \
+        "github.com/howeyc/gopass"
+
 all: build
 .PHONY: vet format build clean distclean
 
@@ -41,11 +47,17 @@ vet:
 format:
 	$(GOCMD) fmt
 
-build:
+getlibs:
+	@$(foreach lib,$(LIBS), echo "fetching lib: $(lib)"; $(GOCMD) get $(lib);)
+
+updatelibs:
+	@$(foreach lib,$(LIBS), echo "updating lib: $(lib)"; $(GOCMD) get -u $(lib);)
+
+build: getlibs
 	$(GOCMD) build -o $(EXECUTEABLE)
 
 distclean: clean
-	rm -f $(EXECUTABLE).8
+	rm -f $(EXECUTEABLE).8
 
 clean:
 	rm -f $(EXECUTEABLE)

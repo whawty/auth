@@ -3,8 +3,50 @@
 
 set -e
 
-if [ "$1" = "configure" ]; then
-  adduser --quiet --system --group --home /var/lib/whawty-auth whawty-auth
+# only do this on fresh installs.
+if [ "$1" = "configure" ] && [ -z "$2" ]; then
+  WHAWTY_AUTH_HOME="/var/lib/whawty/auth"
+  WHAWTY_AUTH_STORE="$WHAWTY_AUTH_HOME/store"
+  WHAWTY_AUTH_USER="whawty-auth"
+
+  WHAWTY_AUTH_CONF="/etc/whawty/auth.json"
+  HMAC_KEY=`dd if=/dev/random bs=32 count=1 2> /dev/null | base64`
+
+  adduser --quiet --system --group --home "$WHAWTY_AUTH_HOME" "$WHAWTY_AUTH_USER"
+
+  admin_user="admin"
+  db_get whawty-auth-app/admin_password && admin_password="$RET"
+  db_set whawty-auth-app/admin_password ""
+  db_set whawty-auth-app/admin_password_again ""
+
+  if [ -n "$admin_password" ]; then
+    touch "$WHAWTY_AUTH_CONF"
+    chown $WHAWTY_AUTH_USER:root "$WHAWTY_AUTH_CONF"
+    chmod 400 "$WHAWTY_AUTH_CONF"
+    cat <<EOF > "$WHAWTY_AUTH_CONF"
+{
+    "basedir": "$WHAWTY_AUTH_STORE",
+    "scryptauth": {
+        "defaultctx": 1,
+        "contexts": [
+            { "ID": 1, "hmackey": "$HMAC_KEY", "pwcost": 12 }
+        ]
+    }
+}
+EOF
+
+    mkdir -p "$WHAWTY_AUTH_STORE"
+    chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_USER "$WHAWTY_AUTH_STORE"
+    chmod 700 "$WHAWTY_AUTH_STORE"
+
+    whawty-auth --conf "$WHAWTY_AUTH_CONF" init "$admin_user"
+    if [ $? -ne 0 ]; then
+      db_input high whawty-auth-app/error_initializing_store || true
+      db_go
+    else
+      chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_USER "$WHAWTY_AUTH_STORE/$admin_user.admin"
+    fi
+  fi
 fi
 
 #DEBHELPER#

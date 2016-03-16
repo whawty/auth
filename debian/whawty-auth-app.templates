@@ -1,0 +1,26 @@
+Template: whawty-auth-app/admin_password
+Type: password
+Description: New password for the whawty.auth "admin" user:
+ A valid whawty.auth store must contain at least one supported hash
+ for an admin user.
+ .
+ If this field is left blank, the auth store will not be initialized.
+ This makes sense for hosts which sync the password hash files from
+ other hosts. You may as well initalize the store manually.
+
+Template: whawty-auth-app/admin_password_again
+Type: password
+Description: Repeat password for the whawty.auth "admin" user:
+
+Template: whawty-auth-app/password_mismatch
+Type: error
+Description: Password input error
+ The two passwords you entered were not the same. Please try again.
+
+Template: whawty-auth-app/error_initializing_store
+Type: error
+Description: Unable to initialize whawty.auth store
+ An error occurred while initializing the whawty.auth store.
+ .
+ Please read the /usr/share/doc/whawty-auth-app/README.Debian file
+ to get instructions on how to initialze the store manually.

@@ -1,4 +1,12 @@
-whawty-auth (0.1~alpha.1-2) UNRELEASED; urgency=medium
+whawty-auth (0.1~alpha.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+  * Dropped all patches.
+  * added debconf based initialzitaion of whawty-auth store
+
+ -- Christian Pointner <equinox@spreadspace.org>  Thu, 17 Mar 2016 00:33:41 +0100
+
+whawty-auth (0.1~alpha.1-2) unstable; urgency=medium
 
   * added base64 encoding batch from upstream
 

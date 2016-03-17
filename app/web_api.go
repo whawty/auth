@@ -34,6 +34,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
@@ -449,7 +450,7 @@ func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	self.H(self.store, self.sessions, w, r)
 }
 
-func runWebApi(addr string, store *StoreChan, staticDir string) (err error) {
+func runWepApi(listener net.Listener, store *StoreChan, staticDir string) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -473,7 +474,23 @@ func runWebApi(addr string, store *StoreChan, staticDir string) (err error) {
 		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
 	})
 
+	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	return server.Serve(listener)
+}
+
+func runWebApiAddr(addr string, store *StoreChan, staticDir string) (err error) {
+	if addr == "" {
+		addr = ":http"
+	}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
 	wl.Printf("web-api: listening on '%s'", addr)
-	server := &http.Server{Addr: addr, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	return server.ListenAndServe()
+	return runWepApi(ln, store, staticDir)
+}
+
+func runWebApiListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
+	wl.Printf("web-api: listening on '%s'", listener.Addr())
+	return runWepApi(net.Listener(listener), store, staticDir)
 }

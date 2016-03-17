@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 03/11/2016
+.\"      Date: 03/17/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "03/11/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "03/17/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -52,6 +52,14 @@ uses the file
 .RS 4
 Run basic consistency check on the whawty store on startup\&. By default checks are enabled\&. This can also be configured using the environment variable
 \fIWHAWTY_AUTH_DO_CHECK\fR\&. If both the environment variable and the command line option are supplied the latter is used\&.
+.RE
+.PP
+\fB\-\-web\-static\-dir\fR \fI</path/to/whawty/admin/interface>\fR
+.RS 4
+This sets the path to the static files of the admin web\-interface\&. By default the path
+\fI/usr/share/whawty/auth\-admin/\fR
+will be used\&. This can also be specified using the environment variable
+\fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE
 .PP
 \fB\-h | \-\-help\fR
@@ -115,14 +123,6 @@ will listen on all sockets simultaneously\&.
 \fB\-\-web\-addr\fR \fI[<addr>]:<port>\fR
 .RS 4
 Also start a small web interface on the specified address\&. This can also be specified using the environment variable
-\fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
-.RE
-.PP
-\fB\-\-web\-static\-dir\fR \fI</path/to/whawty/admin/interface>\fR
-.RS 4
-This sets the path to the static files of the admin web\-interface\&. By default the path
-\fI/usr/share/whawty/auth\-admin/\fR
-will be used\&. This can also be specified using the environment variable
 \fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE
 .SH "BUGS"

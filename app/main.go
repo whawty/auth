@@ -39,7 +39,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"time"
+	"sync"
 
 	"github.com/codegangsta/cli"
 	"github.com/coreos/go-systemd/activation"
@@ -377,13 +377,13 @@ func cmdRun(c *cli.Context) {
 
 	if webAddr != "" {
 		if len(socks) == 0 {
-			if err := runWebApi(webAddr, s.GetInterface(), c.String("web-static-dir")); err != nil {
+			if err := runWebApiAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
 				fmt.Printf("error running web interface: %s\n", err)
 				return
 			}
 		} else {
 			go func() {
-				if err := runWebApi(webAddr, s.GetInterface(), c.String("web-static-dir")); err != nil {
+				if err := runWebApiAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
 					fmt.Printf("warning running web interface failed: %s\n", err)
 				}
 			}()
@@ -404,22 +404,34 @@ func cmdRunSa(c *cli.Context) {
 	listeners, err := activation.Listeners(true)
 	if err != nil {
 		fmt.Printf("fetching socket listeners from systemd failed: %s\n", err)
+		return
 	}
 
 	fmt.Printf("got %d sockets from systemd\n", len(listeners))
+	if len(listeners) == 0 {
+		return
+	}
+
+	var wg sync.WaitGroup
 	for idx, listener := range listeners {
 		switch listener.(type) {
 		case *net.UnixListener:
 			fmt.Printf("listener[%d]: is a UNIX socket (-> saslauthd)\n", idx)
 		case *net.TCPListener:
 			fmt.Printf("listener[%d]: is a TCP socket (-> HTTP)\n", idx)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := runWebApiListener(listener.(*net.TCPListener), s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+					wl.Printf("error running web-api: %s", err)
+				}
+			}()
 		default:
-			fmt.Printf("listener[%d]: has type %T (ingnored)\n", idx, listener)
+			fmt.Printf("listener[%d]: has type %T (ingnoring)\n", idx, listener)
 		}
 	}
-	for {
-		time.Sleep(time.Second)
-	}
+	wg.Wait()
+	fmt.Printf("shutting down since all auth sockets have closed\n")
 }
 
 func main() {
@@ -438,6 +450,12 @@ func main() {
 			Name:   "do-check",
 			Usage:  "run check on base directory before executing command",
 			EnvVar: "WHAWTY_AUTH_DO_CHECK",
+		},
+		cli.StringFlag{
+			Name:   "web-static-dir",
+			Value:  "/usr/share/whawty/auth-admin/",
+			Usage:  "path to static files for the web API",
+			EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -507,12 +525,6 @@ func main() {
 					Name:   "web-addr",
 					Usage:  "address to listen on for web API",
 					EnvVar: "WHAWTY_AUTH_WEB_ADDR",
-				},
-				cli.StringFlag{
-					Name:   "web-static-dir",
-					Value:  "/usr/share/whawty/auth-admin/",
-					Usage:  "path to static files for the web API",
-					EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
 				},
 			},
 			Action: cmdRun,

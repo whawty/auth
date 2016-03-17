@@ -63,6 +63,17 @@ func NewServer(socketpath string, cb AuthCB) (s *Server, err error) {
 	return
 }
 
+// NewServerFromListener creates a server struct using a UnixListener specified
+// by ln. cb is the callback function which will get called for any authentication
+// request.
+func NewServerFromListener(ln *net.UnixListener, cb AuthCB) (s *Server, err error) {
+	s = &Server{}
+	s.sockPath = ln.Addr().String()
+	s.cb = cb
+	s.ln = net.Listener(ln)
+	return
+}
+
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 

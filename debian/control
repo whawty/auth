@@ -5,20 +5,10 @@ Priority: optional
 Standards-Version: 3.9.6
 Build-Depends: debhelper (>= 9), dh-systemd, golang-go (>=2:1.5), git, ca-certificates, libpam0g-dev
 
-Package: whawty-auth-app-common
-Architecture: all
-Depends: ${misc:Depends}, libjs-jquery, libjs-bootstrap
-Description: simple file based authentication suite. (common files)
- whawty-auth is an authentication suite which is based on flat files
- containing scrypt password hashes. It can be used as a replacement
- for saslauthd. There is also a pam module which uses whawty-auth as
- authentication backend.
- .
- This package contains common files for all architectures.
-
 Package: whawty-auth-app
 Architecture: amd64 i386 armhf arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}, whawty-auth-app-common, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Suggests: whawty-auth-app-web
 Description: simple file based authentication suite. (app)
  whawty-auth is an authentication suite which is based on flat files
  containing scrypt password hashes. It can be used as a replacement
@@ -27,6 +17,17 @@ Description: simple file based authentication suite. (app)
  .
  This package contains the app which can be used to create and manage
  password stores.
+
+Package: whawty-auth-app-web
+Architecture: all
+Depends: ${misc:Depends}, libjs-jquery, libjs-bootstrap
+Description: simple file based authentication suite. (web-admin)
+ whawty-auth is an authentication suite which is based on flat files
+ containing scrypt password hashes. It can be used as a replacement
+ for saslauthd. There is also a pam module which uses whawty-auth as
+ authentication backend.
+ .
+ This package contains the static files for the web admin-interface.
 
 Package: libpam-whawty
 Architecture: any

@@ -38,8 +38,10 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/coreos/go-systemd/activation"
 	"github.com/gosuri/uitable"
 	"github.com/howeyc/gopass"
 )
@@ -393,6 +395,22 @@ func cmdRun(c *cli.Context) {
 	fmt.Printf("shutting down since all auth sockets have closed\n")
 }
 
+func cmdRunSa(c *cli.Context) {
+	s := openAndCheck(c)
+	if s == nil {
+		return
+	}
+	listeners, err := activation.Listeners(true)
+	if err != nil {
+		fmt.Printf("fetching socket listeners from systemd failed: %s\n", err)
+	}
+
+	fmt.Printf("got %d sockets from systemd\n", len(listeners))
+	for {
+		time.Sleep(time.Second)
+	}
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
@@ -487,6 +505,11 @@ func main() {
 				},
 			},
 			Action: cmdRun,
+		},
+		{
+			Name:   "runsa",
+			Usage:  "run the auth agent (using systemd socket-activation)",
+			Action: cmdRunSa,
 		},
 	}
 

@@ -35,6 +35,7 @@ EXECUTEABLE := whawty-auth
 LIBS := "github.com/whawty/auth/store" \
         "github.com/whawty/auth/sasl" \
         "github.com/codegangsta/cli" \
+        "github.com/coreos/go-systemd/activation" \
         "github.com/gosuri/uitable" \
         "github.com/howeyc/gopass"
 

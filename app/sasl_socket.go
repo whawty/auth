@@ -32,9 +32,7 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"sync"
 
 	"github.com/whawty/auth/sasl"
 )
@@ -55,32 +53,19 @@ func callback(login, password, service, realm, path string, store *StoreChan) (o
 	return ok, msg, nil
 }
 
-func runSaslAuthSocket(socketpaths []string, store *StoreChan) error {
-	if len(socketpaths) == 0 {
-		return fmt.Errorf("no socket paths specified - exitting")
+func runSaslAuthSocket(path string, store *StoreChan) error {
+	os.Remove(path)
+	s, err := sasl.NewServer(path, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
+		return callback(log, pwd, srv, rlm, path, store)
+	})
+	if err != nil {
+		return err
 	}
+	wl.Printf("listening on '%s'", path)
 
-	var wg sync.WaitGroup
-	for _, path := range socketpaths {
-		os.Remove(path)
-		p := path // path should be a closure for the function below -> we need p as a new reference to path
-		s, err := sasl.NewServer(path, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
-			return callback(log, pwd, srv, rlm, p, store)
-		})
-		if err != nil {
-			return err
-		}
-		wl.Printf("listening on '%s'", path)
-
-		wg.Add(1)
-		go func() {
-			defer os.Remove(p)
-			defer wg.Done()
-			if err := s.Run(); err != nil {
-				wl.Printf("error on sasl socket '%s': %s", p, err)
-			}
-		}()
+	defer os.Remove(path)
+	if err := s.Run(); err != nil {
+		wl.Printf("error on sasl socket '%s': %s", path, err)
 	}
-	wg.Wait()
 	return nil
 }

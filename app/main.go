@@ -375,24 +375,27 @@ func cmdRun(c *cli.Context) {
 	webAddr := c.String("web-addr")
 	socks := c.StringSlice("sock")
 
+	var wg sync.WaitGroup
 	if webAddr != "" {
-		if len(socks) == 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			if err := runWebApiAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
-				fmt.Printf("error running web interface: %s\n", err)
-				return
+				fmt.Printf("warning running web interface failed: %s\n", err)
 			}
-		} else {
-			go func() {
-				if err := runWebApiAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
-					fmt.Printf("warning running web interface failed: %s\n", err)
-				}
-			}()
-		}
+		}()
 	}
-
-	if err := runSaslAuthSocket(socks, s.GetInterface()); err != nil {
-		fmt.Printf("error running auth agent: %s\n", err)
+	for _, path := range socks {
+		p := path
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := runSaslAuthSocket(p, s.GetInterface()); err != nil {
+				fmt.Printf("warning running auth agent(%s) failed: %s\n", p, err)
+			}
+		}()
 	}
+	wg.Wait()
 	fmt.Printf("shutting down since all auth sockets have closed\n")
 }
 

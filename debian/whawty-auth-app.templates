@@ -24,3 +24,11 @@ Description: Unable to initialize whawty.auth store
  .
  Please read the /usr/share/doc/whawty-auth-app/README.Debian file
  to get instructions on how to initialze the store manually.
+
+Template: whawty-auth-app/keeping_store
+Type: note
+Description: The whawty.auth store will be kept.
+ If you want to really delete all your passwords and users you need
+ to remove the store manually using the following command:
+ .
+ rm -rf /var/lib/whawty/auth/store

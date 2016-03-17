@@ -3,6 +3,8 @@
 
 set -e
 
+. /usr/share/debconf/confmodule
+
 if [ "$1" = "purge" ]; then
   if [ -x "$(command -v deluser)" -a -x "$(command -v delgroup)" ]; then
     deluser  --quiet --system whawty-auth || true
@@ -12,11 +14,8 @@ if [ "$1" = "purge" ]; then
   fi
 
   if [ -d "/var/lib/whawty/auth/store" ]; then
-    echo "*********************************************************************************"
-    echo "*   the whawty.auth store will be kept, if you want to really delete all your   *"
-    echo "*   passwords and users you need to remove it manually using the following      *"
-    echo "*   command:       rm -rf /var/lib/whawty/auth/store                            *"
-    echo "*********************************************************************************"
+    db_input high whawty-auth-app/keeping_store || true
+    db_go
   fi
 fi
 

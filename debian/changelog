@@ -1,4 +1,4 @@
-whawty-auth (0.1~alpha.2-1) UNRELEASED; urgency=medium
+whawty-auth (0.1~alpha.2-1) unstable; urgency=medium
 
   * New upstream release.
   * Dropped all patches.
@@ -8,7 +8,7 @@ whawty-auth (0.1~alpha.2-1) UNRELEASED; urgency=medium
   * pam-whawty doesn't depend on whawty-auth-app anymore because
     it might as well be used with saslauthd
 
- -- Christian Pointner <equinox@spreadspace.org>  Thu, 17 Mar 2016 00:33:41 +0100
+ -- Christian Pointner <equinox@spreadspace.org>  Thu, 17 Mar 2016 02:16:08 +0100
 
 whawty-auth (0.1~alpha.1-2) unstable; urgency=medium
 

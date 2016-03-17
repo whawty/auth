@@ -1,0 +1,17 @@
+[Unit]
+Descriptionw=whawty.auth authentication agent
+After=local-fs.target
+
+[Service]
+User=whawty-auth
+Group=whawty-auth
+Type=simple
+EnvironmentFile=-/etc/whawty/auth.ENV
+ExecStart=/usr/bin/whawty-auth runsa
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=full
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

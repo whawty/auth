@@ -1,0 +1,14 @@
+[Unit]
+Description=whawty.auth authentication agent sockets
+
+[Socket]
+ListenStream=127.0.0.1:888
+ListenStream=/var/run/whawty/auth.sock
+RemoveOnStop=true
+SocketUser=whawty-auth
+SocketGroup=whawty-auth
+SocketMode=0660
+DirectoryMode=0750
+
+[Install]
+WantedBy=sockets.target

@@ -125,6 +125,9 @@ will listen on all sockets simultaneously\&.
 Also start a small web interface on the specified address\&. This can also be specified using the environment variable
 \fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE
+.SS "runsa"
+.sp
+This is basically the same as \fBrun\fR but expects all sockets to be passed via systemd socket activation\&. \fBwhawty\-auth\fR will run the web\-api on all TCP sockets and expects saslauthd compatible requests on any unix socket\&. All other socket types are ignored\&.
 .SH "BUGS"
 .sp
 Most likely there are some bugs in \fBwhawty\-auth\fR\&. If you find a bug, please let the developers know at http://github\&.com/whawty/auth\&. Of course, pull requests are preferred\&.

@@ -145,6 +145,14 @@ This instructs *whawty-auth* to run as an authentication service.
      will be used.
 
 
+runsa
+~~~~~
+
+This is basically the same as *run* but expects all sockets to be passed via systemd
+socket activation. *whawty-auth* will run the web-api on all TCP sockets and expects
+saslauthd compatible requests on any unix socket. All other socket types are ignored.
+
+
 BUGS
 ----
 Most likely there are some bugs in *whawty-auth*. If you find a bug, please let

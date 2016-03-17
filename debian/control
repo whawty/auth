@@ -31,7 +31,8 @@ Description: simple file based authentication suite. (web-admin)
 
 Package: libpam-whawty
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, whawty-auth-app
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: whawty-auth-app
 Description: simple file based authentication suite. (PAM module)
  whawty-auth is an authentication suite which is based on flat files
  containing scrypt password hashes. It can be used as a replacement

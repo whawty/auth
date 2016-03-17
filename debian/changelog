@@ -5,6 +5,8 @@ whawty-auth (0.1~alpha.2-1) UNRELEASED; urgency=medium
   * added debconf based initialzitaion of whawty-auth store
   * replaced whawty-auth-app-common with whawty-auth-app-web
   * whawty-auth-app now suggests the web admin package
+  * pam-whawty doesn't depend on whawty-auth-app anymore because
+    it might as well be used with saslauthd
 
  -- Christian Pointner <equinox@spreadspace.org>  Thu, 17 Mar 2016 00:33:41 +0100
 

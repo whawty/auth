@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"sort"
 	"strconv"
@@ -406,6 +407,16 @@ func cmdRunSa(c *cli.Context) {
 	}
 
 	fmt.Printf("got %d sockets from systemd\n", len(listeners))
+	for idx, listener := range listeners {
+		switch listener.(type) {
+		case *net.UnixListener:
+			fmt.Printf("listener[%d]: is a UNIX socket (-> saslauthd)\n", idx)
+		case *net.TCPListener:
+			fmt.Printf("listener[%d]: is a TCP socket (-> HTTP)\n", idx)
+		default:
+			fmt.Printf("listener[%d]: has type %T (ingnored)\n", idx, listener)
+		}
+	}
 	for {
 		time.Sleep(time.Second)
 	}

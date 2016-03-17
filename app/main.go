@@ -420,12 +420,21 @@ func cmdRunSa(c *cli.Context) {
 		switch listener.(type) {
 		case *net.UnixListener:
 			fmt.Printf("listener[%d]: is a UNIX socket (-> saslauthd)\n", idx)
+			wg.Add(1)
+			ln := listener.(*net.UnixListener)
+			go func() {
+				defer wg.Done()
+				if err := runSaslAuthSocketListener(ln, s.GetInterface()); err != nil {
+					fmt.Printf("warning running auth agent failed: %s\n", err)
+				}
+			}()
 		case *net.TCPListener:
 			fmt.Printf("listener[%d]: is a TCP socket (-> HTTP)\n", idx)
 			wg.Add(1)
+			ln := listener.(*net.TCPListener)
 			go func() {
 				defer wg.Done()
-				if err := runWebApiListener(listener.(*net.TCPListener), s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+				if err := runWebApiListener(ln, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
 					wl.Printf("error running web-api: %s", err)
 				}
 			}()

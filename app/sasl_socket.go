@@ -32,6 +32,7 @@
 package main
 
 import (
+	"net"
 	"os"
 
 	"github.com/whawty/auth/sasl"
@@ -64,6 +65,22 @@ func runSaslAuthSocket(path string, store *StoreChan) error {
 	wl.Printf("listening on '%s'", path)
 
 	defer os.Remove(path)
+	if err := s.Run(); err != nil {
+		wl.Printf("error on sasl socket '%s': %s", path, err)
+	}
+	return nil
+}
+
+func runSaslAuthSocketListener(listener *net.UnixListener, store *StoreChan) error {
+	path := listener.Addr().String()
+	s, err := sasl.NewServerFromListener(listener, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
+		return callback(log, pwd, srv, rlm, path, store)
+	})
+	if err != nil {
+		return err
+	}
+	wl.Printf("listening on '%s'", path)
+
 	if err := s.Run(); err != nil {
 		wl.Printf("error on sasl socket '%s': %s", path, err)
 	}

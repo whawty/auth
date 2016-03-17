@@ -1,3 +1,9 @@
+whawty-auth (0.1~alpha.2-2) unstable; urgency=medium
+
+  * installed some missing docs and examples
+
+ -- Christian Pointner <equinox@spreadspace.org>  Thu, 17 Mar 2016 03:21:03 +0100
+
 whawty-auth (0.1~alpha.2-1) unstable; urgency=medium
 
   * New upstream release.

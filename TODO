@@ -1,0 +1,56 @@
+app:
+====
+
+ * implement/test syncing of passwords
+    There should be a cronjob/systemd-timer to sync passwords on
+    a regular basis. This should be running on the receiving end
+    of the sync process (pull-mode). In addition to this the
+    'master' should be able to inform 'slaves' about new/changed
+    passwords (push-mode).
+
+ * clear out memory of variables which contian passwords or tokens
+    Before freeing memory the pam module clears out every
+    variable which contained a password. Should we do this in go
+    as well?!?
+
+ * password strength indicator
+    The password strength indicator used by the web-interface is
+    not very good. i.e. 'aaaaaaaaaaaaaaaaaaaaaaa' gets a high
+    evaluation but is of course not a good choice.
+
+ * implement password policies
+    It would be nice to be able to configure policies for what the
+    administrator considers secure passwords. Weak passwords should
+    get denied by the app.
+
+pam-module:
+===========
+
+ * fuzzy testing
+    Input from pam application (conversation function) and via the
+    unix socket interface should get tested  with random/invalid
+    data. The output as well as memory access (valgrind) should
+    be checked.
+
+sasl:
+=====
+
+ * fuzzy testing
+    Input from the unix socket interface should get tested with
+    random/invalid data. I believe that there is a test framework
+    for stuff like this in golang (needs to be found!).
+
+store:
+======
+
+ * check what kind of locking is possible and needed
+    For now the app uses a single store instance and all actions
+    are outlined by a single go-routine. It would be nice to get
+    rid of this as it will be a bottleneck on high load and it
+    shouldn't be needed anyway. There should be enough atomic
+    operations on filesystem level to make this work.
+
+ * clear out memory of variables which contained passwords
+    Before freeing memory the pam module clears out every
+    variable which contained a password. Should we do this in go
+    as well ?!?

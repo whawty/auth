@@ -2,7 +2,7 @@
 Description=whawty.auth authentication agent sockets
 
 [Socket]
-ListenStream=127.0.0.1:888
+#ListenStream=127.0.0.1:888
 ListenStream=/var/run/whawty/auth.sock
 RemoveOnStop=true
 SocketUser=whawty-auth

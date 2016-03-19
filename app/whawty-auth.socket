@@ -8,7 +8,6 @@ RemoveOnStop=true
 SocketUser=whawty-auth
 SocketGroup=whawty-auth
 SocketMode=0660
-DirectoryMode=0750
 
 [Install]
 WantedBy=sockets.target

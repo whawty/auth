@@ -1,5 +1,5 @@
 [Unit]
-Descriptionw=whawty.auth authentication agent
+Description=whawty.auth authentication agent
 After=local-fs.target
 
 [Service]

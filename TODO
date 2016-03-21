@@ -8,6 +8,10 @@ app:
     'master' should be able to inform 'slaves' about new/changed
     passwords (push-mode).
 
+ * figure out how to deal with automatic upgrades and sync
+    Automatic upgrades should be done whenever a user logs in. This
+    means the syncing needs to work in both directions?!?
+
  * clear out memory of variables which contian passwords or tokens
     Before freeing memory the pam module clears out every
     variable which contained a password. Should we do this in go

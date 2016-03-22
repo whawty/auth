@@ -227,13 +227,19 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	if reqdata.Username == "" || reqdata.NewPassword == "" {
-		respdata.Error = "empty username or new-password is not allowed"
+	if reqdata.Username == "" {
+		respdata.Error = "empty username is not allowed"
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
 
 	if reqdata.Session != "" && reqdata.OldPassword == "" {
+		if reqdata.NewPassword == "" {
+			respdata.Error = "empty newpassword is not allowed when using session based authentication"
+			sendWebResponse(w, http.StatusBadRequest, respdata)
+			return
+		}
+
 		status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
 		if status != http.StatusOK {
 			respdata.Error = errorStr
@@ -256,6 +262,9 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 			}
 			sendWebResponse(w, http.StatusUnauthorized, respdata)
 			return
+		}
+		if reqdata.NewPassword == "" {
+			reqdata.NewPassword = reqdata.OldPassword
 		}
 		wdl.Printf("update user '%s' with password '%s', using current(old) password", reqdata.Username, reqdata.NewPassword)
 	} else {

@@ -12,10 +12,14 @@ app:
     Automatic upgrades should be done whenever a user logs in. This
     means the syncing needs to work in both directions?!?
 
- * clear out memory of variables which contian passwords or tokens
-    Before freeing memory the pam module clears out every
-    variable which contained a password. Should we do this in go
-    as well?!?
+ * improve handling of variables which contain sensitive data
+    It would be nice to protect variables like passwords and other
+    sensitive data i.e. by clearing the memory before returning it to
+    the kernel. Sadly this is quite complicated with go as it is not
+    possible to know for sure if there are any copies of the variable
+    lying around in memory.
+    It would be great to at least use syscall.Mlockall(syscall.MCL_FUTURE)
+    but after adding that the app panics... why is this?
 
  * password strength indicator
     The password strength indicator used by the web-interface is
@@ -53,8 +57,3 @@ store:
     rid of this as it will be a bottleneck on high load and it
     shouldn't be needed anyway. There should be enough atomic
     operations on filesystem level to make this work.
-
- * clear out memory of variables which contained passwords
-    Before freeing memory the pam module clears out every
-    variable which contained a password. Should we do this in go
-    as well ?!?

@@ -459,7 +459,22 @@ func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	self.H(self.store, self.sessions, w, r)
 }
 
-func runWepApi(listener net.Listener, store *StoreChan, staticDir string) (err error) {
+// This is from golang http package - why is this not exported?
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
+}
+
+func runWepApi(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -483,8 +498,9 @@ func runWepApi(listener net.Listener, store *StoreChan, staticDir string) (err e
 		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
 	})
 
+	wl.Printf("web-api: listening on '%s'", listener.Addr())
 	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	return server.Serve(listener)
+	return server.Serve(tcpKeepAliveListener{listener})
 }
 
 func runWebApiAddr(addr string, store *StoreChan, staticDir string) (err error) {
@@ -495,11 +511,9 @@ func runWebApiAddr(addr string, store *StoreChan, staticDir string) (err error) 
 	if err != nil {
 		return err
 	}
-	wl.Printf("web-api: listening on '%s'", addr)
-	return runWepApi(ln, store, staticDir)
+	return runWepApi(ln.(*net.TCPListener), store, staticDir)
 }
 
 func runWebApiListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
-	wl.Printf("web-api: listening on '%s'", listener.Addr())
-	return runWepApi(net.Listener(listener), store, staticDir)
+	return runWepApi(listener, store, staticDir)
 }

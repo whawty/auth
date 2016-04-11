@@ -315,6 +315,15 @@ function main_userViewInit() {
  * Main: global
  *
  */
+function async_load(src) {
+  var first, s;
+  s = document.createElement('script');
+  s.src = src;
+  s.type = 'text/javascript';
+  s.async = true;
+  first = document.getElementsByTagName('script')[0];
+  return first.parentNode.insertBefore(s, first);
+}
 
 function getDateTimeString(d) {
   var datetimestr = Number(d.getDate()).pad(2);
@@ -348,32 +357,29 @@ function main_reqError(req, status, error) {
 
 function main_cleanupPasswordModal() {
   $("#newpassword").val('')
-  $("#newpassword").trigger('keyup')
+  $("#newpassword").trigger('input')
   $("#newpassword-retype").val('')
-  $('#passwordModal .alertbox').text('');
-  $("#changepwform").off("submit");
+  $("#passwordModal .alertbox").text('');
+  $("#changepwform").off('submit');
 }
 
 function main_enablePWStrength() {
-  $('#newpassword').pwstrength({
-    common: {
-      minChar: 8,
-      usernameField: '#changepw-userfield',
-      debug: true,
-    },
-    rules: {
-      activated: {
-        wordTwoCharacterClasses: true,
-        wordRepetitions: true,
-      },
-      scores: {
-        wordSimilarToUsername: -500,
-        wordRepetitions: -100,
-      }
-    },
-    ui: {
-      showVerdicts: false,
-      showVerdictsInsideProgressBar: false,
+  $('#newpassword').on('input', function() {
+    var res = zxcvbn($(this).val(), [ $('#changepw-userfield').text(), 'whawty' ]);
+    $("#pwstrength .alert").remove();
+
+    var est = $('<div class="alert" role="alert">estimated crack-time: </div>')
+    est.append('<strong>' + res.crack_times_display.offline_slow_hashing_1e4_per_second + '</strong>')
+    if(res.score < 2) {
+      est.addClass('alert-danger');
+    } else if(res.score < 4) {
+      est.addClass('alert-warning');
+    } else {
+      est.addClass('alert-success');
+    }
+    $("#pwstrength").append(est)
+    if(res.feedback.warning) {
+      $("#pwstrength").append('<div class="alert alert-warning" role="alert">' + res.feedback.warning + '</div>');
     }
   });
 }
@@ -388,4 +394,5 @@ function main_init() {
     $("#user-view").show();
     main_userViewInit();
   }
+  async_load('js/zxcvbn.js');
 }

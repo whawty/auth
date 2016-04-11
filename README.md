@@ -22,3 +22,6 @@ tba...
 
     © 2016 Christian Pointner <equinox@spreadspace.org>
     © 2016 Markus Grüneis <gimpf@gimpf.org>
+
+    whawty.auth makes use of zxcvbn from https://github.com/dropbox/zxcvbn.
+    The licence of zxcvbn can be found in the file LICENSE.zxcvbn

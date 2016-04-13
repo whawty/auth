@@ -96,13 +96,24 @@ body {
   width: 100%
 }
 
-#changepwform .progress {
-  margin: 0.5em 1em 1.5em 1em;
+#pwstrength {
+  margin: 0.1em 0.5em;
 }
 
-#pwstrength {
-  margin: 1em 3em;
-  text-align: center;
+#pwstrengthindicator {
+  font-size: 2em;
+}
+
+.pwstrengthscore0 { color: #AFAFAF; }
+.pwstrengthscore1 { color: #9b4141; }
+.pwstrengthscore2 { color: #9b7d41; }
+.pwstrengthscore3 { color: #7d9b41; }
+.pwstrengthscore4 { color: #419b41; }
+
+#pwstrengthtips {
+  margin: 1em 0.5em;
+  min-height: 5em;
+  clear: both;
 }
 
 #user-view .btn {

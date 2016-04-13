@@ -366,21 +366,25 @@ function main_cleanupPasswordModal() {
 function main_enablePWStrength() {
   $('#newpassword').on('input', function() {
     var res = zxcvbn($(this).val(), [ $('#changepw-userfield').text(), 'whawty' ]);
-    $("#pwstrength .alert").remove();
 
-    var est = $('<div class="alert" role="alert">estimated crack-time: </div>')
-    est.append('<strong>' + res.crack_times_display.offline_slow_hashing_1e4_per_second + '</strong>')
-    if(res.score < 2) {
-      est.addClass('alert-danger');
-    } else if(res.score < 4) {
-      est.addClass('alert-warning');
-    } else {
-      est.addClass('alert-success');
+    $("#pwestimatedcracktime").html('estimated crack-time: <strong>' + res.crack_times_display.offline_slow_hashing_1e4_per_second + '</strong>');
+
+    var ind = $('#pwstrengthindicator').empty();
+    for(var i=0; i<4; ++i) {
+      if(i < res.score) {
+        ind.append('<span class="glyphicon glyphicon-star pwstrengthscore' + res.score + '" aria-hidden="true"></span>');
+      } else {
+        ind.append('<span class="glyphicon glyphicon-star-empty pwstrengthscore0" aria-hidden="true"></span>');
+      }
     }
-    $("#pwstrength").append(est)
+
+    var tips = $("#pwstrengthtips").empty();
     if(res.feedback.warning) {
-      $("#pwstrength").append('<div class="alert alert-warning" role="alert">' + res.feedback.warning + '</div>');
+      tips.append('<div class="alert alert-warning" role="alert">' + res.feedback.warning + '</div>');
     }
+    res.feedback.suggestions.forEach(function(tip) {
+      tips.append('<div class="alert alert-info" role="alert">' + tip + '</div>');
+    });
   });
 }
 

@@ -71,8 +71,12 @@
                 <div class="modal-body">
                   <div class="alertbox"></div>
                   <input id="newpassword" type="password" class="form-control" placeholder="Password" required>
-                  <div id="pwstrength"></div>
+                  <div id="pwstrength">
+                    <div id="pwestimatedcracktime" class="pull-left"></div>
+                    <div id="pwstrengthindicator" class="pull-right"></div>
+                  </div>
                   <input id="newpassword-retype" type="password" class="form-control" placeholder="Retype Password" required>
+                  <div id="pwstrengthtips"></div>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

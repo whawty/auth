@@ -46,7 +46,7 @@ func FuzzRequest(data []byte) int {
 	if err != nil {
 		panic(err)
 	}
-	if !bytes.Equal(data, dataout) {
+	if !bytes.HasPrefix(data, dataout) {
 		panic("re-encoding decoded request yields different output")
 	}
 
@@ -63,7 +63,7 @@ func FuzzResponse(data []byte) int {
 	if err != nil {
 		panic(err)
 	}
-	if !bytes.Equal(data, dataout) {
+	if !bytes.HasPrefix(data, dataout) {
 		panic("re-encoding decoded response yields different output")
 	}
 

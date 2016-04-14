@@ -10,7 +10,15 @@ app:
 
  * figure out how to deal with automatic upgrades and sync
     Automatic upgrades should be done whenever a user logs in. This
-    means the syncing needs to work in both directions?!?
+    means the syncing needs to work in both directions?!? -> no!
+    The following scheme could solve this:
+     - master has web-api running and automatic upgrades enabled
+     - slaves don't upgrade directly but after a successful login
+       use the web-api of the master to (re)authenticate the user. If
+       this leads to a new password all slaves will receive a normal sync
+       request.
+       These update attempts should be opportunistic. There should be
+       no delay when the master is not reachable.
 
  * improve handling of variables which contain sensitive data
     It would be nice to protect variables like passwords and other
@@ -26,24 +34,19 @@ app:
     administrator considers secure passwords. Weak passwords should
     get denied by the app.
     The password policies should be based on results from zxcvbn
-    see: https://github.com/nbutton23/zxcvbn-go
+    see: https://github.com/nbutton23/zxcvbn-go. Though it would be nice
+    to make the evaluator configureable.
 
 pam-module:
 ===========
 
- * fuzzy testing
+ * (fuzzy) testing
     Input from pam application (conversation function) and via the
-    unix socket interface should get tested  with random/invalid
-    data. The output as well as memory access (valgrind) should
-    be checked.
+    unix socket interface should get tested with random/invalid
+    data. The output as well as memory access should be checked.
 
-sasl:
-=====
-
- * fuzzy testing
-    Input from the unix socket interface should get tested with
-    random/invalid data. I believe that there is a test framework
-    for stuff like this in golang (needs to be found!).
+    https://cmocka.org/ and https://cwrap.org/pam_wrapper.html look
+    very promising.
 
 store:
 ======

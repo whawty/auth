@@ -32,10 +32,23 @@
 
 package sasl
 
+import (
+	"bytes"
+)
+
 func Fuzz(data []byte) int {
 	var req Request
 	if err := req.Unmarshal(data); err != nil {
 		return 0
 	}
+
+	dataout, err := req.Marshal()
+	if err != nil {
+		panic(err)
+	}
+	if !bytes.Equal(data, dataout) {
+		panic("re-encoding decoded request yields different output")
+	}
+
 	return 1
 }

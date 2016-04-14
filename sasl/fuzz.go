@@ -36,7 +36,7 @@ import (
 	"bytes"
 )
 
-func Fuzz(data []byte) int {
+func FuzzRequest(data []byte) int {
 	var req Request
 	if err := req.Unmarshal(data); err != nil {
 		return 0
@@ -48,6 +48,23 @@ func Fuzz(data []byte) int {
 	}
 	if !bytes.Equal(data, dataout) {
 		panic("re-encoding decoded request yields different output")
+	}
+
+	return 1
+}
+
+func FuzzResponse(data []byte) int {
+	var resp Response
+	if err := resp.Unmarshal(data); err != nil {
+		return 0
+	}
+
+	dataout, err := resp.Marshal()
+	if err != nil {
+		panic(err)
+	}
+	if !bytes.Equal(data, dataout) {
+		panic("re-encoding decoded response yields different output")
 	}
 
 	return 1

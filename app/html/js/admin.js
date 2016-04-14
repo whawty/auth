@@ -2,7 +2,7 @@
 
 function admin_init() {
   auth_init()
-  main_enablePWStrength();
+  main_enablePWChecks();
 }
 
 var alertbox = function() {}
@@ -140,12 +140,6 @@ function main_getUpdateButton(user) {
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
-          if (newpassword != $("#newpassword-retype").val()) {
-              alertbox.error('passwordModal', "Error", "Passwords mismatch");
-              $("#newpassword").val('')
-              $("#newpassword-retype").val('')
-              return
-          }
           var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
           $.post("/api/update", data, main_updateSuccess, 'json')
               .fail(main_reqError)
@@ -247,12 +241,6 @@ function main_setupAddButton() {
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
-          if (newpassword != $("#newpassword-retype").val()) {
-              alertbox.error('passwordModal', "Error", "Passwords mismatch");
-              $("#newpassword").val('')
-              $("#newpassword-retype").val('')
-              return
-          }
           var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
           $.post("/api/add", data, main_addSuccess, 'json')
               .fail(main_reqError)
@@ -294,12 +282,6 @@ function main_userViewInit() {
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
-          if (newpassword != $("#newpassword-retype").val()) {
-              alertbox.error('passwordModal', "Error", "Passwords mismatch");
-              $("#newpassword").val('')
-              $("#newpassword-retype").val('')
-              return
-          }
           var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
           $.post("/api/update", data, main_userUpdateSuccess, 'json')
               .fail(main_reqError)
@@ -356,15 +338,44 @@ function main_reqError(req, status, error) {
 }
 
 function main_cleanupPasswordModal() {
+  $('#newpassword').parent().attr('class', 'form-group');
   $("#newpassword").val('')
   $("#newpassword").trigger('input')
+  $("#newpassword-retype").parent().attr('class', 'form-group');
   $("#newpassword-retype").val('')
   $("#passwordModal .alertbox").text('');
   $("#changepwform").off('submit');
+  $("#changepwform").find('button[type="submit"]').prop('disabled', true);
 }
 
-function main_enablePWStrength() {
+function main_comparePasswords() {
+  if($("#newpassword").val() == "" || $("#newpassword").val() != $("#newpassword-retype").val()) {
+    $('#newpassword-retype').parent().attr('class', 'form-group has-error');
+    $("#changepwform").find('button[type="submit"]').prop('disabled', true);
+  } else {
+    $('#newpassword-retype').parent().attr('class', 'form-group has-success');
+    $("#changepwform").find('button[type="submit"]').prop('disabled', false);
+  }
+}
+
+var main_PWStrength = new Array(5);
+main_PWStrength[0] = 'very weak';
+main_PWStrength[1] = 'weak';
+main_PWStrength[2] = 'so-so';
+main_PWStrength[3] = 'strong';
+main_PWStrength[4] = 'very strong';
+
+var main_PWStrengthLevel = new Array(5);
+main_PWStrengthLevel[0] = 'danger';
+main_PWStrengthLevel[1] = 'danger';
+main_PWStrengthLevel[2] = 'warning';
+main_PWStrengthLevel[3] = 'success';
+main_PWStrengthLevel[4] = 'success';
+
+function main_enablePWChecks() {
   $('#newpassword').on('input', function() {
+    main_comparePasswords();
+
     var res = zxcvbn($(this).val(), [ $('#changepw-userfield').text(), 'whawty' ]);
 
     $("#pwestimatedcracktime").html('estimated crack-time: <strong>' + res.crack_times_display.offline_slow_hashing_1e4_per_second + '</strong>');
@@ -378,14 +389,22 @@ function main_enablePWStrength() {
       }
     }
 
-    var tips = $("#pwstrengthtips").empty();
-    if(res.feedback.warning) {
-      tips.append('<div class="alert alert-warning" role="alert">' + res.feedback.warning + '</div>');
+    var tips = '';
+    if($(this).val() == "") {
+      tips = '<div class="alert alert-info" role="alert">Please type in a password</div>';
+    } else if(res.feedback.warning) {
+      tips = '<div class="alert alert-danger" role="alert">' + res.feedback.warning + '</div>';
+    } else {
+      tips = '<div class="alert alert-' + main_PWStrengthLevel[res.score] + '" role="alert">This is a ' + main_PWStrength[res.score] + ' password</div>';
     }
     res.feedback.suggestions.forEach(function(tip) {
-      tips.append('<div class="alert alert-info" role="alert">' + tip + '</div>');
+      tips = tips + '<div class="alert alert-info" role="alert">' + tip + '</div>';
     });
+
+    $("#pwstrengthtips").html(tips);
   });
+
+  $('#newpassword-retype').on('input', main_comparePasswords);
 }
 
 function main_init() {

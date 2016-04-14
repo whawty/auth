@@ -198,8 +198,8 @@ func (r *Response) Decode(reader io.Reader) (err error) {
 	if err := decodeLengthEncodedStrings(reader, parts); err != nil {
 		return err
 	}
-	if len(parts[0]) == 0 {
-		return errors.New("response is empty")
+	if len(parts[0]) < 2 {
+		return errors.New("response is too short")
 	}
 	if len(parts[0]) >= 2 {
 		switch parts[0][0:2] {

@@ -357,7 +357,7 @@ func (d *Dir) Exists(user string) (exists bool, isAdmin bool, err error) {
 }
 
 // Authenticate checks if user and password are a valid combination. It also returns
-// whether user is an admin and when the password was last changed.
-func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin bool, lastchange time.Time, err error) {
+// whether user is an admin, the password is upgradeable and when the password was last changed.
+func (d *Dir) Authenticate(user, password string) (isAuthenticated, isAdmin, upgradeable bool, lastchange time.Time, err error) {
 	return NewUserHash(d, user).Authenticate(password)
 }

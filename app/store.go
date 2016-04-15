@@ -117,6 +117,7 @@ type listFullRequest struct {
 type authenticateResult struct {
 	ok          bool
 	isAdmin     bool
+	upgradeable bool
 	lastChanged time.Time
 	err         error
 }
@@ -182,7 +183,7 @@ func (s *Store) listFull() (result listFullResult) {
 }
 
 func (s *Store) authenticate(username, password string) (result authenticateResult) {
-	result.ok, result.isAdmin, result.lastChanged, result.err = s.dir.Authenticate(username, password)
+	result.ok, result.isAdmin, result.upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
 	return
 }
 
@@ -316,7 +317,7 @@ func (s *StoreChan) ListFull() (store.UserListFull, error) {
 	return res.list, res.err
 }
 
-func (s *StoreChan) Authenticate(username, password string) (bool, bool, time.Time, error) {
+func (s *StoreChan) Authenticate(username, password string) (bool, bool, bool, time.Time, error) {
 	resCh := make(chan authenticateResult)
 	req := authenticateRequest{}
 	req.username = username
@@ -325,7 +326,7 @@ func (s *StoreChan) Authenticate(username, password string) (bool, bool, time.Ti
 	s.authenticateChan <- req
 
 	res := <-resCh
-	return res.ok, res.isAdmin, res.lastChanged, res.err
+	return res.ok, res.isAdmin, res.upgradeable, res.lastChanged, res.err
 }
 
 func (s *Store) GetInterface() *StoreChan {

@@ -64,7 +64,7 @@ func scryptauthGen(password string, store *Dir) (string, error) {
 	return hashStr, nil
 }
 
-func scryptauthCheck(password, hashStr string, store *Dir) (isAuthenticated bool, err error) {
+func scryptauthCheck(password, hashStr string, store *Dir) (isAuthenticated, upgradeable bool, err error) {
 	var ctxID uint
 	var hash, salt []byte
 	if ctxID, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
@@ -73,8 +73,11 @@ func scryptauthCheck(password, hashStr string, store *Dir) (isAuthenticated bool
 
 	ctx, ctxExists := store.Scryptauth.Contexts[ctxID]
 	if !ctxExists {
-		return false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
+		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
 	}
 
-	return ctx.Check(hash, []byte(password), salt)
+	upgradeable = (store.Scryptauth.DefaultCtxID != ctxID)
+
+	isAuthenticated, err = ctx.Check(hash, []byte(password), salt)
+	return
 }

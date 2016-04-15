@@ -74,7 +74,7 @@ func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http
 		return
 	}
 
-	ok, isAdmin, lastChanged, err := store.Authenticate(reqdata.Username, reqdata.Password)
+	ok, isAdmin, _, lastChanged, err := store.Authenticate(reqdata.Username, reqdata.Password)
 	if err != nil || !ok {
 		respdata.Error = "authentication failed"
 		if err != nil {
@@ -254,7 +254,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		}
 		wdl.Printf("user '%s' want's to update user '%s', using a valid session", username, reqdata.Username)
 	} else if reqdata.Session == "" && reqdata.OldPassword != "" {
-		ok, _, _, err := store.Authenticate(reqdata.Username, reqdata.OldPassword)
+		ok, _, _, _, err := store.Authenticate(reqdata.Username, reqdata.OldPassword)
 		if err != nil || !ok {
 			respdata.Error = "authentication failed"
 			if err != nil {

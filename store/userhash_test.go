@@ -296,13 +296,13 @@ func TestAuthenticate(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if isAuthOk, isAdmin, _, _ := u.Authenticate(password1); !isAuthOk {
+	if isAuthOk, isAdmin, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	} else if !isAdmin {
 		t.Fatal("test user should be an admin")
 	}
 
-	if isAuthOk, isAdmin, _, _ := u.Authenticate(password2); isAuthOk {
+	if isAuthOk, isAdmin, _, _, _ := u.Authenticate(password2); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	} else if !isAdmin {
 		t.Fatal("test user should be an admin")
@@ -315,7 +315,7 @@ func TestAuthenticateNonExistent(t *testing.T) {
 
 	u := NewUserHash(testStoreUserHash, username)
 
-	if _, _, _, err := u.Authenticate(password); err == nil {
+	if _, _, _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating not exisiting user should be an error")
 	}
 }
@@ -338,7 +338,7 @@ func TestAuthenticateUnkownContext(t *testing.T) {
 
 	u := NewUserHash(testStoreUserHash, username)
 
-	if _, _, _, err := u.Authenticate(password); err == nil {
+	if _, _, _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating a password which uses an unkown context should give an error")
 	}
 }
@@ -361,7 +361,7 @@ func TestAuthenticateInvalidHash(t *testing.T) {
 
 	u := NewUserHash(testStoreUserHash, username)
 
-	if _, _, _, err := u.Authenticate(password); err == nil {
+	if _, _, _, _, err := u.Authenticate(password); err == nil {
 		t.Fatal("authenticating a password with an invalid hash string should give an error")
 	}
 }
@@ -378,20 +378,20 @@ func TestUpdateUser(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if isAuthOk, _, _, _ := u.Authenticate(password1); !isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
-	if isAuthOk, _, _, _ := u.Authenticate(password2); isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
 
 	if err := u.Update(password2); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if isAuthOk, _, _, _ := u.Authenticate(password1); isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
-	if isAuthOk, _, _, _ := u.Authenticate(password2); !isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
 }
@@ -408,20 +408,20 @@ func TestUpdateAdmin(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if isAuthOk, _, _, _ := u.Authenticate(password1); !isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
-	if isAuthOk, _, _, _ := u.Authenticate(password2); isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
 
 	if err := u.Update(password2); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if isAuthOk, _, _, _ := u.Authenticate(password1); isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); isAuthOk {
 		t.Fatal("authentication shouldn't succeed")
 	}
-	if isAuthOk, _, _, _ := u.Authenticate(password2); !isAuthOk {
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); !isAuthOk {
 		t.Fatal("authentication should succeed")
 	}
 }

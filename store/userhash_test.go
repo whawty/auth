@@ -320,7 +320,7 @@ func TestAuthenticateNonExistent(t *testing.T) {
 	}
 }
 
-func TestAuthenticateUnkownContext(t *testing.T) {
+func TestAuthenticateUnknownContext(t *testing.T) {
 	username := "test-auth-unknown-ctx"
 	password := "secret"
 	hashStr := "hmac_sha256_scrypt:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w="
@@ -339,7 +339,7 @@ func TestAuthenticateUnkownContext(t *testing.T) {
 	u := NewUserHash(testStoreUserHash, username)
 
 	if _, _, _, _, err := u.Authenticate(password); err == nil {
-		t.Fatal("authenticating a password which uses an unkown context should give an error")
+		t.Fatal("authenticating a password which uses an unknown context should give an error")
 	}
 }
 

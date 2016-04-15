@@ -182,8 +182,8 @@ func (s *Store) listFull() (result listFullResult) {
 	return
 }
 
-func (s *Store) authenticate(username, password string) (result authenticateResult) {
-	result.ok, result.isAdmin, result.upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
+func (s *Store) authenticate(username, password string) (result authenticateResult, upgradeable bool) {
+	result.ok, result.isAdmin, upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
 	return
 }
 
@@ -207,7 +207,14 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.listFullChan:
 			req.response <- s.listFull()
 		case req := <-s.authenticateChan:
-			req.response <- s.authenticate(req.username, req.password)
+			resp, upgradeable := s.authenticate(req.username, req.password)
+			req.response <- resp
+			if upgradeable {
+				// TODO:
+				//  - call update() if local updates are enabled
+				//  - enque remote update request if remote updates are enabled
+				//  - ignore if updates are disabled
+			}
 		}
 	}
 }
@@ -317,7 +324,7 @@ func (s *StoreChan) ListFull() (store.UserListFull, error) {
 	return res.list, res.err
 }
 
-func (s *StoreChan) Authenticate(username, password string) (bool, bool, bool, time.Time, error) {
+func (s *StoreChan) Authenticate(username, password string) (bool, bool, time.Time, error) {
 	resCh := make(chan authenticateResult)
 	req := authenticateRequest{}
 	req.username = username
@@ -326,7 +333,7 @@ func (s *StoreChan) Authenticate(username, password string) (bool, bool, bool, t
 	s.authenticateChan <- req
 
 	res := <-resCh
-	return res.ok, res.isAdmin, res.upgradeable, res.lastChanged, res.err
+	return res.ok, res.isAdmin, res.lastChanged, res.err
 }
 
 func (s *Store) GetInterface() *StoreChan {

@@ -41,7 +41,7 @@ import (
 func callback(login, password, service, realm, path string, store *StoreChan) (ok bool, msg string, err error) {
 	wdl.Printf("auth request on '%s': [user=%s] [service=%s] [realm=%s]", path, login, service, realm)
 
-	ok, _, _, _, err = store.Authenticate(login, password)
+	ok, _, _, err = store.Authenticate(login, password)
 	if err != nil {
 		return false, "", err
 	}

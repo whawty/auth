@@ -348,7 +348,7 @@ func cmdAuthenticate(c *cli.Context) {
 		password = string(pwd)
 	}
 
-	ok, isAdmin, upgradeable, _, err := s.GetInterface().Authenticate(username, password)
+	ok, isAdmin, _, err := s.GetInterface().Authenticate(username, password)
 	if err != nil {
 		fmt.Printf("Error authenticating user '%s': %s\n", username, err)
 		os.Exit(2)
@@ -362,10 +362,6 @@ func cmdAuthenticate(c *cli.Context) {
 		fmt.Printf("user '%s' is an admin\n", username)
 	} else {
 		fmt.Printf("user '%s' is a normal user\n", username)
-	}
-
-	if upgradeable {
-		fmt.Printf("password could be upgraded to newer context!\n")
 	}
 	os.Exit(0)
 }

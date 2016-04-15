@@ -254,6 +254,10 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)
 	}
+	if !upgradeable {
+		upgradeable = (u.store.DefaultFormat != formatID)
+	}
+
 	isAuthenticated = false
 	return
 }

@@ -43,7 +43,7 @@ The following global options can be passed to *whawty-auth*.
 *--web-static-dir* '</path/to/whawty/admin/interface>'::
      This sets the path to the static files of the admin web-interface. By default the path
      '/usr/share/whawty/auth-admin/' will be used. This can also be specified using the
-     environment variable 'WHAWTY_AUTH_WEB_ADDR'. If both the command line option as well
+     environment variable 'WHAWTY_AUTH_WEB_STATIC_DIR'. If both the command line option as well
      as the environment variable are supplied the value of the command line option will be
      used.
 

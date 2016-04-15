@@ -503,7 +503,7 @@ func runWepApi(listener *net.TCPListener, store *StoreChan, staticDir string) (e
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 
-func runWebApiAddr(addr string, store *StoreChan, staticDir string) (err error) {
+func runWebAddr(addr string, store *StoreChan, staticDir string) (err error) {
 	if addr == "" {
 		addr = ":http"
 	}
@@ -514,6 +514,6 @@ func runWebApiAddr(addr string, store *StoreChan, staticDir string) (err error) 
 	return runWepApi(ln.(*net.TCPListener), store, staticDir)
 }
 
-func runWebApiListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
+func runWebListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
 	return runWepApi(listener, store, staticDir)
 }

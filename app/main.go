@@ -377,19 +377,19 @@ func cmdRun(c *cli.Context) {
 	}
 
 	webAddr := c.String("web-addr")
-	socks := c.StringSlice("sock")
+	saslPaths := c.StringSlice("sock")
 
 	var wg sync.WaitGroup
 	if webAddr != "" {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := runWebApiAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+			if err := runWebAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
 				fmt.Printf("warning running web interface failed: %s\n", err)
 			}
 		}()
 	}
-	for _, path := range socks {
+	for _, path := range saslPaths {
 		p := path
 		wg.Add(1)
 		go func() {
@@ -438,7 +438,7 @@ func cmdRunSa(c *cli.Context) {
 			ln := listener.(*net.TCPListener)
 			go func() {
 				defer wg.Done()
-				if err := runWebApiListener(ln, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+				if err := runWebListener(ln, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
 					fmt.Printf("error running web-api: %s", err)
 				}
 			}()

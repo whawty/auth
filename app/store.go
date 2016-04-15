@@ -32,6 +32,7 @@
 package main
 
 import (
+	"errors"
 	"time"
 
 	"github.com/whawty/auth/store"
@@ -139,6 +140,7 @@ type Store struct {
 	listChan         chan listRequest
 	listFullChan     chan listFullRequest
 	authenticateChan chan authenticateRequest
+	upgradeChan      chan updateRequest
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -199,7 +201,16 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.removeChan:
 			req.response <- s.remove(req.username)
 		case req := <-s.updateChan:
-			req.response <- s.update(req.username, req.password)
+			resp := s.update(req.username, req.password)
+			if req.response != nil {
+				req.response <- resp
+			} else {
+				if resp.err != nil {
+					wl.Printf("local-upgrade for '%s' failed: %v", req.username, resp.err)
+				} else {
+					wdl.Printf("local-upgrade for '%s' successfull", req.username)
+				}
+			}
 		case req := <-s.setAdminChan:
 			req.response <- s.setAdmin(req.username, req.isAdmin)
 		case req := <-s.listChan:
@@ -209,11 +220,8 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.authenticateChan:
 			resp, upgradeable := s.authenticate(req.username, req.password)
 			req.response <- resp
-			if upgradeable {
-				// TODO:
-				//  - call update() if local updates are enabled
-				//  - enque remote update request if remote updates are enabled
-				//  - ignore if updates are disabled
+			if upgradeable && s.upgradeChan != nil {
+				s.upgradeChan <- updateRequest{username: req.username, password: req.password}
 			}
 		}
 	}
@@ -350,7 +358,7 @@ func (s *Store) GetInterface() *StoreChan {
 	return ch
 }
 
-func NewStore(configfile string) (s *Store, err error) {
+func NewStore(configfile, doUpgrades string) (s *Store, err error) {
 	s = &Store{}
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
@@ -364,6 +372,18 @@ func NewStore(configfile string) (s *Store, err error) {
 	s.listChan = make(chan listRequest, 10)
 	s.listFullChan = make(chan listFullRequest, 10)
 	s.authenticateChan = make(chan authenticateRequest, 10)
+
+	switch doUpgrades {
+	case "local":
+		s.upgradeChan = s.updateChan
+	case "":
+		s.upgradeChan = nil
+	default:
+		// TODO: parse doUpgrades as url -> create/run remote upgrader
+		s.upgradeChan = nil
+		err = errors.New("unsupported hash-upgrade mode, must be either empty, 'local' or a http(s) url to the master")
+		return
+	}
 
 	go s.dispatchRequests()
 	return

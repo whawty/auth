@@ -474,7 +474,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func runWepApi(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
+func runWebApi(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -511,9 +511,9 @@ func runWebAddr(addr string, store *StoreChan, staticDir string) (err error) {
 	if err != nil {
 		return err
 	}
-	return runWepApi(ln.(*net.TCPListener), store, staticDir)
+	return runWebApi(ln.(*net.TCPListener), store, staticDir)
 }
 
 func runWebListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
-	return runWepApi(listener, store, staticDir)
+	return runWebApi(listener, store, staticDir)
 }

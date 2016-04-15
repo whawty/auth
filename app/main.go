@@ -439,7 +439,7 @@ func cmdRunSa(c *cli.Context) {
 			go func() {
 				defer wg.Done()
 				if err := runWebApiListener(ln, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
-					wl.Printf("error running web-api: %s", err)
+					fmt.Printf("error running web-api: %s", err)
 				}
 			}()
 		default:

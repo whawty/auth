@@ -47,6 +47,18 @@ The following global options can be passed to *whawty-auth*.
      as the environment variable are supplied the value of the command line option will be
      used.
 
+*--do-upgrades* '(local|<remote-url>)'::
+     This enables local or remote upgrades for password hashes. By default no upgrades will
+     be done. 'local' means direct upgrades on the local store. 'remote' upgrades can be
+     configured by specifying the url to a remote *whawy-auth* instance. The url must point to
+     the web-api endpoint on that host (i.e. 'https://whawty-master.example.com/api/update').
+     For any password hash which is upgradeable an update call to the remote host will be
+     initialized after the user is successfully authenticated. This is done in a opportunistic
+     way. This means errors while calling the remote update will be ignored.
+     You may as well use the environment variable 'WHAWTY_AUTH_DO_UPGRADES' to configure
+     upgrades. If both the command line option as well as the environment variable are supplied
+     the value of the command line option will be used.
+
 *-h | --help*::
     Show help text and exit.
 

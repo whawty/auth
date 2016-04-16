@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 04/15/2016
+.\"      Date: 04/16/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "04/15/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "04/16/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -60,6 +60,20 @@ This sets the path to the static files of the admin web\-interface\&. By default
 \fI/usr/share/whawty/auth\-admin/\fR
 will be used\&. This can also be specified using the environment variable
 \fIWHAWTY_AUTH_WEB_STATIC_DIR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
+.RE
+.PP
+\fB\-\-do\-upgrades\fR \fI(local|<remote\-url>)\fR
+.RS 4
+This enables local or remote upgrades for password hashes\&. By default no upgrades will be done\&.
+\fIlocal\fR
+means direct upgrades on the local store\&.
+\fIremote\fR
+upgrades can be configured by specifying the url to a remote
+\fBwhawy\-auth\fR
+instance\&. The url must point to the web\-api endpoint on that host (i\&.e\&.
+\fIhttps://whawty\-master\&.example\&.com/api/update\fR)\&. For any password hash which is upgradeable an update call to the remote host will be initialized after the user is successfully authenticated\&. This is done in a opportunistic way\&. This means errors while calling the remote update will be ignored\&. You may as well use the environment variable
+\fIWHAWTY_AUTH_DO_UPGRADES\fR
+to configure upgrades\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE
 .PP
 \fB\-h | \-\-help\fR

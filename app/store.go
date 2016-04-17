@@ -212,7 +212,7 @@ func (s *Store) dispatchRequests() {
 				if resp := s.update(req.username, req.password); resp.err != nil {
 					wl.Printf("upgrade(local): failed for '%s': %v", req.username, resp.err)
 				} else {
-					wdl.Printf("upgrade(local): successfull for '%s'", req.username)
+					wdl.Printf("upgrade(local): successfully upgraded '%s'", req.username)
 				}
 			}
 		case req := <-s.setAdminChan:
@@ -246,9 +246,9 @@ func remoteHTTPUpgrade(update updateRequest, remote string) {
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
-		wl.Printf("upgrade(remote): failed for '%s' with status:", update.username, resp.Status)
+		wl.Printf("upgrade(remote): failed for '%s' with status: %s", update.username, resp.Status)
 	} else {
-		wdl.Printf("upgrade(remote): successfull for '%s'", update.username)
+		wdl.Printf("upgrade(remote): successfully upgraded '%s'", update.username)
 	}
 }
 

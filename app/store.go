@@ -32,7 +32,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -228,9 +231,31 @@ func (s *Store) dispatchRequests() {
 	}
 }
 
+func remoteHTTPUpgrade(update updateRequest, remote string) {
+	reqdata, err := json.Marshal(webUpdateRequest{Username: update.username, OldPassword: update.password})
+	if err != nil {
+		wl.Printf("remote upgrader: error while encoding update request: %v", err)
+		return
+	}
+	req, _ := http.NewRequest("POST", remote, bytes.NewReader(reqdata))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		wl.Printf("remote upgrader: error sending update request: %v", err)
+		return
+	}
+	// TODO: make this more beautiful
+	wdl.Printf("remote upgrader: got response: %+v", resp)
+}
+
 func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
 	for update := range upgradeChan {
-		wdl.Printf("remote upgrader got update for '%s' -> sending it to %s", update.username, remote)
+		wdl.Printf("remote upgrader: got update for '%s' -> sending it to %s", update.username, remote)
+		go func(update updateRequest, remote string) {
+			// TODO: implement rate limiting
+			remoteHTTPUpgrade(update, remote)
+		}(update, remote)
 	}
 }
 

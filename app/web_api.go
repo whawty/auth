@@ -203,10 +203,10 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 }
 
 type webUpdateRequest struct {
-	Session     string `json:"session"`
+	Session     string `json:"session,omitempty"`
 	Username    string `json:"username"`
-	OldPassword string `json:"oldpassword"`
-	NewPassword string `json:"newpassword"`
+	OldPassword string `json:"oldpassword,omitempty"`
+	NewPassword string `json:"newpassword,omitempty"`
 }
 
 type webUpdateResponse struct {

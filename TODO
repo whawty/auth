@@ -8,18 +8,6 @@ app:
     'master' should be able to inform 'slaves' about new/changed
     passwords (push-mode).
 
- * figure out how to deal with automatic upgrades and sync
-    Automatic upgrades should be done whenever a user logs in. This
-    means the syncing needs to work in both directions?!? -> no!
-    The following scheme could solve this:
-     - master has web-api running and automatic upgrades enabled
-     - slaves don't upgrade directly but after a successful login
-       use the web-api of the master to (re)authenticate the user. If
-       this leads to a new password all slaves will receive a normal sync
-       request.
-       These update attempts should be opportunistic. There should be
-       no delay when the master is not reachable.
-
  * improve handling of variables which contain sensitive data
     It would be nice to protect variables like passwords and other
     sensitive data i.e. by clearing the memory before returning it to

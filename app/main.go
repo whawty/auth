@@ -40,6 +40,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/codegangsta/cli"
 	"github.com/coreos/go-systemd/activation"
@@ -358,6 +359,9 @@ func cmdAuthenticate(c *cli.Context) {
 		os.Exit(1)
 	}
 
+	// wait for potential upgrades - this might still be to fast for remote upgrades
+	// TODO: find a better way to handle this situation
+	time.Sleep(100 * time.Millisecond)
 	if isAdmin {
 		fmt.Printf("user '%s' is an admin\n", username)
 	} else {

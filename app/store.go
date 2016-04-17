@@ -33,6 +33,7 @@ package main
 
 import (
 	"errors"
+	"net/url"
 	"time"
 
 	"github.com/whawty/auth/store"
@@ -227,6 +228,29 @@ func (s *Store) dispatchRequests() {
 	}
 }
 
+func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
+	for update := range upgradeChan {
+		wdl.Printf("remote upgrader got update for '%s' -> sending it to %s", update.username, remote)
+	}
+}
+
+func runRemoteUpgrader(remote string) (upgradeChan chan updateRequest, err error) {
+	var r *url.URL
+	if r, err = url.Parse(remote); err != nil {
+		return
+	}
+	switch r.Scheme {
+	case "http":
+		fallthrough
+	case "https":
+		upgradeChan = make(chan updateRequest, 10)
+		go remoteHTTPUpgrader(upgradeChan, remote)
+	default:
+		err = errors.New("unsupported hash-upgrade mode, must be either empty, 'local' or a http(s) url to the master")
+	}
+	return
+}
+
 // *********************************************************
 // Public Interface
 
@@ -374,15 +398,14 @@ func NewStore(configfile, doUpgrades string) (s *Store, err error) {
 	s.authenticateChan = make(chan authenticateRequest, 10)
 
 	switch doUpgrades {
-	case "local":
-		s.upgradeChan = s.updateChan
 	case "":
 		s.upgradeChan = nil
+	case "local":
+		s.upgradeChan = s.updateChan
 	default:
-		// TODO: parse doUpgrades as url -> create/run remote upgrader
-		s.upgradeChan = nil
-		err = errors.New("unsupported hash-upgrade mode, must be either empty, 'local' or a http(s) url to the master")
-		return
+		if s.upgradeChan, err = runRemoteUpgrader(doUpgrades); err != nil {
+			return
+		}
 	}
 
 	go s.dispatchRequests()

@@ -253,12 +253,18 @@ func remoteHTTPUpgrade(update updateRequest, remote string) {
 }
 
 func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
+	sem := make(chan bool, 10) // TODO: hardcoded value
 	for update := range upgradeChan {
-		wdl.Printf("upgrade(remote): upgrading '%s' via %s", update.username, remote)
-		go func(update updateRequest, remote string) {
-			// TODO: implement rate limiting
-			remoteHTTPUpgrade(update, remote)
-		}(update, remote)
+		select {
+		case sem <- true:
+			wdl.Printf("upgrade(remote): upgrading '%s' via %s", update.username, remote)
+			go func(update updateRequest, remote string) {
+				defer func() { <-sem }()
+				remoteHTTPUpgrade(update, remote)
+			}(update, remote)
+		default:
+			wdl.Printf("upgrade(remote): ignoring upgrade request for '%s' due to rate-limiting", update.username)
+		}
 	}
 }
 

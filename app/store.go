@@ -205,14 +205,14 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.removeChan:
 			req.response <- s.remove(req.username)
 		case req := <-s.updateChan:
-			resp := s.update(req.username, req.password)
 			if req.response != nil {
-				req.response <- resp
+				req.response <- s.update(req.username, req.password)
 			} else {
-				if resp.err != nil {
-					wl.Printf("local-upgrade for '%s' failed: %v", req.username, resp.err)
+				wdl.Printf("upgrade(local): upgrading '%s'", req.username)
+				if resp := s.update(req.username, req.password); resp.err != nil {
+					wl.Printf("upgrade(local): failed for '%s': %v", req.username, resp.err)
 				} else {
-					wdl.Printf("local-upgrade for '%s' successfull", req.username)
+					wdl.Printf("upgrade(local): successfull for '%s'", req.username)
 				}
 			}
 		case req := <-s.setAdminChan:
@@ -234,7 +234,7 @@ func (s *Store) dispatchRequests() {
 func remoteHTTPUpgrade(update updateRequest, remote string) {
 	reqdata, err := json.Marshal(webUpdateRequest{Username: update.username, OldPassword: update.password})
 	if err != nil {
-		wl.Printf("remote upgrader: error while encoding update request: %v", err)
+		wl.Printf("upgrade(remote): error while encoding update request: %v", err)
 		return
 	}
 	req, _ := http.NewRequest("POST", remote, bytes.NewReader(reqdata))
@@ -242,16 +242,19 @@ func remoteHTTPUpgrade(update updateRequest, remote string) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		wl.Printf("remote upgrader: error sending update request: %v", err)
+		wl.Printf("upgrade(remote): error sending update request: %v", err)
 		return
 	}
-	// TODO: make this more beautiful
-	wdl.Printf("remote upgrader: got response: %+v", resp)
+	if resp.StatusCode != http.StatusOK {
+		wl.Printf("upgrade(remote): failed for '%s' with status:", update.username, resp.Status)
+	} else {
+		wdl.Printf("upgrade(remote): successfull for '%s'", update.username)
+	}
 }
 
 func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
 	for update := range upgradeChan {
-		wdl.Printf("remote upgrader: got update for '%s' -> sending it to %s", update.username, remote)
+		wdl.Printf("upgrade(remote): upgrading '%s' via %s", update.username, remote)
 		go func(update updateRequest, remote string) {
 			// TODO: implement rate limiting
 			remoteHTTPUpgrade(update, remote)

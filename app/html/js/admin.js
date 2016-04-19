@@ -327,7 +327,7 @@ function main_reqError(req, status, error) {
   }
 
   if(req.status == 401) {
-    var user = auth_username
+    var user = auth_username;
     auth_logout();
     $("#username").val(user);
     $("#password").focus();
@@ -339,8 +339,9 @@ function main_reqError(req, status, error) {
 
 function main_cleanupPasswordModal() {
   $('#newpassword').parent().attr('class', 'form-group');
-  $("#newpassword").val('')
-  $("#newpassword").trigger('input')
+  $("#newpassword").val('');
+  $("#newpassword").trigger('input');
+  $("#newpassword").focus();
   $("#newpassword-retype").parent().attr('class', 'form-group');
   $("#newpassword-retype").val('')
   $("#passwordModal .alertbox").text('');

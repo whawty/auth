@@ -37,7 +37,8 @@ LIBS := "github.com/whawty/auth/store" \
         "github.com/codegangsta/cli" \
         "github.com/coreos/go-systemd/activation" \
         "github.com/gosuri/uitable" \
-        "github.com/howeyc/gopass"
+        "github.com/howeyc/gopass" \
+        "github.com/nbutton23/zxcvbn-go"
 
 all: build
 .PHONY: vet format build clean distclean

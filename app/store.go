@@ -135,6 +135,7 @@ type authenticateRequest struct {
 
 type Store struct {
 	dir              *store.Dir
+	policy           PolicyChecker
 	initChan         chan initRequest
 	checkChan        chan checkRequest
 	addChan          chan addRequest
@@ -148,6 +149,14 @@ type Store struct {
 }
 
 func (s *Store) init(username, password string) (result initResult) {
+	if ok, err := s.policy.Check(password, username); !ok || err != nil {
+		if err != nil {
+			result.err = err
+		} else {
+			result.err = errors.New("password policy checked failed")
+		}
+		return
+	}
 	result.err = s.dir.Init(username, password)
 	return
 }
@@ -158,6 +167,14 @@ func (s *Store) check() (result checkResult) {
 }
 
 func (s *Store) add(username, password string, isAdmin bool) (result addResult) {
+	if ok, err := s.policy.Check(password, username); !ok || err != nil {
+		if err != nil {
+			result.err = err
+		} else {
+			result.err = errors.New("password policy checked failed")
+		}
+		return
+	}
 	result.err = s.dir.AddUser(username, password, isAdmin)
 	return
 }
@@ -169,6 +186,14 @@ func (s *Store) remove(username string) (result removeResult) {
 }
 
 func (s *Store) update(username, password string) (result updateResult) {
+	if ok, err := s.policy.Check(password, username); !ok || err != nil {
+		if err != nil {
+			result.err = err
+		} else {
+			result.err = errors.New("password policy checked failed")
+		}
+		return
+	}
 	result.err = s.dir.UpdateUser(username, password)
 	return
 }
@@ -416,10 +441,15 @@ func (s *Store) GetInterface() *StoreChan {
 	return ch
 }
 
-func NewStore(configfile, doUpgrades string) (s *Store, err error) {
+func NewStore(configfile, doUpgrades, policyType, policyCondition string) (s *Store, err error) {
 	s = &Store{}
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
+	}
+	if policyType != "" {
+		if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
+			return
+		}
 	}
 	s.initChan = make(chan initRequest, 1)
 	s.checkChan = make(chan checkRequest, 1)

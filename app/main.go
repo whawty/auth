@@ -96,7 +96,7 @@ func cmdInit(c *cli.Context) {
 		password = pwd
 	}
 
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"), c.GlobalString("policy-type"), c.GlobalString("policy-condition"))
 	if err != nil {
 		fmt.Printf("Error initializing whawty store: %s\n", err)
 		return
@@ -109,7 +109,7 @@ func cmdInit(c *cli.Context) {
 }
 
 func cmdCheck(c *cli.Context) {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"), c.GlobalString("policy-type"), c.GlobalString("policy-condition"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return
@@ -129,7 +129,7 @@ func cmdCheck(c *cli.Context) {
 }
 
 func openAndCheck(c *cli.Context) *Store {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"), c.GlobalString("policy-type"), c.GlobalString("policy-condition"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return nil
@@ -478,6 +478,18 @@ func main() {
 			Value:  "",
 			Usage:  "enable local or remote upgrades for password hashes",
 			EnvVar: "WHAWTY_AUTH_DO_UPGRADES",
+		},
+		cli.StringFlag{
+			Name:   "policy-type",
+			Value:  "",
+			Usage:  "password policy type",
+			EnvVar: "WHAWTY_AUTH_POLICY_TYPE",
+		},
+		cli.StringFlag{
+			Name:   "policy-condition",
+			Value:  "",
+			Usage:  "password policy condition",
+			EnvVar: "WHAWTY_AUTH_POLICY_CONDITION",
 		},
 	}
 	app.Commands = []cli.Command{

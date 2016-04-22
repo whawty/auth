@@ -92,8 +92,10 @@ function auth_init() {
     } else {
       $('#role-field').text("User");
     }
+    $("#mainwindow").fadeIn();
     main_init();
   } else {
+    $("#loginbox").fadeIn();
     $("#mainwindow").hide();
   }
   $("#loginform").submit(function(event) {

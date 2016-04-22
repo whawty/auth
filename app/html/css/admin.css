@@ -1,5 +1,9 @@
 body {
-    background-color: #eee;
+  background-color: #eee;
+}
+
+#loginbox, #mainwindow {
+  display: none;
 }
 
 /*
@@ -9,7 +13,7 @@ body {
  */
 
 .loginspacer {
-    padding-top: 30px;
+  padding-top: 30px;
 }
 
 .form-auth {

@@ -42,9 +42,9 @@ type ZXCVBNPolicy struct {
 
 func (z ZXCVBNPolicy) Check(password, username string) (result bool, err error) {
 	score := zxcvbn.PasswordStrength(password, []string{username, "whawty"})
-	wl.Printf("zxcbvn score: %+v", score)
+	wl.Printf("zxcbvn result: score = %d (entropy = %f, crack-time: %s)", score.Score, score.Entropy, score.CrackTimeDisplay)
 	// TODO: check condition
-	return
+	return true, nil
 }
 
 func NewZXCVBNPolicy(condition string) (p ZXCVBNPolicy, err error) {

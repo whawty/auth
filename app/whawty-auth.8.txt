@@ -10,7 +10,7 @@ whawty-auth - manage whawty auth stores
 SYNOPSIS
 --------
 
-*whawty-auth* '[global options]' *command* '[command options]' [arguments...]
+*whawty-auth*  '[global options]' *<command>* '[command options]' '[arguments ... ]'
 
 
 DESCRIPTION
@@ -72,8 +72,8 @@ Any of the following commands supports *-h | --help* as an option. This will pri
 extra help information for the command. All these commands use the auth store directory
 as specified by the main configuration file.
 
-init
-~~~~
+init '<adminname>' '[<password>]'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *init* can be used to initialize a whawty auth store. For this to work the directory
 must exist, be writeable by the user who runs the program and must be empty. The first
@@ -88,39 +88,41 @@ check
 Check the whawty auth store for consistency.
 
 
-add
-~~~
+add '<username>' '[<password>]'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This adds a user to the store. The name of the user must be supplied as the first
 argument. The password may be supplied as a second parameter. If this is omitted
 *whawty-auth* prompts the user for it.
 
 
-remove
-~~~~~~
+remove '<username>'
+~~~~~~~~~~~~~~~~~~~
 
 *remove* can be used to delete a user from the store. The sole argument supported
 specifies to user to be deleted.
 
 
-update
-~~~~~~
+update '<username>' '[<password>]'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This can be used to change the password of an existing user. The first argument
 specifies the username. The new password may be specified as a second argument.
 If no password is set using the command line the user will be prompted for it.
+Mind that to change a password via the command-line you don't need to know the
+old password.
 
 
-set-admin
-~~~~~~~~~
+set-admin  '<username>' '(true|false)'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *set-admin* can be used to change the admin status of a user. The first argument
 is the username. The second argument should reflect the new status. *true* or *1*
 enables the admin flag. *false* or *0* disables it.
 
 
-list
-~~~~
+list '[options]'
+~~~~~~~~~~~~~~~~
 
 This prints a list of all users in the store.
 
@@ -129,8 +131,8 @@ This prints a list of all users in the store.
     only the name, admin status and last change date are printed.
 
 
-authenticate
-~~~~~~~~~~~~
+authenticate '<username>' '[<password>]'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *authenticate* runs a full auth-check for the given user. The username in question needs
 to be supplied as a first argument. The second optional argument is the password. If
@@ -138,8 +140,8 @@ no password is specified the user will be prompted for it. If the authentication
 successful the result code will be 0. On error the result code will be 1.
 
 
-run
-~~~
+run '[options]'
+~~~~~~~~~~~~~~~
 
 This instructs *whawty-auth* to run as an authentication service.
 

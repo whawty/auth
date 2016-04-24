@@ -33,23 +33,73 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/nbutton23/zxcvbn-go"
+	"github.com/nbutton23/zxcvbn-go/scoring"
 )
 
 type ZXCVBNPolicy struct {
+	condition func(score scoring.MinEntropyMatch, threshold uint64) bool
+	threshold uint64
 }
 
 func (z ZXCVBNPolicy) Check(password, username string) (result bool, err error) {
 	score := zxcvbn.PasswordStrength(password, []string{username, "whawty"})
-	wl.Printf("zxcbvn result: score = %d (entropy = %f, crack-time: %s)", score.Score, score.Entropy, score.CrackTimeDisplay)
-	// TODO: check condition
-	return true, nil
+	result = z.condition(score, z.threshold)
+	if result {
+		wdl.Printf("zxcbvn result: score = %d, entropy = %f, crack-time: %s (%f s) -> success", score.Score, score.Entropy, score.CrackTimeDisplay, score.CrackTime)
+	} else {
+		wdl.Printf("zxcbvn result: score = %d, entropy = %f, crack-time: %s (%f s) -> failed", score.Score, score.Entropy, score.CrackTimeDisplay, score.CrackTime)
+	}
+	return result, nil
+}
+
+func ZXCVBNConditionScore(score scoring.MinEntropyMatch, threshold uint64) bool {
+	return score.Score >= int(threshold)
+}
+
+func ZXCVBNConditionEntropy(score scoring.MinEntropyMatch, threshold uint64) bool {
+	return score.Entropy >= float64(threshold)
+}
+
+func ZXCVBNConditionTime(score scoring.MinEntropyMatch, threshold uint64) bool {
+	return score.CrackTime >= float64(threshold)
 }
 
 func NewZXCVBNPolicy(condition string) (p ZXCVBNPolicy, err error) {
-	// TODO: parse condition
-	return ZXCVBNPolicy{}, nil
+	c := strings.Fields(condition)
+	if len(c) != 3 {
+		err = fmt.Errorf("invalid policy condition string '%s'", condition)
+		return
+	}
+
+	if c[1] != ">=" {
+		err = fmt.Errorf("condition may only check for '>='")
+		return
+	}
+
+	if p.threshold, err = strconv.ParseUint(c[2], 10, 64); err != nil {
+		return
+	}
+
+	switch c[0] {
+	case "score":
+		if p.threshold > 4 {
+			err = fmt.Errorf("threshold %d is too high for zxcvbn.score, must be <= 4", p.threshold)
+			return
+		}
+		p.condition = ZXCVBNConditionScore
+	case "entropy":
+		p.condition = ZXCVBNConditionEntropy
+	case "time":
+		p.condition = ZXCVBNConditionTime
+	default:
+		err = fmt.Errorf("invalid condtion value '%s', must be one of score, entropy, time", c[0])
+		return
+	}
+	return
 }
 
 type NullPolicy struct {
@@ -65,6 +115,8 @@ type PolicyChecker interface {
 
 func NewPasswordPolicy(policyType, condition string) (p PolicyChecker, err error) {
 	switch policyType {
+	case "":
+		return NullPolicy{}, nil
 	case "zxcvbn":
 		return NewZXCVBNPolicy(condition)
 	default:

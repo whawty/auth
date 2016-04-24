@@ -17,13 +17,10 @@ app:
     It would be great to at least use syscall.Mlockall(syscall.MCL_FUTURE)
     but after adding that the app panics... why is this?
 
- * implement password policies
-    It would be nice to be able to configure policies for what the
-    administrator considers secure passwords. Weak passwords should
-    get denied by the app.
-    The password policies should be based on results from zxcvbn
-    see: https://github.com/nbutton23/zxcvbn-go. Though it would be nice
-    to make the evaluator configureable.
+ * test password policy zxcvbn
+    The golang implementation of zxcvbn produces different scores and
+    crack-times as the json implementation this makes it difficult for
+    the user to know whether a password will be excepted
 
 pam-module:
 ===========

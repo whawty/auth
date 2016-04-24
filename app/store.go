@@ -446,12 +446,8 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition string) (s *St
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
 	}
-	if policyType != "" {
-		if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
-			return
-		}
-	} else {
-		s.policy = NullPolicy{}
+	if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
+		return
 	}
 
 	s.initChan = make(chan initRequest, 1)

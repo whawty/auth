@@ -52,6 +52,13 @@ func NewZXCVBNPolicy(condition string) (p ZXCVBNPolicy, err error) {
 	return ZXCVBNPolicy{}, nil
 }
 
+type NullPolicy struct {
+}
+
+func (z NullPolicy) Check(password, username string) (result bool, err error) {
+	return true, nil
+}
+
 type PolicyChecker interface {
 	Check(password, username string) (bool, error)
 }

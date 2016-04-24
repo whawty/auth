@@ -450,7 +450,10 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition string) (s *St
 		if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
 			return
 		}
+	} else {
+		s.policy = NullPolicy{}
 	}
+
 	s.initChan = make(chan initRequest, 1)
 	s.checkChan = make(chan checkRequest, 1)
 	s.addChan = make(chan addRequest, 10)

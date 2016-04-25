@@ -59,6 +59,27 @@ The following global options can be passed to *whawty-auth*.
      upgrades. If both the command line option as well as the environment variable are supplied
      the value of the command line option will be used.
 
+*--policy-type* '<type>'::
+     This tells the app to check new passwords against a password policy. At the moment only one
+     password policy type is available: 'zxcvbn'. If this is omitted there won't be any policy
+     enforced. The password policy will be used whenever a user is added or the password of a user
+     gets changed. The operation will fail if the policy is not fulfilled.
+     You may as well configure this using the environment variable 'WHAWTY_AUTH_POLICY_TYPE'.
+     As with all other options the value supplied using the command line will override any value
+     set using the environment.
+
+*--policy-condition* '<condition>'::
+     This configures which condition must be met in order to fulfill the password policy. The
+     value depends on the policy-type used. For now the only policy type is 'zxcvbn' which allows
+     to evaluate passwords on the basis of entropy, estimated crack-time and the score. The
+     entropy and the crack-time are positive numbers with no upper bound. The score is a value
+     between 0 and 4, where 0 is a very weak password and 4 is the highest possible strength. The
+     condition can have the following form: '(entropy|time|score) >= <value>'.
+     For example the condition 'time >= 3600' allows all passwords which have a estimated crack-time
+     of one hour or longer. Besides the command line option you may use the environment variable
+     'WHAWTY_AUTH_POLICY_CONDITION' to configure the condition. Again the command line option,
+     should it exists, overrides any value from the environment.
+
 *-h | --help*::
     Show help text and exit.
 

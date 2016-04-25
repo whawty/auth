@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 04/22/2016
+.\"      Date: 04/25/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "04/22/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "04/25/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -74,6 +74,25 @@ instance\&. The url must point to the web\-api endpoint on that host (i\&.e\&.
 \fIhttps://whawty\-master\&.example\&.com/api/update\fR)\&. For any password hash which is upgradeable an update call to the remote host will be initialized after the user is successfully authenticated\&. This is done in a opportunistic way\&. This means errors while calling the remote update will be ignored\&. You may as well use the environment variable
 \fIWHAWTY_AUTH_DO_UPGRADES\fR
 to configure upgrades\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
+.RE
+.PP
+\fB\-\-policy\-type\fR \fI<type>\fR
+.RS 4
+This tells the app to check new passwords against a password policy\&. At the moment only one password policy type is available:
+\fIzxcvbn\fR\&. If this is omitted there won\(cqt be any policy enforced\&. The password policy will be used whenever a user is added or the password of a user gets changed\&. The operation will fail if the policy is not fulfilled\&. You may as well configure this using the environment variable
+\fIWHAWTY_AUTH_POLICY_TYPE\fR\&. As with all other options the value supplied using the command line will override any value set using the environment\&.
+.RE
+.PP
+\fB\-\-policy\-condition\fR \fI<condition>\fR
+.RS 4
+This configures which condition must be met in order to fulfill the password policy\&. The value depends on the policy\-type used\&. For now the only policy type is
+\fIzxcvbn\fR
+which allows to evaluate passwords on the basis of entropy, estimated crack\-time and the score\&. The entropy and the crack\-time are positive numbers with no upper bound\&. The score is a value between 0 and 4, where 0 is a very weak password and 4 is the highest possible strength\&. The condition can have the following form:
+\fI(entropy|time|score) >= <value>\fR\&. For example the condition
+\fItime >= 3600\fR
+allows all passwords which have a estimated crack\-time of one hour or longer\&. Besides the command line option you may use the environment variable
+\fIWHAWTY_AUTH_POLICY_CONDITION\fR
+to configure the condition\&. Again the command line option, should it exists, overrides any value from the environment\&.
 .RE
 .PP
 \fB\-h | \-\-help\fR

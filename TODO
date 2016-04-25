@@ -20,7 +20,7 @@ app:
  * test password policy zxcvbn
     The golang implementation of zxcvbn produces different scores and
     crack-times as the json implementation this makes it difficult for
-    the user to know whether a password will be excepted
+    the user to know whether a password will be accepted
 
 pam-module:
 ===========

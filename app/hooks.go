@@ -31,18 +31,38 @@
 
 package main
 
+import (
+	"time"
+)
+
 type HooksCaller struct {
-	Notify chan bool
-	dir    string
+	Notify  chan bool
+	dir     string
+	timeout time.Duration
+	pending uint
+}
+
+func (h *HooksCaller) call() {
+	// TODO: call all executables inside h.dir
+	wdl.Printf("Hooks: not yet implemented!")
 }
 
 func (h *HooksCaller) run() {
+	t := time.NewTimer(h.timeout)
+	t.Stop()
 	for {
 		select {
+		case <-t.C:
+			if h.pending > 1 {
+				h.call()
+			}
+			h.pending = 0
 		case <-h.Notify:
-			wdl.Printf("Hooks: not yet implemented!")
-			// TODO: call all executables inside h.dir
-			// TODO: implement a rate-limiting
+			if h.pending == 0 {
+				h.call()
+				t.Reset(h.timeout)
+			}
+			h.pending++
 		}
 	}
 }
@@ -50,8 +70,11 @@ func (h *HooksCaller) run() {
 func NewHooksCaller(hooksDir string) (h *HooksCaller, err error) {
 	// TODO: check if hooksDir exists
 
-	h = &HooksCaller{dir: hooksDir}
+	h = &HooksCaller{}
 	h.Notify = make(chan bool, 32)
+	h.dir = hooksDir
+	h.timeout = 5 * time.Second // TODO: hardcoded value
+	h.pending = 0
 	go h.run()
 	return
 }

@@ -136,6 +136,7 @@ type authenticateRequest struct {
 type Store struct {
 	dir              *store.Dir
 	policy           PolicyChecker
+	hooks            *HooksCaller
 	initChan         chan initRequest
 	checkChan        chan checkRequest
 	addChan          chan addRequest
@@ -176,12 +177,15 @@ func (s *Store) add(username, password string, isAdmin bool) (result addResult) 
 		return
 	}
 	result.err = s.dir.AddUser(username, password, isAdmin)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 
 func (s *Store) remove(username string) (result removeResult) {
-	//	result.err = s.dir.RemoveUser(username)
 	s.dir.RemoveUser(username)
+	s.hooks.Notify <- true
 	return
 }
 
@@ -195,11 +199,17 @@ func (s *Store) update(username, password string) (result updateResult) {
 		return
 	}
 	result.err = s.dir.UpdateUser(username, password)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 
 func (s *Store) setAdmin(username string, isAdmin bool) (result setAdminResult) {
 	result.err = s.dir.SetAdmin(username, isAdmin)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 
@@ -447,6 +457,9 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition string) (s *St
 		return
 	}
 	if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
+		return
+	}
+	if s.hooks, err = NewHooksCaller("./hooks"); err != nil { // TODO: hardcoded value
 		return
 	}
 

@@ -32,6 +32,13 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -42,9 +49,90 @@ type HooksCaller struct {
 	pending uint
 }
 
-func (h *HooksCaller) call() {
-	// TODO: call all executables inside h.dir
-	wdl.Printf("Hooks: not yet implemented!")
+func runCommand(executeable string) {
+	wdl.Printf("Hooks: calling '%s'", executeable)
+
+	var out bytes.Buffer
+	cmd := exec.Command(executeable) // TODO: arguments?
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	cmd.Stdin = nil
+	// TODO: environment?
+
+	if err := cmd.Start(); err != nil {
+		wl.Printf("Hooks: error calling '%s': %v", executeable, err)
+		return
+	}
+
+	go func() {
+		exited := make(chan error)
+		go func() {
+			exited <- cmd.Wait()
+		}()
+
+		t := time.NewTimer(time.Minute) // TODO: hardcoded value
+		defer t.Stop()
+
+		for {
+			select {
+			case <-t.C:
+				wl.Printf("Hooks: killing long running hook '%s'", executeable)
+				cmd.Process.Kill()
+			case err := <-exited:
+				if err != nil {
+					wl.Printf("Hooks: '%s': %v", executeable, err)
+				} else {
+					wdl.Printf("Hooks: '%s': %s", executeable, cmd.ProcessState)
+				}
+				return
+			}
+		}
+	}()
+}
+
+func (h *HooksCaller) runAll() {
+	dir, err := os.Open(h.dir)
+	if err != nil {
+		wl.Printf("Hooks: error opening hooks directory: %v", err)
+		return
+	}
+	defer dir.Close()
+
+	var dirInfo os.FileInfo
+	if dirInfo, err = dir.Stat(); err != nil {
+		wl.Printf("Hooks: error opening hooks directory: %v", err)
+		return
+	}
+
+	if !dirInfo.IsDir() {
+		wl.Printf("Hooks: '%s' is not a directory", h.dir)
+		return
+	}
+	if dirInfo.Mode()&02 != 0 {
+		wl.Printf("Hooks: '%s' is world-writable - won't call any hook scripts from here", h.dir)
+		return
+	}
+
+	var files []os.FileInfo
+	if files, err = dir.Readdir(0); err != nil {
+		wl.Printf("Hooks: error reading hooks directory: %v", err)
+	}
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), ".") { // hidden files
+			continue
+		}
+
+		m := file.Mode()
+		if !m.IsRegular() && (m&os.ModeSymlink) == 0 { // no special files except symlinks
+			continue
+		}
+
+		if m&0111 == 0 { // not executeable -> we still don't know if we are allowed to execute it...
+			continue
+		}
+
+		runCommand(filepath.Join(h.dir, path.Clean("/"+file.Name())))
+	}
 }
 
 func (h *HooksCaller) run() {
@@ -54,12 +142,12 @@ func (h *HooksCaller) run() {
 		select {
 		case <-t.C:
 			if h.pending > 1 {
-				h.call()
+				h.runAll()
 			}
 			h.pending = 0
 		case <-h.Notify:
 			if h.pending == 0 {
-				h.call()
+				h.runAll()
 				t.Reset(h.timeout)
 			}
 			h.pending++
@@ -68,7 +156,13 @@ func (h *HooksCaller) run() {
 }
 
 func NewHooksCaller(hooksDir string) (h *HooksCaller, err error) {
-	// TODO: check if hooksDir exists
+	var d os.FileInfo
+	if d, err = os.Stat(hooksDir); err != nil {
+		return
+	}
+	if !d.IsDir() {
+		return nil, fmt.Errorf("Hooks: '%s' is not a directory", hooksDir)
+	}
 
 	h = &HooksCaller{}
 	h.Notify = make(chan bool, 32)

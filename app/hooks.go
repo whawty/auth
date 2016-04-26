@@ -32,7 +32,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -50,13 +49,12 @@ type HooksCaller struct {
 	pending   uint
 }
 
-func runCommand(executeable, store string) {
+func runHook(executeable, store string) {
 	wdl.Printf("Hooks: calling '%s'", executeable)
 
-	var out bytes.Buffer
 	cmd := exec.Command(executeable, "update")
-	cmd.Stdout = &out
-	cmd.Stderr = &out
+	cmd.Stdout = nil
+	cmd.Stderr = nil
 	cmd.Stdin = nil
 	cmd.Env = append(os.Environ(), fmt.Sprintf("WHAWTY_AUTH_STORE=%s", store))
 
@@ -91,7 +89,7 @@ func runCommand(executeable, store string) {
 	}()
 }
 
-func (h *HooksCaller) runAll() {
+func (h *HooksCaller) runAllHooks() {
 	dir, err := os.Open(h.dir)
 	if err != nil {
 		wl.Printf("Hooks: error opening hooks directory: %v", err)
@@ -132,7 +130,7 @@ func (h *HooksCaller) runAll() {
 			continue
 		}
 
-		runCommand(filepath.Join(h.dir, path.Clean("/"+file.Name())), h.store)
+		runHook(filepath.Join(h.dir, path.Clean("/"+file.Name())), h.store)
 	}
 }
 
@@ -149,12 +147,12 @@ func (h *HooksCaller) run() {
 		select {
 		case <-t.C:
 			if h.pending > 1 {
-				h.runAll()
+				h.runAllHooks()
 			}
 			h.pending = 0
 		case <-h.Notify:
 			if h.pending == 0 {
-				h.runAll()
+				h.runAllHooks()
 				t.Reset(h.rateLimit)
 			}
 			h.pending++

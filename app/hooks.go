@@ -43,21 +43,22 @@ import (
 )
 
 type HooksCaller struct {
-	Notify  chan bool
-	dir     string
-	timeout time.Duration
-	pending uint
+	Notify    chan bool
+	dir       string
+	store     string
+	rateLimit time.Duration
+	pending   uint
 }
 
-func runCommand(executeable string) {
+func runCommand(executeable, store string) {
 	wdl.Printf("Hooks: calling '%s'", executeable)
 
 	var out bytes.Buffer
-	cmd := exec.Command(executeable) // TODO: arguments?
+	cmd := exec.Command(executeable, "update")
 	cmd.Stdout = &out
 	cmd.Stderr = &out
 	cmd.Stdin = nil
-	// TODO: environment?
+	cmd.Env = append(os.Environ(), fmt.Sprintf("WHAWTY_AUTH_STORE=%s", store))
 
 	if err := cmd.Start(); err != nil {
 		wl.Printf("Hooks: error calling '%s': %v", executeable, err)
@@ -131,12 +132,18 @@ func (h *HooksCaller) runAll() {
 			continue
 		}
 
-		runCommand(filepath.Join(h.dir, path.Clean("/"+file.Name())))
+		runCommand(filepath.Join(h.dir, path.Clean("/"+file.Name())), h.store)
 	}
 }
 
 func (h *HooksCaller) run() {
-	t := time.NewTimer(h.timeout)
+	if h.dir == "" { // just consume requests and do nothing
+		for {
+			<-h.Notify
+		}
+	}
+
+	t := time.NewTimer(h.rateLimit)
 	t.Stop()
 	for {
 		select {
@@ -148,26 +155,29 @@ func (h *HooksCaller) run() {
 		case <-h.Notify:
 			if h.pending == 0 {
 				h.runAll()
-				t.Reset(h.timeout)
+				t.Reset(h.rateLimit)
 			}
 			h.pending++
 		}
 	}
 }
 
-func NewHooksCaller(hooksDir string) (h *HooksCaller, err error) {
-	var d os.FileInfo
-	if d, err = os.Stat(hooksDir); err != nil {
-		return
-	}
-	if !d.IsDir() {
-		return nil, fmt.Errorf("Hooks: '%s' is not a directory", hooksDir)
+func NewHooksCaller(hooksDir, storeDir string) (h *HooksCaller, err error) {
+	if hooksDir != "" {
+		var d os.FileInfo
+		if d, err = os.Stat(hooksDir); err != nil {
+			return
+		}
+		if !d.IsDir() {
+			return nil, fmt.Errorf("Hooks: '%s' is not a directory", hooksDir)
+		}
 	}
 
 	h = &HooksCaller{}
 	h.Notify = make(chan bool, 32)
 	h.dir = hooksDir
-	h.timeout = 5 * time.Second // TODO: hardcoded value
+	h.store = storeDir
+	h.rateLimit = 5 * time.Second // TODO: hardcoded value
 	h.pending = 0
 	go h.run()
 	return

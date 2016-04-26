@@ -96,7 +96,8 @@ func cmdInit(c *cli.Context) {
 		password = pwd
 	}
 
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"), c.GlobalString("policy-type"), c.GlobalString("policy-condition"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		fmt.Printf("Error initializing whawty store: %s\n", err)
 		return
@@ -109,7 +110,8 @@ func cmdInit(c *cli.Context) {
 }
 
 func cmdCheck(c *cli.Context) {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"), c.GlobalString("policy-type"), c.GlobalString("policy-condition"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return
@@ -129,7 +131,8 @@ func cmdCheck(c *cli.Context) {
 }
 
 func openAndCheck(c *cli.Context) *Store {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"), c.GlobalString("policy-type"), c.GlobalString("policy-condition"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return nil
@@ -490,6 +493,12 @@ func main() {
 			Value:  "",
 			Usage:  "password policy condition",
 			EnvVar: "WHAWTY_AUTH_POLICY_CONDITION",
+		},
+		cli.StringFlag{
+			Name:   "hooks-dir",
+			Value:  "",
+			Usage:  "path to update hooks",
+			EnvVar: "WHAWTY_AUTH_HOOKS_DIR",
 		},
 	}
 	app.Commands = []cli.Command{

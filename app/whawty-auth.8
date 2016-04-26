@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 04/25/2016
+.\"      Date: 04/26/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "04/25/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "04/26/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -38,6 +38,16 @@ whawty-auth \- manage whawty auth stores
 .SH "GLOBAL OPTIONS"
 .sp
 The following global options can be passed to \fBwhawty\-auth\fR\&.
+.PP
+\fB\-h | \-\-help\fR
+.RS 4
+Show help text and exit\&.
+.RE
+.PP
+\fB\-v | \-\-version\fR
+.RS 4
+Print version information and exit\&.
+.RE
 .PP
 \fB\-\-conf\fR \fI</path/to/config\&.json>\fR
 .RS 4
@@ -95,14 +105,14 @@ allows all passwords which have a estimated crack\-time of one hour or longer\&.
 to configure the condition\&. Again the command line option, should it exists, overrides any value from the environment\&.
 .RE
 .PP
-\fB\-h | \-\-help\fR
+\fB\-\-hooks\-dir\fR \fI</path/to/hooks>\fR
 .RS 4
-Show help text and exit\&.
-.RE
-.PP
-\fB\-v | \-\-version\fR
-.RS 4
-Print version information and exit\&.
+Whenever there is a change in the store (add, remove, update or set\-admin)
+\fBwhawty\-auth\fR
+will run all exectuables inside this directory\&. This can for example be used to request a resync of the local store with remote copies\&. If this option is omitted there won\(cqt be any hooks called\&. Hooks are called with a sole argument
+\fIupdate\fR\&. The base directory of the store can be fetched from the environment variable
+\fIWHAWTY_AUTH_STORE\fR\&. These hooks are called at most once every 5 seconds\&. If a hook runs longer than 1 minute it will get killed\&. Beside the command line option you may use the environment variable
+\fIWHAWTY_AUTH_HOOKS_DIR\fR\&. If both the environment variable and the command line option are set, the latter will be used\&.
 .RE
 .SH "COMMANDS"
 .sp

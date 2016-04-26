@@ -116,7 +116,7 @@ type UserHash struct {
 	user  string
 }
 
-// NewUserHash creates a new whawty.auth UserHash for user inside basedir.
+// NewUserHash creates a new whawty.auth UserHash for user inside BaseDir.
 func NewUserHash(store *Dir, user string) (u *UserHash) {
 	u = &UserHash{}
 	u.store = store
@@ -125,7 +125,7 @@ func NewUserHash(store *Dir, user string) (u *UserHash) {
 }
 
 func (u *UserHash) getFilename(isAdmin bool) string {
-	filename := filepath.Join(u.store.basedir, u.user)
+	filename := filepath.Join(u.store.BaseDir, u.user)
 	if isAdmin {
 		return filename + adminExt
 	}
@@ -197,7 +197,7 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 		return nil
 	}
 
-	oldname := filepath.Join(u.store.basedir, u.user)
+	oldname := filepath.Join(u.store.BaseDir, u.user)
 	newname := oldname
 	if adminState {
 		oldname += userExt
@@ -211,7 +211,7 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 
 // Remove deletes hash file.
 func (u *UserHash) Remove() {
-	filename := filepath.Join(u.store.basedir, u.user)
+	filename := filepath.Join(u.store.BaseDir, u.user)
 	os.Remove(filename + adminExt)
 	os.Remove(filename + userExt)
 	return
@@ -220,7 +220,7 @@ func (u *UserHash) Remove() {
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if
 // the user's hash file format is not supported
 func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
-	filename := filepath.Join(u.store.basedir, u.user)
+	filename := filepath.Join(u.store.BaseDir, u.user)
 	var ok bool
 	if ok, err = fileExists(filename + adminExt); err != nil {
 		return

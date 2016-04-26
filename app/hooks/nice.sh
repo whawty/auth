@@ -1,5 +1,5 @@
 #!/bin/sh
 
-echo "i am well behaved..."
+echo "store is at: $WHAWTY_STORE" > /tmp/whawty-hook.nice
 
 exit 0

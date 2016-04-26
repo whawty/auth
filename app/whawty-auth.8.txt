@@ -28,6 +28,12 @@ GLOBAL OPTIONS
 
 The following global options can be passed to *whawty-auth*.
 
+*-h | --help*::
+    Show help text and exit.
+
+*-v | --version*::
+    Print version information and exit.
+
 *--conf* '</path/to/config.json>'::
     This sets the path to main configuration file. By default *whawty-auth* uses
     the file '/etc/whawty/auth.json'. This may also be configured using
@@ -80,11 +86,16 @@ The following global options can be passed to *whawty-auth*.
      'WHAWTY_AUTH_POLICY_CONDITION' to configure the condition. Again the command line option,
      should it exists, overrides any value from the environment.
 
-*-h | --help*::
-    Show help text and exit.
-
-*-v | --version*::
-    Print version information and exit.
+*--hooks-dir* '</path/to/hooks>'::
+     Whenever there is a change in the store (add, remove, update or set-admin) *whawty-auth* will
+     run all exectuables inside this directory. This can for example be used to request a resync of
+     the local store with remote copies.
+     If this option is omitted there won't be any hooks called. Hooks are called with a sole argument
+     'update'. The base directory of the store can be fetched from the environment variable
+     'WHAWTY_AUTH_STORE'. These hooks are called at most once every 5 seconds. If a hook runs longer
+     than 1 minute it will get killed.
+     Beside the command line option you may use the environment variable 'WHAWTY_AUTH_HOOKS_DIR'. If
+     both the environment variable and the command line option are set, the latter will be used.
 
 COMMANDS
 --------

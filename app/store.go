@@ -451,7 +451,7 @@ func (s *Store) GetInterface() *StoreChan {
 	return ch
 }
 
-func NewStore(configfile, doUpgrades, policyType, policyCondition string) (s *Store, err error) {
+func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir string) (s *Store, err error) {
 	s = &Store{}
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
@@ -459,7 +459,7 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition string) (s *St
 	if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
 		return
 	}
-	if s.hooks, err = NewHooksCaller("./hooks"); err != nil { // TODO: hardcoded value
+	if s.hooks, err = NewHooksCaller(hooksDir, s.dir.BaseDir); err != nil {
 		return
 	}
 

@@ -68,7 +68,7 @@ func init() {
 
 // Dir represents a directoy containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
-	basedir       string
+	BaseDir       string
 	DefaultFormat string
 	Scryptauth    struct {
 		Contexts     map[uint]*scryptauth.Context
@@ -76,10 +76,10 @@ type Dir struct {
 	}
 }
 
-// NewDir creates a new whawty.auth store using basedir as base directory.
-func NewDir(basedir string) (d *Dir) {
+// NewDir creates a new whawty.auth store using BaseDir as base directory.
+func NewDir(BaseDir string) (d *Dir) {
 	d = &Dir{}
-	d.basedir = filepath.Clean(basedir)
+	d.BaseDir = filepath.Clean(BaseDir)
 	d.DefaultFormat = scryptauthFormatID
 	d.Scryptauth.Contexts = make(map[uint]*scryptauth.Context)
 	return
@@ -250,21 +250,21 @@ func listAllUsers(dir *os.File, list UserListFull) error {
 
 // Init initalizes the store by creating a password file for an admin user.
 func (d *Dir) Init(admin, password string) error {
-	dir, err := openDir(d.basedir)
+	dir, err := openDir(d.BaseDir)
 	if err != nil {
 		return err
 	}
 	defer dir.Close()
 
 	if empty := isDirEmpty(dir); !empty {
-		return fmt.Errorf("Error: '%s' is not empty", d.basedir)
+		return fmt.Errorf("Error: '%s' is not empty", d.BaseDir)
 	}
 	return d.AddUser(admin, password, true)
 }
 
 // Check tests if the directory is a valid whawty.auth base directory.
 func (d *Dir) Check() (ok bool, err error) {
-	dir, err := openDir(d.basedir)
+	dir, err := openDir(d.BaseDir)
 	if err != nil {
 		return false, err
 	}
@@ -311,7 +311,7 @@ type UserList map[string]User
 
 // List returns a list of all supported users in the store.
 func (d *Dir) List() (UserList, error) {
-	dir, err := openDir(d.basedir)
+	dir, err := openDir(d.BaseDir)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +340,7 @@ type UserListFull map[string]UserFull
 // ListFull returns a list of all users in the store. This includes users with
 // unsupported hash formats.
 func (d *Dir) ListFull() (UserListFull, error) {
-	dir, err := openDir(d.basedir)
+	dir, err := openDir(d.BaseDir)
 	if err != nil {
 		return nil, err
 	}

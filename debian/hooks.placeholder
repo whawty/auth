@@ -1,0 +1,4 @@
+# This is a placeholder which keeps dpkg from removing the folder
+#
+# This directory should contain scripts which are run by whawty-auth app
+# whenever there is a change in the store.

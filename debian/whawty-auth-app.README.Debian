@@ -5,23 +5,32 @@ Store
 -----
 
 A Description of the schema of the store directory (/var/lib/whawty/auth/store) can be
-found in SCHEMA.md.
+found at SCHEMA.md.
 
 If you have entered a admin password during installation the store is already initialized
 with a single admin user named 'admin'. You can change the admin user name by simply
 renaming the file inside the store directory.
-You can change the password using the the app. Read the manpage of whawty-auth for additional
+You can change the password using the app. Read the manpage of whawty-auth for additional
 information.
 
 
 Manual Initialization
 ---------------------
 
-In order to initialize the store manually you need to create an emptry directory and write
+In order to initialize the store manually you need to create an empty directory and write
 a configuration file which contains at least one scrypt context. Take a look into the script
 init-store.sh to get an idea about how this is done.
 It is strongly recommended that the configuration file is read-only for the user running
 the authentication service. No other user should be able to access the file.
+
+
+Configuration
+-------------
+
+Beside the store all configuration is done using either command line options or environment
+variables. The systemd service unit sources the file /etc/whawty/auth.ENV before starting
+the app. You can use this to configure stuff like password upgrades. Consult the manpage
+to find out how this is done.
 
 
 saslauthd-Interface
@@ -40,4 +49,4 @@ the run command. If you want to use the whawty.auth web interface you need to al
 the package: whawty-auth-app-web. This is not needed if you only want to use the saslauthd
 interface or if you want to integrate the web-api into another service.
 Since whawty.auth doesn't support HTTPS it is not recommended to run the web interface directly
-on the network. Always use an SSL-enabling reverse proxy!
+on the network. Always use a SSL-enabling reverse proxy!

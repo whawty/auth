@@ -1,2 +1,3 @@
 etc/whawty/
+usr/lib/whawty/auth-hooks/
 var/lib/whawty/auth/

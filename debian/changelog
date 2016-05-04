@@ -1,3 +1,10 @@
+whawty-auth (0.1~rc1-1) UNRELEASED; urgency=medium
+
+  * Imported Upstream version 0.1~rc1
+  * added hooks directory
+
+ -- Christian Pointner <equinox@spreadspace.org>  Thu, 05 May 2016 00:41:41 +0200
+
 whawty-auth (0.1~alpha.2-2) unstable; urgency=medium
 
   * installed some missing docs and examples

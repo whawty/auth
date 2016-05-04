@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 03/11/2016
+.\"      Date: 04/26/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "03/11/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "04/26/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,13 +31,23 @@
 whawty-auth \- manage whawty auth stores
 .SH "SYNOPSIS"
 .sp
-\fBwhawty\-auth\fR \fI[global options]\fR \fBcommand\fR \fI[command options]\fR [arguments\&...]
+\fBwhawty\-auth\fR \fI[global options]\fR \fB<command>\fR \fI[command options]\fR \fI[arguments \&... ]\fR
 .SH "DESCRIPTION"
 .sp
 \fBwhawty\-auth\fR implements everything which is needed to run a whawty auth service\&. This tool can be used to initialize and manage whawty auth stores\&. When used as a daemon it can be used to offer a saslauthd compatible authentication service and or a small web interface to manage users and passwords\&. Together with \fBpam_whawty\fR authentication can also be done using PAM\&.
 .SH "GLOBAL OPTIONS"
 .sp
 The following global options can be passed to \fBwhawty\-auth\fR\&.
+.PP
+\fB\-h | \-\-help\fR
+.RS 4
+Show help text and exit\&.
+.RE
+.PP
+\fB\-v | \-\-version\fR
+.RS 4
+Print version information and exit\&.
+.RE
 .PP
 \fB\-\-conf\fR \fI</path/to/config\&.json>\fR
 .RS 4
@@ -54,37 +64,78 @@ Run basic consistency check on the whawty store on startup\&. By default checks 
 \fIWHAWTY_AUTH_DO_CHECK\fR\&. If both the environment variable and the command line option are supplied the latter is used\&.
 .RE
 .PP
-\fB\-h | \-\-help\fR
+\fB\-\-web\-static\-dir\fR \fI</path/to/whawty/admin/interface>\fR
 .RS 4
-Show help text and exit\&.
+This sets the path to the static files of the admin web\-interface\&. By default the path
+\fI/usr/share/whawty/auth\-admin/\fR
+will be used\&. This can also be specified using the environment variable
+\fIWHAWTY_AUTH_WEB_STATIC_DIR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE
 .PP
-\fB\-v | \-\-version\fR
+\fB\-\-do\-upgrades\fR \fI(local|<remote\-url>)\fR
 .RS 4
-Print version information and exit\&.
+This enables local or remote upgrades for password hashes\&. By default no upgrades will be done\&.
+\fIlocal\fR
+means direct upgrades on the local store\&.
+\fIremote\fR
+upgrades can be configured by specifying the url to a remote
+\fBwhawy\-auth\fR
+instance\&. The url must point to the web\-api endpoint on that host (i\&.e\&.
+\fIhttps://whawty\-master\&.example\&.com/api/update\fR)\&. For any password hash which is upgradeable an update call to the remote host will be initialized after the user is successfully authenticated\&. This is done in a opportunistic way\&. This means errors while calling the remote update will be ignored\&. You may as well use the environment variable
+\fIWHAWTY_AUTH_DO_UPGRADES\fR
+to configure upgrades\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
+.RE
+.PP
+\fB\-\-policy\-type\fR \fI<type>\fR
+.RS 4
+This tells the app to check new passwords against a password policy\&. At the moment only one password policy type is available:
+\fIzxcvbn\fR\&. If this is omitted there won\(cqt be any policy enforced\&. The password policy will be used whenever a user is added or the password of a user gets changed\&. The operation will fail if the policy is not fulfilled\&. You may as well configure this using the environment variable
+\fIWHAWTY_AUTH_POLICY_TYPE\fR\&. As with all other options the value supplied using the command line will override any value set using the environment\&.
+.RE
+.PP
+\fB\-\-policy\-condition\fR \fI<condition>\fR
+.RS 4
+This configures which condition must be met in order to fulfill the password policy\&. The value depends on the policy\-type used\&. For now the only policy type is
+\fIzxcvbn\fR
+which allows to evaluate passwords on the basis of entropy, estimated crack\-time and the score\&. The entropy and the crack\-time are positive numbers with no upper bound\&. The score is a value between 0 and 4, where 0 is a very weak password and 4 is the highest possible strength\&. The condition can have the following form:
+\fI(entropy|time|score) >= <value>\fR\&. For example the condition
+\fItime >= 3600\fR
+allows all passwords which have a estimated crack\-time of one hour or longer\&. Besides the command line option you may use the environment variable
+\fIWHAWTY_AUTH_POLICY_CONDITION\fR
+to configure the condition\&. Again the command line option, should it exists, overrides any value from the environment\&.
+.RE
+.PP
+\fB\-\-hooks\-dir\fR \fI</path/to/hooks>\fR
+.RS 4
+Whenever there is a change in the store (add, remove, update or set\-admin)
+\fBwhawty\-auth\fR
+will run all exectuables inside this directory\&. This can for example be used to request a resync of the local store with remote copies\&. If this option is omitted there won\(cqt be any hooks called\&. Hooks are called with a sole argument
+\fIupdate\fR\&. The base directory of the store can be fetched from the environment variable
+\fIWHAWTY_AUTH_STORE\fR\&. These hooks are called at most once every 5 seconds\&. If a hook runs longer than 1 minute it will get killed\&. Beside the command line option you may use the environment variable
+\fIWHAWTY_AUTH_HOOKS_DIR\fR\&. If both the environment variable and the command line option are set, the latter will be used\&.
 .RE
 .SH "COMMANDS"
 .sp
 Any of the following commands supports \fB\-h | \-\-help\fR as an option\&. This will print extra help information for the command\&. All these commands use the auth store directory as specified by the main configuration file\&.
-.SS "init"
+.SS "init \fI<adminname>\fR \fI[<password>]\fR"
 .sp
 \fBinit\fR can be used to initialize a whawty auth store\&. For this to work the directory must exist, be writeable by the user who runs the program and must be empty\&. The first argument is the name of the admin user which will get created\&. The password of the user can be supplied using a second optional argument\&. If no password is supplied on the command line \fBwhawty\-auth\fR will prompt the user for it\&.
 .SS "check"
 .sp
 Check the whawty auth store for consistency\&.
-.SS "add"
+.SS "add \fI<username>\fR \fI[<password>]\fR"
 .sp
 This adds a user to the store\&. The name of the user must be supplied as the first argument\&. The password may be supplied as a second parameter\&. If this is omitted \fBwhawty\-auth\fR prompts the user for it\&.
-.SS "remove"
+.SS "remove \fI<username>\fR"
 .sp
 \fBremove\fR can be used to delete a user from the store\&. The sole argument supported specifies to user to be deleted\&.
-.SS "update"
+.SS "update \fI<username>\fR \fI[<password>]\fR"
 .sp
-This can be used to change the password of an existing user\&. The first argument specifies the username\&. The new password may be specified as a second argument\&. If no password is set using the command line the user will be prompted for it\&.
-.SS "set\-admin"
+This can be used to change the password of an existing user\&. The first argument specifies the username\&. The new password may be specified as a second argument\&. If no password is set using the command line the user will be prompted for it\&. Mind that to change a password via the command\-line you don\(cqt need to know the old password\&.
+.SS "set\-admin \fI<username>\fR \fI(true|false)\fR"
 .sp
 \fBset\-admin\fR can be used to change the admin status of a user\&. The first argument is the username\&. The second argument should reflect the new status\&. \fBtrue\fR or \fB1\fR enables the admin flag\&. \fBfalse\fR or \fB0\fR disables it\&.
-.SS "list"
+.SS "list \fI[options]\fR"
 .sp
 This prints a list of all users in the store\&.
 .PP
@@ -94,10 +145,10 @@ This option tells
 \fBwhawty\-auth\fR
 to print additional info for each user\&. By default only the name, admin status and last change date are printed\&.
 .RE
-.SS "authenticate"
+.SS "authenticate \fI<username>\fR \fI[<password>]\fR"
 .sp
 \fBauthenticate\fR runs a full auth\-check for the given user\&. The username in question needs to be supplied as a first argument\&. The second optional argument is the password\&. If no password is specified the user will be prompted for it\&. If the authentication was successful the result code will be 0\&. On error the result code will be 1\&.
-.SS "run"
+.SS "run \fI[options]\fR"
 .sp
 This instructs \fBwhawty\-auth\fR to run as an authentication service\&.
 .PP
@@ -117,14 +168,9 @@ will listen on all sockets simultaneously\&.
 Also start a small web interface on the specified address\&. This can also be specified using the environment variable
 \fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
 .RE
-.PP
-\fB\-\-web\-static\-dir\fR \fI</path/to/whawty/admin/interface>\fR
-.RS 4
-This sets the path to the static files of the admin web\-interface\&. By default the path
-\fI/usr/share/whawty/auth\-admin/\fR
-will be used\&. This can also be specified using the environment variable
-\fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
-.RE
+.SS "runsa"
+.sp
+This is basically the same as \fBrun\fR but expects all sockets to be passed via systemd socket activation\&. \fBwhawty\-auth\fR will run the web\-api on all TCP sockets and expects saslauthd compatible requests on any unix socket\&. All other socket types are ignored\&.
 .SH "BUGS"
 .sp
 Most likely there are some bugs in \fBwhawty\-auth\fR\&. If you find a bug, please let the developers know at http://github\&.com/whawty/auth\&. Of course, pull requests are preferred\&.

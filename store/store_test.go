@@ -57,34 +57,34 @@ func TestNewDirFromConfig(t *testing.T) {
 	}{
 		{"", false},
 		{"{}", false},
-		{`{ "basedir": "/tmp" }`, true},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 0 } }`, true},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17 } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp" }`, true},
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 0 } }`, true},
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17 } }`, false},
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 0, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 13, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "", "pwcost": 12 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA==", "pwcost": 12 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "$$invalid§§", "pwcost": 12 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 33 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 0, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 0, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14 }
      ] } }`, false},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
      ] } }`, true},
-		{`{ "basedir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
+		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
          { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 },
          { "ID": 18, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14, "p": 7, "r": 2 }
      ] } }`, true},

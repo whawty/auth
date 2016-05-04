@@ -1,3 +1,4 @@
+// +build gofuzz
 //
 // Copyright (c) 2016 Christian Pointner <equinox@spreadspace.org>
 //               2016 Markus Grüneis <gimpf@gimpf.org>
@@ -29,55 +30,42 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-package store
+package sasl
 
 import (
-	"fmt"
-
-	"gopkg.in/spreadspace/scryptauth.v2"
+	"bytes"
 )
 
-func scryptauthSupported(hashStr string) (bool, string, error) {
-	ctxID, hash, salt, err := scryptauth.DecodeBase64(hashStr)
-	if err != nil {
-		return false, "", err
+func FuzzRequest(data []byte) int {
+	var req Request
+	if err := req.Unmarshal(data); err != nil {
+		return 0
 	}
 
-	if ctxID == 0 || len(hash) == 0 || len(salt) == 0 {
-		return false, "", fmt.Errorf("whawty.auth.store: hash has invalid format")
+	dataout, err := req.Marshal()
+	if err != nil {
+		panic(err)
 	}
-	params := fmt.Sprintf("context:%d", ctxID)
-	return true, params, nil
+	if !bytes.HasPrefix(data, dataout) {
+		panic("re-encoding decoded request yields different output")
+	}
+
+	return 1
 }
 
-func scryptauthGen(password string, store *Dir) (string, error) {
-	ctx, ctxExists := store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID]
-	if !ctxExists {
-		return "", fmt.Errorf("whawty.auth.store: the store has no default context")
+func FuzzResponse(data []byte) int {
+	var resp Response
+	if err := resp.Unmarshal(data); err != nil {
+		return 0
 	}
-	hash, salt, err := ctx.Gen([]byte(password))
+
+	dataout, err := resp.Marshal()
 	if err != nil {
-		return "", err
+		panic(err)
+	}
+	if !bytes.HasPrefix(data, dataout) {
+		panic("re-encoding decoded response yields different output")
 	}
 
-	hashStr := scryptauth.EncodeBase64(store.Scryptauth.DefaultCtxID, hash, salt)
-	return hashStr, nil
-}
-
-func scryptauthCheck(password, hashStr string, store *Dir) (isAuthenticated, upgradeable bool, err error) {
-	var ctxID uint
-	var hash, salt []byte
-	if ctxID, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
-		return
-	}
-
-	ctx, ctxExists := store.Scryptauth.Contexts[ctxID]
-	if !ctxExists {
-		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
-	}
-
-	upgradeable = (store.Scryptauth.DefaultCtxID != ctxID)
-
-	isAuthenticated, err = ctx.Check(hash, []byte(password), salt)
-	return
+	return 1
 }

@@ -112,7 +112,7 @@ int _whawty_parse_args(whawty_ctx_t* ctx, int argc, const char **argv)
       if(strlen(argv[i]) < 6)
         _whawty_logf(ctx, LOG_WARNING, "ignoring invalid argument [%s]", argv[i]);
       else {
-        ctx->sockpath_ = strdup(&(argv[i][8]));
+        ctx->sockpath_ = strdup(&(argv[i][5]));
         if(ctx->sockpath_ == NULL)
           return PAM_BUF_ERR;
       }

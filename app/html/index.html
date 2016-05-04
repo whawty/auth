@@ -9,10 +9,6 @@
 
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/admin.css" rel="stylesheet">
-    <script src="jquery/jquery.min.js"></script>
-    <script src="bootstrap/js/bootstrap.min.js"></script>
-    <script src="js/pwstrength-bootstrap.min.js"></script>
-    <script src="js/admin.js"></script>
   </head>
   <body>
 
@@ -70,9 +66,17 @@
                   <h4 class="modal-title">New Password for <strong id="changepw-userfield"></strong>...</h4>
                 </div>
                 <div class="modal-body">
-                  <div class="alertbox"></div>
-                  <input id="newpassword" type="password" class="form-control" placeholder="Password" required>
-                  <input id="newpassword-retype" type="password" class="form-control" placeholder="Retype Password" required>
+                  <div class="form-group">
+                    <input id="newpassword" type="password" class="form-control" placeholder="Password" required>
+                    <div id="pwstrength">
+                      <div id="pwestimatedcracktime" class="pull-left"></div>
+                      <div id="pwstrengthindicator" class="pull-right"></div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <input id="newpassword-retype" type="password" class="form-control" placeholder="Retype Password" required>
+                  </div>
+                  <div id="pwstrengthtips"></div>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -137,7 +141,7 @@
           <div class="row">
             <div class="col-md-4"></div>
             <div class="col-md-4">
-              <h1>User: <strong class="username" >unkown</strong></h1>
+              <h1>User: <strong class="username" >unknown</strong></h1>
             </div>
             <div class="col-md-4"></div>
           </div>
@@ -164,6 +168,9 @@
 
     </div>
 
+    <script src="jquery/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="js/admin.js"></script>
     <script type="text/javascript">
       admin_init();
     </script>

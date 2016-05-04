@@ -34,6 +34,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
@@ -136,7 +137,7 @@ func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.Response
 		return
 	}
 
-	wdl.Printf("admin '%s' want's to add user '%s' with password '%s' and admin status: %t", username, reqdata.Username, reqdata.Password, reqdata.IsAdmin)
+	wdl.Printf("admin '%s' want's to add user '%s' and admin status: %t", username, reqdata.Username, reqdata.IsAdmin)
 
 	if err := store.Add(reqdata.Username, reqdata.Password, reqdata.IsAdmin); err != nil {
 		respdata.Error = err.Error()
@@ -202,10 +203,10 @@ func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.Respo
 }
 
 type webUpdateRequest struct {
-	Session     string `json:"session"`
+	Session     string `json:"session,omitempty"`
 	Username    string `json:"username"`
-	OldPassword string `json:"oldpassword"`
-	NewPassword string `json:"newpassword"`
+	OldPassword string `json:"oldpassword,omitempty"`
+	NewPassword string `json:"newpassword,omitempty"`
 }
 
 type webUpdateResponse struct {
@@ -226,13 +227,19 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 		return
 	}
 
-	if reqdata.Username == "" || reqdata.NewPassword == "" {
-		respdata.Error = "empty username or new-password is not allowed"
+	if reqdata.Username == "" {
+		respdata.Error = "empty username is not allowed"
 		sendWebResponse(w, http.StatusBadRequest, respdata)
 		return
 	}
 
 	if reqdata.Session != "" && reqdata.OldPassword == "" {
+		if reqdata.NewPassword == "" {
+			respdata.Error = "empty newpassword is not allowed when using session based authentication"
+			sendWebResponse(w, http.StatusBadRequest, respdata)
+			return
+		}
+
 		status, errorStr, username, isAdmin := sessions.Check(reqdata.Session)
 		if status != http.StatusOK {
 			respdata.Error = errorStr
@@ -245,7 +252,7 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 			sendWebResponse(w, http.StatusForbidden, respdata)
 			return
 		}
-		wdl.Printf("user '%s' want's to update user '%s' with password '%s', using a valid session", username, reqdata.Username, reqdata.NewPassword)
+		wdl.Printf("user '%s' want's to update user '%s', using a valid session", username, reqdata.Username)
 	} else if reqdata.Session == "" && reqdata.OldPassword != "" {
 		ok, _, _, err := store.Authenticate(reqdata.Username, reqdata.OldPassword)
 		if err != nil || !ok {
@@ -256,7 +263,13 @@ func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.Respo
 			sendWebResponse(w, http.StatusUnauthorized, respdata)
 			return
 		}
-		wdl.Printf("update user '%s' with password '%s', using current(old) password", reqdata.Username, reqdata.NewPassword)
+		if reqdata.NewPassword == "" {
+			// TODO: return Error if upgrades are disabled since this makes only sence for upgrading password contexts
+			respdata.Username = reqdata.Username
+			sendWebResponse(w, http.StatusOK, respdata)
+			return
+		}
+		wdl.Printf("update user '%s', using current(old) password", reqdata.Username)
 	} else {
 		respdata.Error = "exactly one of session or old-password must be supplied"
 		sendWebResponse(w, http.StatusBadRequest, respdata)
@@ -449,7 +462,22 @@ func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	self.H(self.store, self.sessions, w, r)
 }
 
-func runWebApi(addr string, store *StoreChan, staticDir string) (err error) {
+// This is from golang http package - why is this not exported?
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
+}
+
+func runWebApi(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -473,7 +501,22 @@ func runWebApi(addr string, store *StoreChan, staticDir string) (err error) {
 		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
 	})
 
-	wl.Printf("web-api: listening on '%s'", addr)
-	server := &http.Server{Addr: addr, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	return server.ListenAndServe()
+	wl.Printf("web-api: listening on '%s'", listener.Addr())
+	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	return server.Serve(tcpKeepAliveListener{listener})
+}
+
+func runWebAddr(addr string, store *StoreChan, staticDir string) (err error) {
+	if addr == "" {
+		addr = ":http"
+	}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	return runWebApi(ln.(*net.TCPListener), store, staticDir)
+}
+
+func runWebListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
+	return runWebApi(listener, store, staticDir)
 }

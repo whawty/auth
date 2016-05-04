@@ -55,7 +55,7 @@ type cfgScryptauth struct {
 }
 
 type config struct {
-	BaseDir    string        `json:"basedir"`
+	BaseDir    string        `json:"BaseDir"`
 	Scryptauth cfgScryptauth `json:"scryptauth"`
 }
 
@@ -111,7 +111,7 @@ func (d *Dir) fromConfig(configfile string) error {
 	if c.BaseDir == "" {
 		return fmt.Errorf("Error: config file does not contain a base directory")
 	}
-	d.basedir = c.BaseDir
+	d.BaseDir = c.BaseDir
 
 	// Format: scryptauth
 	for _, ctx := range c.Scryptauth.Contexts {

@@ -35,11 +35,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"sort"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/coreos/go-systemd/activation"
 	"github.com/gosuri/uitable"
 	"github.com/howeyc/gopass"
 )
@@ -92,7 +96,8 @@ func cmdInit(c *cli.Context) {
 		password = pwd
 	}
 
-	s, err := NewStore(c.GlobalString("conf"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		fmt.Printf("Error initializing whawty store: %s\n", err)
 		return
@@ -105,7 +110,8 @@ func cmdInit(c *cli.Context) {
 }
 
 func cmdCheck(c *cli.Context) {
-	s, err := NewStore(c.GlobalString("conf"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return
@@ -125,7 +131,8 @@ func cmdCheck(c *cli.Context) {
 }
 
 func openAndCheck(c *cli.Context) *Store {
-	s, err := NewStore(c.GlobalString("conf"))
+	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		fmt.Printf("Error opening whawty store: %s\n", err)
 		return nil
@@ -355,6 +362,9 @@ func cmdAuthenticate(c *cli.Context) {
 		os.Exit(1)
 	}
 
+	// wait for potential upgrades - this might still be to fast for remote upgrades
+	// TODO: find a better way to handle this situation
+	time.Sleep(100 * time.Millisecond)
 	if isAdmin {
 		fmt.Printf("user '%s' is an admin\n", username)
 	} else {
@@ -370,26 +380,76 @@ func cmdRun(c *cli.Context) {
 	}
 
 	webAddr := c.String("web-addr")
-	socks := c.StringSlice("sock")
+	saslPaths := c.StringSlice("sock")
 
+	var wg sync.WaitGroup
 	if webAddr != "" {
-		if len(socks) == 0 {
-			if err := runWebApi(webAddr, s.GetInterface(), c.String("web-static-dir")); err != nil {
-				fmt.Printf("error running web interface: %s\n", err)
-				return
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := runWebAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+				fmt.Printf("warning running web interface failed: %s\n", err)
 			}
-		} else {
+		}()
+	}
+	for _, path := range saslPaths {
+		p := path
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := runSaslAuthSocket(p, s.GetInterface()); err != nil {
+				fmt.Printf("warning running auth agent(%s) failed: %s\n", p, err)
+			}
+		}()
+	}
+	wg.Wait()
+	fmt.Printf("shutting down since all auth sockets have closed\n")
+}
+
+func cmdRunSa(c *cli.Context) {
+	s := openAndCheck(c)
+	if s == nil {
+		return
+	}
+	listeners, err := activation.Listeners(true)
+	if err != nil {
+		fmt.Printf("fetching socket listeners from systemd failed: %s\n", err)
+		return
+	}
+
+	fmt.Printf("got %d sockets from systemd\n", len(listeners))
+	if len(listeners) == 0 {
+		return
+	}
+
+	var wg sync.WaitGroup
+	for idx, listener := range listeners {
+		switch listener.(type) {
+		case *net.UnixListener:
+			fmt.Printf("listener[%d]: is a UNIX socket (-> saslauthd)\n", idx)
+			wg.Add(1)
+			ln := listener.(*net.UnixListener)
 			go func() {
-				if err := runWebApi(webAddr, s.GetInterface(), c.String("web-static-dir")); err != nil {
-					fmt.Printf("warning running web interface failed: %s\n", err)
+				defer wg.Done()
+				if err := runSaslAuthSocketListener(ln, s.GetInterface()); err != nil {
+					fmt.Printf("warning running auth agent failed: %s\n", err)
 				}
 			}()
+		case *net.TCPListener:
+			fmt.Printf("listener[%d]: is a TCP socket (-> HTTP)\n", idx)
+			wg.Add(1)
+			ln := listener.(*net.TCPListener)
+			go func() {
+				defer wg.Done()
+				if err := runWebListener(ln, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+					fmt.Printf("error running web-api: %s", err)
+				}
+			}()
+		default:
+			fmt.Printf("listener[%d]: has type %T (ingnoring)\n", idx, listener)
 		}
 	}
-
-	if err := runSaslAuthSocket(socks, s.GetInterface()); err != nil {
-		fmt.Printf("error running auth agent: %s\n", err)
-	}
+	wg.Wait()
 	fmt.Printf("shutting down since all auth sockets have closed\n")
 }
 
@@ -409,6 +469,36 @@ func main() {
 			Name:   "do-check",
 			Usage:  "run check on base directory before executing command",
 			EnvVar: "WHAWTY_AUTH_DO_CHECK",
+		},
+		cli.StringFlag{
+			Name:   "web-static-dir",
+			Value:  "/usr/share/whawty/auth-admin/",
+			Usage:  "path to static files for the web API",
+			EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
+		},
+		cli.StringFlag{
+			Name:   "do-upgrades",
+			Value:  "",
+			Usage:  "enable local or remote upgrades for password hashes",
+			EnvVar: "WHAWTY_AUTH_DO_UPGRADES",
+		},
+		cli.StringFlag{
+			Name:   "policy-type",
+			Value:  "",
+			Usage:  "password policy type",
+			EnvVar: "WHAWTY_AUTH_POLICY_TYPE",
+		},
+		cli.StringFlag{
+			Name:   "policy-condition",
+			Value:  "",
+			Usage:  "password policy condition",
+			EnvVar: "WHAWTY_AUTH_POLICY_CONDITION",
+		},
+		cli.StringFlag{
+			Name:   "hooks-dir",
+			Value:  "",
+			Usage:  "path to update hooks",
+			EnvVar: "WHAWTY_AUTH_HOOKS_DIR",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -479,14 +569,13 @@ func main() {
 					Usage:  "address to listen on for web API",
 					EnvVar: "WHAWTY_AUTH_WEB_ADDR",
 				},
-				cli.StringFlag{
-					Name:   "web-static-dir",
-					Value:  "/usr/share/whawty/auth-admin/",
-					Usage:  "path to static files for the web API",
-					EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
-				},
 			},
 			Action: cmdRun,
+		},
+		{
+			Name:   "runsa",
+			Usage:  "run the auth agent (using systemd socket-activation)",
+			Action: cmdRunSa,
 		},
 	}
 

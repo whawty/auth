@@ -32,6 +32,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/whawty/auth/store"
@@ -117,6 +122,7 @@ type listFullRequest struct {
 type authenticateResult struct {
 	ok          bool
 	isAdmin     bool
+	upgradeable bool
 	lastChanged time.Time
 	err         error
 }
@@ -129,6 +135,8 @@ type authenticateRequest struct {
 
 type Store struct {
 	dir              *store.Dir
+	policy           PolicyChecker
+	hooks            *HooksCaller
 	initChan         chan initRequest
 	checkChan        chan checkRequest
 	addChan          chan addRequest
@@ -138,9 +146,18 @@ type Store struct {
 	listChan         chan listRequest
 	listFullChan     chan listFullRequest
 	authenticateChan chan authenticateRequest
+	upgradeChan      chan updateRequest
 }
 
 func (s *Store) init(username, password string) (result initResult) {
+	if ok, err := s.policy.Check(password, username); !ok || err != nil {
+		if err != nil {
+			result.err = err
+		} else {
+			result.err = errors.New("password policy checked failed")
+		}
+		return
+	}
 	result.err = s.dir.Init(username, password)
 	return
 }
@@ -151,23 +168,48 @@ func (s *Store) check() (result checkResult) {
 }
 
 func (s *Store) add(username, password string, isAdmin bool) (result addResult) {
+	if ok, err := s.policy.Check(password, username); !ok || err != nil {
+		if err != nil {
+			result.err = err
+		} else {
+			result.err = errors.New("password policy checked failed")
+		}
+		return
+	}
 	result.err = s.dir.AddUser(username, password, isAdmin)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 
 func (s *Store) remove(username string) (result removeResult) {
-	//	result.err = s.dir.RemoveUser(username)
 	s.dir.RemoveUser(username)
+	s.hooks.Notify <- true
 	return
 }
 
 func (s *Store) update(username, password string) (result updateResult) {
+	if ok, err := s.policy.Check(password, username); !ok || err != nil {
+		if err != nil {
+			result.err = err
+		} else {
+			result.err = errors.New("password policy checked failed")
+		}
+		return
+	}
 	result.err = s.dir.UpdateUser(username, password)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 
 func (s *Store) setAdmin(username string, isAdmin bool) (result setAdminResult) {
 	result.err = s.dir.SetAdmin(username, isAdmin)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 
@@ -181,8 +223,8 @@ func (s *Store) listFull() (result listFullResult) {
 	return
 }
 
-func (s *Store) authenticate(username, password string) (result authenticateResult) {
-	result.ok, result.isAdmin, result.lastChanged, result.err = s.dir.Authenticate(username, password)
+func (s *Store) authenticate(username, password string) (result authenticateResult, upgradeable bool) {
+	result.ok, result.isAdmin, upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
 	return
 }
 
@@ -198,7 +240,16 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.removeChan:
 			req.response <- s.remove(req.username)
 		case req := <-s.updateChan:
-			req.response <- s.update(req.username, req.password)
+			if req.response != nil {
+				req.response <- s.update(req.username, req.password)
+			} else {
+				wdl.Printf("upgrade(local): upgrading '%s'", req.username)
+				if resp := s.update(req.username, req.password); resp.err != nil {
+					wl.Printf("upgrade(local): failed for '%s': %v", req.username, resp.err)
+				} else {
+					wdl.Printf("upgrade(local): successfully upgraded '%s'", req.username)
+				}
+			}
 		case req := <-s.setAdminChan:
 			req.response <- s.setAdmin(req.username, req.isAdmin)
 		case req := <-s.listChan:
@@ -206,9 +257,67 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.listFullChan:
 			req.response <- s.listFull()
 		case req := <-s.authenticateChan:
-			req.response <- s.authenticate(req.username, req.password)
+			resp, upgradeable := s.authenticate(req.username, req.password)
+			req.response <- resp
+			if upgradeable && s.upgradeChan != nil {
+				s.upgradeChan <- updateRequest{username: req.username, password: req.password}
+			}
 		}
 	}
+}
+
+func remoteHTTPUpgrade(update updateRequest, remote string) {
+	reqdata, err := json.Marshal(webUpdateRequest{Username: update.username, OldPassword: update.password})
+	if err != nil {
+		wl.Printf("upgrade(remote): error while encoding update request: %v", err)
+		return
+	}
+	req, _ := http.NewRequest("POST", remote, bytes.NewReader(reqdata))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		wl.Printf("upgrade(remote): error sending update request: %v", err)
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		wl.Printf("upgrade(remote): failed for '%s' with status: %s", update.username, resp.Status)
+	} else {
+		wdl.Printf("upgrade(remote): successfully upgraded '%s'", update.username)
+	}
+}
+
+func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
+	sem := make(chan bool, 10) // TODO: hardcoded value
+	for update := range upgradeChan {
+		select {
+		case sem <- true:
+			wdl.Printf("upgrade(remote): upgrading '%s' via %s", update.username, remote)
+			go func(update updateRequest, remote string) {
+				defer func() { <-sem }()
+				remoteHTTPUpgrade(update, remote)
+			}(update, remote)
+		default:
+			wdl.Printf("upgrade(remote): ignoring upgrade request for '%s' due to rate-limiting", update.username)
+		}
+	}
+}
+
+func runRemoteUpgrader(remote string) (upgradeChan chan updateRequest, err error) {
+	var r *url.URL
+	if r, err = url.Parse(remote); err != nil {
+		return
+	}
+	switch r.Scheme {
+	case "http":
+		fallthrough
+	case "https":
+		upgradeChan = make(chan updateRequest, 10)
+		go remoteHTTPUpgrader(upgradeChan, remote)
+	default:
+		err = errors.New("unsupported hash-upgrade mode, must be either empty, 'local' or a http(s) url to the master")
+	}
+	return
 }
 
 // *********************************************************
@@ -342,11 +451,18 @@ func (s *Store) GetInterface() *StoreChan {
 	return ch
 }
 
-func NewStore(configfile string) (s *Store, err error) {
+func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir string) (s *Store, err error) {
 	s = &Store{}
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
 	}
+	if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
+		return
+	}
+	if s.hooks, err = NewHooksCaller(hooksDir, s.dir.BaseDir); err != nil {
+		return
+	}
+
 	s.initChan = make(chan initRequest, 1)
 	s.checkChan = make(chan checkRequest, 1)
 	s.addChan = make(chan addRequest, 10)
@@ -356,6 +472,17 @@ func NewStore(configfile string) (s *Store, err error) {
 	s.listChan = make(chan listRequest, 10)
 	s.listFullChan = make(chan listFullRequest, 10)
 	s.authenticateChan = make(chan authenticateRequest, 10)
+
+	switch doUpgrades {
+	case "":
+		s.upgradeChan = nil
+	case "local":
+		s.upgradeChan = s.updateChan
+	default:
+		if s.upgradeChan, err = runRemoteUpgrader(doUpgrades); err != nil {
+			return
+		}
+	}
 
 	go s.dispatchRequests()
 	return

@@ -1,3 +1,11 @@
+whawty-auth (0.1~rc1-2) UNRELEASED; urgency=medium
+
+  * Fixed debconf if no admin password is set.
+  * added patch to use new/improved exit code handling
+    of codegangsta cli library.
+
+ -- Christian Pointner <equinox@spreadspace.org>  Fri, 06 May 2016 02:48:37 +0200
+
 whawty-auth (0.1~rc1-1) unstable; urgency=medium
 
   * Imported Upstream version 0.1~rc1

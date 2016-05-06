@@ -1,3 +1,4 @@
 usr/bin/whawty-auth
-etc/whawty/
+lib/systemd/system/
 usr/lib/whawty/auth-hooks/
+etc/whawty/

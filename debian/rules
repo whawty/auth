@@ -15,6 +15,9 @@ override_dh_auto_clean:
 override_dh_auto_install:
 	install -d $$(pwd)/debian/tmp/usr/bin/
 	install -m 755 $$(pwd)/app/whawty-auth $$(pwd)/debian/tmp/usr/bin/
+	install -d $$(pwd)/debian/tmp/lib/systemd/system/
+	install -m 644 $$(pwd)/app/whawty-auth.socket $$(pwd)/debian/tmp/lib/systemd/system/
+	install -m 644 $$(pwd)/app/whawty-auth.service $$(pwd)/debian/tmp/lib/systemd/system/
 	install -d $$(pwd)/debian/tmp/usr/lib/whawty/auth-hooks/
 	install -m 644 $$(pwd)/debian/hooks.placeholder $$(pwd)/debian/tmp/usr/lib/whawty/auth-hooks/.placeholder
 	install -d $$(pwd)/debian/tmp/etc/whawty/

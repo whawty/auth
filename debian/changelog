@@ -1,3 +1,9 @@
+whawty-auth (0.1~rc1-3) unstable; urgency=medium
+
+  * Add systemd service and socket unit for whawty-auth app
+
+ -- Christian Pointner <equinox@spreadspace.org>  Fri, 06 May 2016 03:56:54 +0200
+
 whawty-auth (0.1~rc1-2) unstable; urgency=medium
 
   * Fixed debconf if no admin password is set.

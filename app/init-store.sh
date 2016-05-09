@@ -4,7 +4,7 @@ WHAWTY_AUTH_STORE="/var/lib/whawty/auth/store"
 WHAWTY_AUTH_USER="whawty-auth"
 WHAWTY_AUTH_GROUP="whawty-auth"
 
-WHAWTY_AUTH_CONF="/etc/whawty/auth.json"
+WHAWTY_AUTH_CONF="/etc/whawty/auth-store.json"
 
 ###########################################
 
@@ -33,7 +33,7 @@ EOF
 
 echo -n "name of admin user: "
 read admin_user
-/usr/bin/whawty-auth --conf "$WHAWTY_AUTH_CONF" init "$admin_user"
+/usr/bin/whawty-auth --store "$WHAWTY_AUTH_CONF" init "$admin_user"
 /bin/chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_GROUP "$WHAWTY_AUTH_STORE/$admin_user.admin"
 
 exit 0

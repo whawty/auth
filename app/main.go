@@ -99,7 +99,7 @@ func cmdInit(c *cli.Context) error {
 		password = pwd
 	}
 
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		return cli.NewExitError(fmt.Sprintf("Error initializing whawty store: %s", err), 3)
@@ -111,7 +111,7 @@ func cmdInit(c *cli.Context) error {
 }
 
 func cmdCheck(c *cli.Context) error {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		return cli.NewExitError(fmt.Sprintf("Error opening whawty store: %s", err), 3)
@@ -127,7 +127,7 @@ func cmdCheck(c *cli.Context) error {
 }
 
 func openAndCheck(c *cli.Context) (*Store, error) {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
 		return nil, fmt.Errorf("Error opening whawty store: %s", err)
@@ -454,10 +454,10 @@ func main() {
 	app.Usage = "manage whawty auth stores"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:   "conf",
-			Value:  "/etc/whawty/auth.json",
-			Usage:  "path to the configuration file",
-			EnvVar: "WHAWTY_AUTH_CONFIG",
+			Name:   "store",
+			Value:  "/etc/whawty/auth-store.json",
+			Usage:  "path to the store configuration file",
+			EnvVar: "WHAWTY_AUTH_STORE_CONFIG",
 		},
 		cli.BoolTFlag{
 			Name:   "do-check",

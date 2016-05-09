@@ -10,7 +10,7 @@ WHAWTY_AUTH_CONF="/etc/whawty/auth.json"
 
 set -e
 
-HMAC_KEY=`dd if=/dev/random bs=32 count=1 2> /dev/null | base64`
+HMAC_KEY=`dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64`
 
 /bin/touch "$WHAWTY_AUTH_CONF"
 /bin/chown $WHAWTY_AUTH_USER:root "$WHAWTY_AUTH_CONF"

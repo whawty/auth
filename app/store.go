@@ -259,7 +259,7 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.authenticateChan:
 			resp, upgradeable := s.authenticate(req.username, req.password)
 			req.response <- resp
-			if upgradeable && s.upgradeChan != nil {
+			if resp.ok && upgradeable && s.upgradeChan != nil {
 				s.upgradeChan <- updateRequest{username: req.username, password: req.password}
 			}
 		}

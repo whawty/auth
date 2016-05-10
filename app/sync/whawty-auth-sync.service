@@ -1,0 +1,12 @@
+[Unit]
+Description=whawty-auth store resync
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rsync -rlpt --delete -e ssh whawty-auth-master::store /var/lib/whawty/auth/store
+User=whawty-auth
+Group=whawty-auth
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=full
+ProtectHome=yes

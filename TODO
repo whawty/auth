@@ -1,13 +1,6 @@
 app:
 ====
 
- * implement/test syncing of passwords
-    There should be a cronjob/systemd-timer to sync passwords on
-    a regular basis. This should be running on the receiving end
-    of the sync process (pull-mode). In addition to this the
-    'master' should be able to inform 'slaves' about new/changed
-    passwords (push-mode).
-
  * improve handling of variables which contain sensitive data
     It would be nice to protect variables like passwords and other
     sensitive data i.e. by clearing the memory before returning it to

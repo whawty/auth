@@ -41,8 +41,8 @@ header:
 
     <format-identifier>:<last-change>:<format specific string>
 
-_format-identifier_ is a unique identifier for the hashing format. This id must
-not include a `:`. _last-change_ is a unix time stamp and represents the last
+`format-identifier` is a unique identifier for the hashing format. This id must
+not include a `:`. `last-change` is a unix time stamp and represents the last
 date/time when the password has been modified.
 
 For now the only supported algorithm is scrypt inside hmac-sha256 which has the
@@ -50,7 +50,7 @@ following structure:
 
     hmac_sha256_scrypt:<last-change>:ctxID:base64(salt):base64(hash)
 
-_hmac_sha256_scrypt_ is the identifier for this algorithm, _ctxID_ is an
+`hmac_sha256_scrypt` is the identifier for this algorithm, `ctxID` is an
 identifier for a set of parameters which must be stored outside of the base
 directory. A whawty.auth agent should support multiple parameter-sets to allow
 soft upgrades of passwords. This algorithm needs the following parameters:
@@ -60,7 +60,7 @@ soft upgrades of passwords. This algorithm needs the following parameters:
     r:          the scrypt parameter r
     p:          the scrypt parameter p
 
-_salt_ is a random number with 256bits, _hash_ is the output of the following
+`salt` is a random number with 256bits, `hash` is the output of the following
 function:
 
     hmac_sha256(scrypt(user_password, salt, N, r, p), server_key)

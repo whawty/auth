@@ -2,9 +2,17 @@
 
 [![Build Status](https://travis-ci.org/whawty/auth.svg?branch=master)](https://travis-ci.org/whawty/auth)
 
-simple file based authentication suite
+whawty.auth is simple file based authentication suite. It uses flat files containing password hashes. These
+hashes are currently based on scrypt but the algorithm can be upgraded on the fly. To find out more about
+the storage backend read [this file](doc/SCHEMA.md).
 
-tba...
+This repository contains a golang app which can act as a whawty.auth agent. You can use this app to manage
+usernames using a simple web UI. It also offers a _saslauthd_ compatible unix socket to authenticate against it.
+There is also a PAM module which uses this socket to bring whawty.auth to PAM applications.
+
+The whawty.auth app can be configured to automatically do upgrades to newer hash algorithms when a user logs
+in. This way it is possible to smoothly upgrade to newer/stronger hashing formats. The app also supports
+synchronisation between multiple hosts. An sample setup for this can be found [here](app/sync/README.md).
 
 ## golang API
 

@@ -104,8 +104,7 @@ At first add the new context to all the slaves' store configurations. Also don't
 context parameter in the config to the new `context-id`. You need to restart the whawty.auth app for the changes
 to take effect.
 When all slaves are updated and restarted you can add the new context to the masters' store configuration as
-well. Don't forget to also set the default context to the new `context-id`. After that doing that you need
-to restart the app on the master.
+well. Don't forget to also set the default context to the new `context-id` and restart the app.
 
 After restarting the master users logging in on any app (master or slave) should lead to new upgraded password
 hashes. Slaves will sync the changes using the above ssh/rsync setup.

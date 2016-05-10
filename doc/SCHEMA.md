@@ -20,19 +20,21 @@ If this conditions are not met the agent has to exit with an error.
 If a whawty.auth agent doesn't support the hashing format of a file it has
 to act according to the following rules:
 
-- on authenticate: ignore the file and act as if the user does not exist
-- on add: report an error (user exists)
-- on update: report an error (won't overwrite unsupported formats)
-- on delete: delete the file (a warning may be shown)
+- **on authenticate:** ignore the file and act as if the user does not exist
+- **on add:** report an error (user exists)
+- **on update:** report an error (won't overwrite unsupported formats)
+- **on delete:** delete the file (a warning may be shown)
 
 Usernames must only contain the following characters: `[-_.@A-Za-z0-9]`
 
 The difference between admins and normal users is that admin users are
 allowed to add new users. Also granting admin privileges to normal users
 may only be done by admins. An admin is also allowed to change any password.
-Normal users may only update their own password.
+Normal users may only update their own password. However this is not intended
+as a replacement for a real authorisation database but should only be used
+by a whawty.auth agent to add/remove/change users.
 
-A whawty.auth agent may upgrade the hashing algorithm to an other(newer)
+A whawty.auth agent may upgrade the hashing algorithm to an other (newer/stronger)
 format during authentication.
 However if an agent supports this it must be possible to disable upgrades.
 

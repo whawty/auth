@@ -97,14 +97,16 @@ slave to do remote upgrades using the the following as an argument to the `--do-
 
 ## Add a new `context-id` to the store
 
-In order to create a new `context-id` for the store backend you have to generate a new context. This can be
-done using the script 'gen-auth-context.sh'. You have to specify a `context-id` and a `pwcost` parameter for
-this context. The script will print a new context to STDOUT. Add this line to the auth-store.json config.
-At the master we will keep the default context for now. Restart the whawty.auth app.
+In order to create a new context for the store backend you have to generate it. This can be done using the
+script `gen-auth-context.sh`. You have to specify a `context-id` and a `pwcost` parameter for this context.
+The script will print the new context to STDOUT. Add this line to the auth-store.json config.
+At first add the new context to all the slaves' store configurations. Also don't forget to set the default
+context parameter in the config to the new `context-id`. You need to restart the whawty.auth app for the changes
+to take effect.
+When all slaves are updated and restarted you can add the new context to the masters' store configuration as
+well. Don't forget to also set the default context to the new `context-id`. After that doing that you need
+to restart the app on the master.
 
-Now add the new context to all the slaves store configurations as well. For the slaves you may update the
-default context right away as they will not change anything at their stores directly. You need to restart the
-whawty.auth app on the slaves as well. When all slaves are updated and restarted you can switch the default
-context at the master to the new context and again restart the app.
-After this users logging in on any app (master or slave) should lead to new upgraded password hashes. If all
-users are upgraded to a the new context you may delete the old.
+After restarting the master users logging in on any app (master or slave) should lead to new upgraded password
+hashes. Slaves will sync the changes using the above ssh/rsync setup.
+If all users are upgraded to a the new context you may delete the old ones but this is not necessary.

@@ -103,11 +103,12 @@ In order to create a new context for the store backend you have to generate it. 
 script `gen-auth-context.sh`. You have to specify a `context-id` and a `pwcost` parameter for this context.
 The script will print the new context to STDOUT. Add this line to the auth-store.json config.
 At first add the new context to all the slaves' store configurations. Also don't forget to set the default
-context parameter in the config to the new `context-id`. You need to restart the whawty.auth app for the changes
-to take effect.
-When all slaves are updated and restarted you can add the new context to the masters' store configuration as
-well. Don't forget to also set the default context to the new `context-id` and restart the app.
+context parameter in the config to the new `context-id`. You need to reload the whawty.auth app store config
+using SIGHUP for the changes to take effect.
+When all slaves are updated and reloaded you can add the new context to the masters' store configuration as
+well. Don't forget to also set the default context to the new `context-id` and reload the app using SIGHUP.
 
-After restarting the master users logging in on any app (master or slave) should lead to new upgraded password
+After reloading the master users logging in on any app (master or slave) should lead to new upgraded password
 hashes. Slaves will sync the changes using the above ssh/rsync setup.
-If all users are upgraded to a the new context you may delete the old ones but this is not necessary.
+You can and should delete all contexts which are not used anymore. This makes it less likely that an attacker
+who might have an old copy of the hashes is able to crack them in the future.

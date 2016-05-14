@@ -199,8 +199,17 @@ socket activation. *whawty-auth* will run the web-api on all TCP sockets and exp
 saslauthd compatible requests on any unix socket. All other socket types are ignored.
 
 
+SIGNALS
+-------
+
+On HUP *whawty-auth* tries to reload the store configuration. I also runs a basic
+consistency check. If there is any error during that process the old configurtion
+will be kept.
+
+
 BUGS
 ----
+
 Most likely there are some bugs in *whawty-auth*. If you find a bug, please let
 the developers know at http://github.com/whawty/auth. Of course, pull requests
 are preferred.
@@ -208,6 +217,7 @@ are preferred.
 
 SEE ALSO
 --------
+
 *pam-whawty*(8)
 
 

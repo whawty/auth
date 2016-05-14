@@ -137,6 +137,7 @@ type authenticateRequest struct {
 }
 
 type Store struct {
+	configfile       string
 	dir              *store.Dir
 	policy           PolicyChecker
 	hooks            *HooksCaller
@@ -150,6 +151,26 @@ type Store struct {
 	listFullChan     chan listFullRequest
 	authenticateChan chan authenticateRequest
 	upgradeChan      chan updateRequest
+}
+
+func (s *Store) reload() {
+	wdl.Printf("store: reloading store config from '%s'", s.configfile)
+	newdir, err := store.NewDirFromConfig(s.configfile)
+	if err != nil {
+		wl.Printf("store: reload failed: %v, keeping current configuration", err)
+		return
+	}
+	if ok, err := newdir.Check(); err != nil || !ok {
+		if err == nil {
+			err = errors.New("this is not a valid store")
+		}
+		wl.Printf("store: reload failed: %v, keeping current configuration", err)
+		return
+	}
+
+	s.dir = newdir
+	s.hooks.NewStore <- s.dir.BaseDir
+	wl.Printf("store: successfully reloaded")
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -238,8 +259,7 @@ func (s *Store) dispatchRequests() {
 	for {
 		select {
 		case <-reload:
-			wl.Printf("store: SIGHUP received - reloading configuration")
-			// TODO: implement this
+			s.reload()
 		case req := <-s.initChan:
 			req.response <- s.init(req.username, req.password)
 		case req := <-s.checkChan:
@@ -465,6 +485,7 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir stri
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
 	}
+	s.configfile = configfile
 	if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
 		return
 	}

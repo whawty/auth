@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/10/2016
+.\"      Date: 05/14/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "05/10/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "05/14/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -171,6 +171,9 @@ Also start a small web interface on the specified address\&. This can also be sp
 .SS "runsa"
 .sp
 This is basically the same as \fBrun\fR but expects all sockets to be passed via systemd socket activation\&. \fBwhawty\-auth\fR will run the web\-api on all TCP sockets and expects saslauthd compatible requests on any unix socket\&. All other socket types are ignored\&.
+.SH "SIGNALS"
+.sp
+On HUP \fBwhawty\-auth\fR tries to reload the store configuration\&. I also runs a basic consistency check\&. If there is any error during that process the old configurtion will be kept\&.
 .SH "BUGS"
 .sp
 Most likely there are some bugs in \fBwhawty\-auth\fR\&. If you find a bug, please let the developers know at http://github\&.com/whawty/auth\&. Of course, pull requests are preferred\&.

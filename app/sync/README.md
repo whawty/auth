@@ -13,10 +13,10 @@ the one on the (remote) master host.
 ### context upgrades
 
 The whawty.auth app can be configured to automatically upgrade passwords hashes when users
-authenticate against it. For this to work the storage backend compares the current
-default `context-id`, as set by the store configuration, with the one which was used
-to generate the current hash. If the `context-id`'s differ it marks the hash as upgradeable.
-After a successful authentication the app now does one of the following:
+authenticate against it. For this to work the storage backend compares the current default
+hashing format and default `context-id`, as set by the store configuration, with the one which
+was used to generate the current hash. If the format or `context-id`'s differ it marks the
+hash as upgradeable. After a successful authentication the app now does one of the following:
 
 - **do nothing:** no upgrade will be done, the hash files will stay untouched
 - **local upgrades:** do an update operation on the local store
@@ -24,19 +24,19 @@ After a successful authentication the app now does one of the following:
 
 The first 2 steps are quite self-explanatory. For the third to work the slave host must
 be able to reach the masters web API. The uri for the update endpoint can be configured
-using the `--do-upgrades` parameter. Mind that the app has no support for https and it is
-strongly recommended to have a SSL-enabling reverse proxy in front of it.
+using the `--do-upgrades` parameter. Mind that the app's web API currently has no support for
+https and it is strongly recommended to have a SSL-enabling reverse proxy in front of it.
 
 The remote upgrades are opportunistic which means that a failed update call will be
 silently ignored. This is so that a temporary communications problem between master and slave
 doesn't slow down local authentication requests. There is also a limit for concurrent
-remote upgrade calls to the master.
+remote upgrade calls a slave will send to the master.
 
 ## Setup
 
 ### Master
 
-This assumes you have whawty.auth app as user `whawty-auth`. The store directory is at
+This assumes you have whawty.auth app running as user `whawty-auth`. The store directory is at
 `/var/lib/whawty/auth/store`. `/var/lib/whawty/auth` is the home of the user `whawty-auth`.
 In order to enable automatic upgrades the web API should be enabled and the app should be
 configured to do local upgrades. Also a SSL-enabling reverse proxy is configured to forward
@@ -58,8 +58,9 @@ The `authorized_keys` file should contain one line of the following form for eac
 
 ### Slave
 
-This assumes the slave runs as the same user and uses the same store base directory as the
-master. Use the following commands to create a `.ssh` directory:
+This assumes you have whawty.auth app running as user `whawty-auth`. The store directory is at
+`/var/lib/whawty/auth/store`. `/var/lib/whawty/auth` is the home of the user `whawty-auth`.
+Now use the following commands to create a `.ssh` directory:
 
     # mkdir /var/lib/whawty/auth/.ssh
     # chmod 700 /var/lib/whawty/auth/.ssh
@@ -73,6 +74,7 @@ to it:
       HostName <hostname or IP of master>
       IdentityFile ~/.ssh/id_ed25519
       IdentitiesOnly yes
+      PasswordAuthentication no
 
 Use the contents of `/var/lib/whawty/auth/.ssh/id_ed25519.pub` to add the entry to the
 `authorized_keys` file of the master as documented above. You should now be able to sync password

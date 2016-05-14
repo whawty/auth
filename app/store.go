@@ -37,6 +37,9 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/whawty/auth/store"
@@ -229,8 +232,14 @@ func (s *Store) authenticate(username, password string) (result authenticateResu
 }
 
 func (s *Store) dispatchRequests() {
+	reload := make(chan os.Signal, 1)
+	signal.Notify(reload, syscall.SIGHUP)
+
 	for {
 		select {
+		case <-reload:
+			wl.Printf("store: SIGHUP received - reloading configuration")
+			// TODO: implement this
 		case req := <-s.initChan:
 			req.response <- s.init(req.username, req.password)
 		case req := <-s.checkChan:

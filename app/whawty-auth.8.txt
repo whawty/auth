@@ -102,7 +102,7 @@ COMMANDS
 
 Any of the following commands supports *-h | --help* as an option. This will print
 extra help information for the command. All these commands use the auth store directory
-as specified by the main configuration file.
+as specified by the global store configuration file.
 
 init '<adminname>' '[<password>]'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,7 +117,8 @@ the command line *whawty-auth* will prompt the user for it.
 check
 ~~~~~
 
-Check the whawty auth store for consistency.
+Check the whawty auth store for consistency. On success the exit code will be 0. Any
+other value means that there is an error.
 
 
 add '<username>' '[<password>]'
@@ -132,7 +133,7 @@ remove '<username>'
 ~~~~~~~~~~~~~~~~~~~
 
 *remove* can be used to delete a user from the store. The sole argument supported
-specifies to user to be deleted.
+specifies the user to be deleted.
 
 
 update '<username>' '[<password>]'
@@ -160,7 +161,9 @@ This prints a list of all users in the store.
 
 *--full*::
     This option tells *whawty-auth* to print additional info for each user. By default
-    only the name, admin status and last change date are printed.
+    only the name, admin status and last change date are printed. This also prints
+    users which have an unsupported hash formats. These users are ingored by the normal
+    list command.
 
 
 authenticate '<username>' '[<password>]'

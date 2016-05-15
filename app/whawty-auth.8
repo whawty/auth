@@ -2,12 +2,12 @@
 .\"     Title: whawty-auth
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/14/2016
+.\"      Date: 05/15/2016
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "WHAWTY\-AUTH" "8" "05/14/2016" "\ \&" "\ \&"
+.TH "WHAWTY\-AUTH" "8" "05/15/2016" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -116,19 +116,19 @@ will run all exectuables inside this directory\&. This can for example be used t
 .RE
 .SH "COMMANDS"
 .sp
-Any of the following commands supports \fB\-h | \-\-help\fR as an option\&. This will print extra help information for the command\&. All these commands use the auth store directory as specified by the main configuration file\&.
+Any of the following commands supports \fB\-h | \-\-help\fR as an option\&. This will print extra help information for the command\&. All these commands use the auth store directory as specified by the global store configuration file\&.
 .SS "init \fI<adminname>\fR \fI[<password>]\fR"
 .sp
 \fBinit\fR can be used to initialize a whawty auth store\&. For this to work the directory must exist, be writeable by the user who runs the program and must be empty\&. The first argument is the name of the admin user which will get created\&. The password of the user can be supplied using a second optional argument\&. If no password is supplied on the command line \fBwhawty\-auth\fR will prompt the user for it\&.
 .SS "check"
 .sp
-Check the whawty auth store for consistency\&.
+Check the whawty auth store for consistency\&. On success the exit code will be 0\&. Any other value means that there is an error\&.
 .SS "add \fI<username>\fR \fI[<password>]\fR"
 .sp
 This adds a user to the store\&. The name of the user must be supplied as the first argument\&. The password may be supplied as a second parameter\&. If this is omitted \fBwhawty\-auth\fR prompts the user for it\&.
 .SS "remove \fI<username>\fR"
 .sp
-\fBremove\fR can be used to delete a user from the store\&. The sole argument supported specifies to user to be deleted\&.
+\fBremove\fR can be used to delete a user from the store\&. The sole argument supported specifies the user to be deleted\&.
 .SS "update \fI<username>\fR \fI[<password>]\fR"
 .sp
 This can be used to change the password of an existing user\&. The first argument specifies the username\&. The new password may be specified as a second argument\&. If no password is set using the command line the user will be prompted for it\&. Mind that to change a password via the command\-line you don\(cqt need to know the old password\&.
@@ -143,7 +143,7 @@ This prints a list of all users in the store\&.
 .RS 4
 This option tells
 \fBwhawty\-auth\fR
-to print additional info for each user\&. By default only the name, admin status and last change date are printed\&.
+to print additional info for each user\&. By default only the name, admin status and last change date are printed\&. This also prints users which have an unsupported hash formats\&. These users are ingored by the normal list command\&.
 .RE
 .SS "authenticate \fI<username>\fR \fI[<password>]\fR"
 .sp

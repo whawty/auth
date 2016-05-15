@@ -1,1 +1,3 @@
 app/init-store.sh
+app/gen-auth-context.sh
+app/sync/

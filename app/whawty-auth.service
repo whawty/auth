@@ -8,6 +8,7 @@ Group=whawty-auth
 Type=simple
 EnvironmentFile=-/etc/whawty/auth.ENV
 ExecStart=/usr/bin/whawty-auth runsa
+ExecReload=/bin/kill -HUP $MAINPID
 PrivateTmp=yes
 PrivateDevices=yes
 ProtectSystem=full

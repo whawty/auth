@@ -170,12 +170,17 @@ int _whawty_get_password(whawty_ctx_t* ctx)
 {
   if(ctx->flags_ & WHAWTY_CONF_USE_FIRST_PASS || ctx->flags_ & WHAWTY_CONF_TRY_FIRST_PASS) {
         // fetch password from stack
-    int ret = pam_get_item(ctx->pamh_, PAM_AUTHTOK, (const void**)(&(ctx->password_)));
+    char* pwd;
+    int ret = pam_get_item(ctx->pamh_, PAM_AUTHTOK, (const void**)(&pwd));
     if(ret != PAM_SUCCESS) {
       _whawty_logf(ctx, LOG_ERR, "pam_get_item() returned an error reading the password [%s]", pam_strerror(ctx->pamh_, ret));
       return ret;
     }
-    if(ctx->password_ != NULL) {
+    if(pwd != NULL) {
+      ctx->password_ = strdup(pwd);
+      if(ctx->password_ == NULL)
+        return PAM_BUF_ERR;
+
       _whawty_logf(ctx, LOG_DEBUG, "successfully fetched password [from stack]");
       return PAM_SUCCESS;
     }

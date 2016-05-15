@@ -62,10 +62,13 @@ func init() {
 func askPass() (string, error) {
 	fmt.Printf("new password: ")
 	if p1, err := gopass.GetPasswd(); err != nil || len(p1) == 0 {
+		if len(p1) == 0 {
+			return "", fmt.Errorf("empyty password is not allowed!")
+		}
 		return "", err
 	} else {
 		fmt.Printf("retype password: ")
-		if p2, err := gopass.GetPasswd(); err != nil || len(p2) == 0 {
+		if p2, err := gopass.GetPasswd(); err != nil {
 			return "", err
 		} else {
 			if string(p1) == string(p2) {
@@ -77,11 +80,11 @@ func askPass() (string, error) {
 	}
 }
 
-func cmdInit(c *cli.Context) {
+func cmdInit(c *cli.Context) error {
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "init")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	password := c.Args().Get(1)
@@ -89,79 +92,69 @@ func cmdInit(c *cli.Context) {
 		pwd, err := askPass()
 		if err != nil {
 			if err != gopass.ErrInterrupted {
-				fmt.Println(err)
+				return cli.NewExitError(err.Error(), 2)
 			}
-			return
+			return cli.NewExitError("", 2)
 		}
 		password = pwd
 	}
 
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
-		fmt.Printf("Error initializing whawty store: %s\n", err)
-		return
+		return cli.NewExitError(fmt.Sprintf("Error initializing whawty store: %s", err), 3)
 	}
 	if err := s.GetInterface().Init(username, password); err != nil {
-		fmt.Printf("Error initializing whawty store: %s\n", err)
-		return
+		return cli.NewExitError(fmt.Sprintf("Error initializing whawty store: %s", err), 3)
 	}
-	fmt.Printf("whawty store successfully initialized!\n")
+	return cli.NewExitError(fmt.Sprintf("whawty store successfully initialized!"), 0)
 }
 
-func cmdCheck(c *cli.Context) {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+func cmdCheck(c *cli.Context) error {
+	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
-		fmt.Printf("Error opening whawty store: %s\n", err)
-		return
+		return cli.NewExitError(fmt.Sprintf("Error opening whawty store: %s", err), 3)
 	}
-	if ok, err := s.GetInterface().Check(); err != nil {
-		fmt.Printf("Error checking whawty store: %s\n", err)
-		return
-	} else {
-		if ok {
-			fmt.Printf("whawty store is ok!\n")
-			os.Exit(0)
-		} else {
-			fmt.Printf("whawty store is invalid!\n")
-			os.Exit(1)
-		}
+	ok, err := s.GetInterface().Check()
+	if err != nil {
+		return cli.NewExitError(fmt.Sprintf("Error checking whawty store: %s", err), 3)
 	}
+	if !ok {
+		return cli.NewExitError(fmt.Sprintf("whawty store is invalid!"), 1)
+	}
+	return cli.NewExitError(fmt.Sprintf("whawty store is ok!"), 0)
 }
 
-func openAndCheck(c *cli.Context) *Store {
-	s, err := NewStore(c.GlobalString("conf"), c.GlobalString("do-upgrades"),
+func openAndCheck(c *cli.Context) (*Store, error) {
+	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
-		fmt.Printf("Error opening whawty store: %s\n", err)
-		return nil
+		return nil, fmt.Errorf("Error opening whawty store: %s", err)
 	}
 
 	if !c.GlobalBool("do-check") {
-		return s
+		return s, nil
 	}
 
 	if ok, err := s.GetInterface().Check(); err != nil {
-		fmt.Printf("Error checking whawty store: %s\n", err)
-		return nil
+		return nil, fmt.Errorf("Error checking whawty store: %s", err)
 	} else if !ok {
-		fmt.Printf("Error whawty store is invalid!\n")
-		return nil
+		return nil, fmt.Errorf("Error whawty store is invalid!")
 	}
-	return s
+	return s, nil
 }
 
-func cmdAdd(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdAdd(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "add")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	password := c.Args().Get(1)
@@ -169,49 +162,47 @@ func cmdAdd(c *cli.Context) {
 		pwd, err := askPass()
 		if err != nil {
 			if err != gopass.ErrInterrupted {
-				fmt.Println(err)
+				return cli.NewExitError(err.Error(), 2)
 			}
-			return
+			return cli.NewExitError("", 2)
 		}
 		password = pwd
 	}
 
 	if err := s.GetInterface().Add(username, password, false); err != nil {
-		fmt.Printf("Error adding user '%s': %s\n", username, err)
-	} else {
-		fmt.Printf("user '%s' successfully added!\n", username)
+		return cli.NewExitError(fmt.Sprintf("Error adding user '%s': %s", username, err), 3)
 	}
+	return cli.NewExitError(fmt.Sprintf("user '%s' successfully added!", username), 0)
 }
 
-func cmdRemove(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdRemove(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "remove")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	if err := s.GetInterface().Remove(username); err != nil {
-		fmt.Printf("Error removing user '%s': %s\n", username, err)
-	} else {
-		fmt.Printf("user '%s' successfully removed!\n", username)
+		return cli.NewExitError(fmt.Sprintf("Error removing user '%s': %s", username, err), 3)
 	}
+	return cli.NewExitError(fmt.Sprintf("user '%s' successfully removed!", username), 0)
 }
 
-func cmdUpdate(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdUpdate(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "update")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	password := c.Args().Get(1)
@@ -219,54 +210,52 @@ func cmdUpdate(c *cli.Context) {
 		pwd, err := askPass()
 		if err != nil {
 			if err != gopass.ErrInterrupted {
-				fmt.Println(err)
+				return cli.NewExitError(err.Error(), 2)
 			}
-			return
+			return cli.NewExitError("", 2)
 		}
 		password = pwd
 	}
 
 	if err := s.GetInterface().Update(username, password); err != nil {
-		fmt.Printf("Error updating user '%s': %s\n", username, err)
-	} else {
-		fmt.Printf("user '%s' successfully updated!\n", username)
+		return cli.NewExitError(fmt.Sprintf("Error updating user '%s': %s", username, err), 3)
 	}
+	return cli.NewExitError(fmt.Sprintf("user '%s' successfully updated!", username), 0)
 }
 
-func cmdSetAdmin(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdSetAdmin(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "set-admin")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	isAdmin, err := strconv.ParseBool(c.Args().Get(1))
 	if err != nil {
 		cli.ShowCommandHelp(c, "set-admin")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	if err := s.GetInterface().SetAdmin(username, isAdmin); err != nil {
-		fmt.Printf("Error changing admin status of user '%s': %s\n", username, err)
+		return cli.NewExitError(fmt.Sprintf("Error changing admin status of user '%s': %s", username, err), 3)
+	}
+
+	if isAdmin {
+		return cli.NewExitError(fmt.Sprintf("user '%s' is now an admin!", username), 0)
 	} else {
-		if isAdmin {
-			fmt.Printf("user '%s' is now an admin!\n", username)
-		} else {
-			fmt.Printf("user '%s' is now a normal user!\n", username)
-		}
+		return cli.NewExitError(fmt.Sprintf("user '%s' is now a normal user!", username), 0)
 	}
 }
 
-func cmdListFull(s *StoreChan) {
+func cmdListFull(s *StoreChan) error {
 	lst, err := s.ListFull()
 	if err != nil {
-		fmt.Printf("Error listing user: %s\n", err)
-		return
+		return fmt.Errorf("Error listing user: %s\n", err)
 	}
 
 	var keys []string
@@ -286,13 +275,13 @@ func cmdListFull(s *StoreChan) {
 		table.AddRow(k, t, lst[k].LastChanged.String(), lst[k].IsValid, lst[k].IsSupported, lst[k].FormatID, lst[k].FormatParams)
 	}
 	fmt.Println(table)
+	return nil
 }
 
-func cmdListSupported(s *StoreChan) {
+func cmdListSupported(s *StoreChan) error {
 	lst, err := s.List()
 	if err != nil {
-		fmt.Printf("Error listing user: %s\n", err)
-		return
+		return fmt.Errorf("Error listing user: %s\n", err)
 	}
 
 	var keys []string
@@ -312,31 +301,36 @@ func cmdListSupported(s *StoreChan) {
 		table.AddRow(k, t, lst[k].LastChanged.String())
 	}
 	fmt.Println(table)
+	return nil
 }
 
-func cmdList(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdList(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	if c.Bool("full") {
-		cmdListFull(s.GetInterface())
+		err = cmdListFull(s.GetInterface())
 	} else {
-		cmdListSupported(s.GetInterface())
+		err = cmdListSupported(s.GetInterface())
 	}
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
+	}
+	return cli.NewExitError("", 0)
 }
 
-func cmdAuthenticate(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdAuthenticate(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	username := c.Args().First()
 	if username == "" {
 		cli.ShowCommandHelp(c, "authenticate")
-		return
+		return cli.NewExitError("", 0)
 	}
 
 	password := c.Args().Get(1)
@@ -345,38 +339,36 @@ func cmdAuthenticate(c *cli.Context) {
 		pwd, err := gopass.GetPasswd()
 		if err != nil {
 			if err != gopass.ErrInterrupted {
-				fmt.Println(err)
+				return cli.NewExitError(err.Error(), 2)
 			}
-			return
+			return cli.NewExitError("", 2)
 		}
 		password = string(pwd)
 	}
 
 	ok, isAdmin, _, err := s.GetInterface().Authenticate(username, password)
 	if err != nil {
-		fmt.Printf("Error authenticating user '%s': %s\n", username, err)
-		os.Exit(2)
+		return cli.NewExitError(fmt.Sprintf("Error authenticating user '%s': %s", username, err), 3)
 	}
 	if !ok {
-		fmt.Printf("Error wrong password for user '%s'\n", username)
-		os.Exit(1)
+		return cli.NewExitError(fmt.Sprintf("Error wrong password for user '%s'", username), 1)
 	}
 
 	// wait for potential upgrades - this might still be to fast for remote upgrades
 	// TODO: find a better way to handle this situation
 	time.Sleep(100 * time.Millisecond)
+
 	if isAdmin {
-		fmt.Printf("user '%s' is an admin\n", username)
+		return cli.NewExitError(fmt.Sprintf("user '%s' is an admin.", username), 0)
 	} else {
-		fmt.Printf("user '%s' is a normal user\n", username)
+		return cli.NewExitError(fmt.Sprintf("user '%s' is a normal user.", username), 0)
 	}
-	os.Exit(0)
 }
 
-func cmdRun(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdRun(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
 
 	webAddr := c.String("web-addr")
@@ -403,23 +395,24 @@ func cmdRun(c *cli.Context) {
 		}()
 	}
 	wg.Wait()
-	fmt.Printf("shutting down since all auth sockets have closed\n")
+
+	return cli.NewExitError(fmt.Sprintf("shutting down since all auth sockets have closed."), 0)
 }
 
-func cmdRunSa(c *cli.Context) {
-	s := openAndCheck(c)
-	if s == nil {
-		return
+func cmdRunSa(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
 	}
+
 	listeners, err := activation.Listeners(true)
 	if err != nil {
-		fmt.Printf("fetching socket listeners from systemd failed: %s\n", err)
-		return
+		return cli.NewExitError(fmt.Sprintf("fetching socket listeners from systemd failed: %s", err), 2)
 	}
 
 	fmt.Printf("got %d sockets from systemd\n", len(listeners))
 	if len(listeners) == 0 {
-		return
+		return cli.NewExitError("shutting down since there are no sockets to lissten on.", 2)
 	}
 
 	var wg sync.WaitGroup
@@ -450,20 +443,21 @@ func cmdRunSa(c *cli.Context) {
 		}
 	}
 	wg.Wait()
-	fmt.Printf("shutting down since all auth sockets have closed\n")
+
+	return cli.NewExitError(fmt.Sprintf("shutting down since all auth sockets have closed."), 0)
 }
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
-	app.Version = "0.1"
+	app.Version = "0.1-rc2"
 	app.Usage = "manage whawty auth stores"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:   "conf",
-			Value:  "/etc/whawty/auth.json",
-			Usage:  "path to the configuration file",
-			EnvVar: "WHAWTY_AUTH_CONFIG",
+			Name:   "store",
+			Value:  "/etc/whawty/auth-store.json",
+			Usage:  "path to the store configuration file",
+			EnvVar: "WHAWTY_AUTH_STORE_CONFIG",
 		},
 		cli.BoolTFlag{
 			Name:   "do-check",

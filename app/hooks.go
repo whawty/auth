@@ -43,6 +43,7 @@ import (
 
 type HooksCaller struct {
 	Notify    chan bool
+	NewStore  chan string
 	dir       string
 	store     string
 	rateLimit time.Duration
@@ -137,7 +138,10 @@ func (h *HooksCaller) runAllHooks() {
 func (h *HooksCaller) run() {
 	if h.dir == "" { // just consume requests and do nothing
 		for {
-			<-h.Notify
+			select {
+			case <-h.Notify:
+			case <-h.NewStore:
+			}
 		}
 	}
 
@@ -156,6 +160,8 @@ func (h *HooksCaller) run() {
 				t.Reset(h.rateLimit)
 			}
 			h.pending++
+		case s := <-h.NewStore:
+			h.store = s
 		}
 	}
 }
@@ -173,6 +179,7 @@ func NewHooksCaller(hooksDir, storeDir string) (h *HooksCaller, err error) {
 
 	h = &HooksCaller{}
 	h.Notify = make(chan bool, 32)
+	h.NewStore = make(chan string, 1)
 	h.dir = hooksDir
 	h.store = storeDir
 	h.rateLimit = 5 * time.Second // TODO: hardcoded value

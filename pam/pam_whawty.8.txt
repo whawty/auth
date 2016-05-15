@@ -70,6 +70,7 @@ using this module.
 
 BUGS
 ----
+
 Most likely there are some bugs in *pam_whawty*. If you find a bug, please let
 the developers know at http://github.com/whawty/auth. Of course, pull requests
 are preferred.
@@ -77,7 +78,8 @@ are preferred.
 
 SEE ALSO
 --------
-*pam.conf*(5), *pamd.d*(5), *pam*(7)
+
+*pam.conf*(5), *pamd.d*(5), *pam*(7), *whawty-auth*(8)
 
 
 AUTHORS

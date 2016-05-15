@@ -305,8 +305,7 @@ type User struct {
 	LastChanged time.Time `json:"lastchanged"`
 }
 
-// UserList is the return value of List(). The key of the map is the username
-// and the value is true if the user is an admin.
+// UserList is the return value of List(). The key of the map is the username.
 type UserList map[string]User
 
 // List returns a list of all supported users in the store.
@@ -333,8 +332,7 @@ type UserFull struct {
 	FormatParams string    `json:"formatparams"`
 }
 
-// UserListFull is the return value of ListFull(). The key of the map is the username
-// and the value contains additional information for that specific user.
+// UserListFull is the return value of ListFull(). The key of the map is the username.
 type UserListFull map[string]UserFull
 
 // ListFull returns a list of all users in the store. This includes users with

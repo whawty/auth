@@ -1,0 +1,10 @@
+[Unit]
+Description=whawty-auth store sync timer
+
+[Timer]
+OnBootSec=5s
+OnUnitActiveSec=1m
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

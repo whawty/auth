@@ -37,6 +37,9 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/whawty/auth/store"
@@ -134,6 +137,7 @@ type authenticateRequest struct {
 }
 
 type Store struct {
+	configfile       string
 	dir              *store.Dir
 	policy           PolicyChecker
 	hooks            *HooksCaller
@@ -147,6 +151,26 @@ type Store struct {
 	listFullChan     chan listFullRequest
 	authenticateChan chan authenticateRequest
 	upgradeChan      chan updateRequest
+}
+
+func (s *Store) reload() {
+	wdl.Printf("store: reloading store config from '%s'", s.configfile)
+	newdir, err := store.NewDirFromConfig(s.configfile)
+	if err != nil {
+		wl.Printf("store: reload failed: %v, keeping current configuration", err)
+		return
+	}
+	if ok, err := newdir.Check(); err != nil || !ok {
+		if err == nil {
+			err = errors.New("this is not a valid store")
+		}
+		wl.Printf("store: reload failed: %v, keeping current configuration", err)
+		return
+	}
+
+	s.dir = newdir
+	s.hooks.NewStore <- s.dir.BaseDir
+	wl.Printf("store: successfully reloaded")
 }
 
 func (s *Store) init(username, password string) (result initResult) {
@@ -229,8 +253,13 @@ func (s *Store) authenticate(username, password string) (result authenticateResu
 }
 
 func (s *Store) dispatchRequests() {
+	reload := make(chan os.Signal, 1)
+	signal.Notify(reload, syscall.SIGHUP)
+
 	for {
 		select {
+		case <-reload:
+			s.reload()
 		case req := <-s.initChan:
 			req.response <- s.init(req.username, req.password)
 		case req := <-s.checkChan:
@@ -259,7 +288,7 @@ func (s *Store) dispatchRequests() {
 		case req := <-s.authenticateChan:
 			resp, upgradeable := s.authenticate(req.username, req.password)
 			req.response <- resp
-			if upgradeable && s.upgradeChan != nil {
+			if resp.ok && upgradeable && s.upgradeChan != nil {
 				s.upgradeChan <- updateRequest{username: req.username, password: req.password}
 			}
 		}
@@ -456,6 +485,7 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir stri
 	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
 		return
 	}
+	s.configfile = configfile
 	if s.policy, err = NewPasswordPolicy(policyType, policyCondition); err != nil {
 		return
 	}

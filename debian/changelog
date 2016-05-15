@@ -1,3 +1,11 @@
+whawty-auth (0.1~rc2-1) unstable; urgency=medium
+
+  * Imported Upstream version 0.1~rc2
+  * added examples for sync
+  * default config file has been moved
+
+ -- Christian Pointner <equinox@spreadspace.org>  Sun, 15 May 2016 20:52:36 +0200
+
 whawty-auth (0.1~rc1-3) unstable; urgency=medium
 
   * Add systemd service and socket unit for whawty-auth app

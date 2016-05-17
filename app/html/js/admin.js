@@ -139,6 +139,7 @@ function main_getUpdateButton(user) {
       main_cleanupPasswordModal()
 
       $('#changepw-userfield').text(user);
+      $('#changepw-username').val(user); // tell the browser to update it's the password store
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
@@ -240,6 +241,7 @@ function main_setupAddButton() {
       main_cleanupPasswordModal()
 
       $('#changepw-userfield').text(user);
+      $('#changepw-username').val(user); // tell the browser to update it's the password store
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()
@@ -281,6 +283,7 @@ function main_userViewInit() {
       main_cleanupPasswordModal()
 
       $('#changepw-userfield').text(auth_username);
+      $('#changepw-username').val(auth_username); // tell the browser to update it's the password store
       $("#changepwform").submit(function(event) {
           event.preventDefault();
           var newpassword = $("#newpassword").val()

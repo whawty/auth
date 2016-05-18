@@ -99,10 +99,9 @@ function auth_init() {
     $("#mainwindow").hide();
   }
   $("#loginform").submit(function(event) {
-    event.preventDefault();
     var data = JSON.stringify({ username: $("#username").val(), password: $("#password").val() })
-    $.post("/api/authenticate", data, auth_loginSuccess, 'json')
-        .fail(auth_loginError)
+    $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
+    return false;
   });
 }
 
@@ -141,12 +140,11 @@ function main_getUpdateButton(user) {
       $('#changepw-userfield').text(user);
       $('#changepw-username').val(user); // tell the browser to update it's the password store
       $("#changepwform").submit(function(event) {
-          event.preventDefault();
           var newpassword = $("#newpassword").val()
           var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
-          $.post("/api/update", data, main_updateSuccess, 'json')
-              .fail(main_reqError)
+          $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
+          return false;
       });
       $("#passwordModal").modal('show');
   });
@@ -162,8 +160,7 @@ function main_getRemoveButton(user) {
   btn.html('<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>&nbsp;&nbsp;Remove')
   return btn.click(function() {
       var data = JSON.stringify({ session: auth_session, username: user })
-      $.post("/api/remove", data, main_removeSuccess, 'json')
-          .fail(main_reqError)
+      $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError)
   });
 }
 
@@ -177,8 +174,7 @@ function main_getSetAdminButton(user, oldstate) {
   var newstate = !oldstate;
   return btn.click(function() {
       var data = JSON.stringify({ session: auth_session, username: user, admin: newstate })
-      $.post("/api/set-admin", data, main_setadminSuccess, 'json')
-          .fail(main_reqError)
+      $.post("/api/set-admin", data, main_setadminSuccess, 'json').fail(main_reqError)
   });
 }
 
@@ -232,7 +228,6 @@ function main_addSuccess(data) {
 function main_setupAddButton() {
   $("#addusername").val('')
   $("#adduserform").submit(function(event) {
-      event.preventDefault();
       var user = $("#addusername").val()
       var admin = false
       if ( $('input[name="addrole"]:checked').val()  == "admin") {
@@ -243,22 +238,21 @@ function main_setupAddButton() {
       $('#changepw-userfield').text(user);
       $('#changepw-username').val(user); // tell the browser to update it's the password store
       $("#changepwform").submit(function(event) {
-          event.preventDefault();
           var newpassword = $("#newpassword").val()
           var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
-          $.post("/api/add", data, main_addSuccess, 'json')
-              .fail(main_reqError)
+          $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
           $("#addusername").val('')
+          return false;
       });
       $("#passwordModal").modal('show');
+      return false;
   });
 }
 
 function main_updateUserlist() {
   var data = JSON.stringify({ session: auth_session, })
-  $.post("/api/list-full", data, main_userlistSuccess, 'json')
-          .fail(main_reqError)
+  $.post("/api/list-full", data, main_userlistSuccess, 'json').fail(main_reqError)
 }
 
 function main_adminViewInit() {
@@ -285,12 +279,11 @@ function main_userViewInit() {
       $('#changepw-userfield').text(auth_username);
       $('#changepw-username').val(auth_username); // tell the browser to update it's the password store
       $("#changepwform").submit(function(event) {
-          event.preventDefault();
           var newpassword = $("#newpassword").val()
           var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
-          $.post("/api/update", data, main_userUpdateSuccess, 'json')
-              .fail(main_reqError)
+          $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
+          return false;
       });
       $("#passwordModal").modal('show');
   });

@@ -101,7 +101,6 @@ function auth_init() {
   $("#loginform").submit(function(event) {
     var data = JSON.stringify({ username: $("#username").val(), password: $("#password").val() })
     $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
-    return false;
   });
 }
 
@@ -144,7 +143,6 @@ function main_getUpdateButton(user) {
           var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
           $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
-          return false;
       });
       $("#passwordModal").modal('show');
   });
@@ -228,6 +226,7 @@ function main_addSuccess(data) {
 function main_setupAddButton() {
   $("#addusername").val('')
   $("#adduserform").submit(function(event) {
+      event.preventDefault();
       var user = $("#addusername").val()
       var admin = false
       if ( $('input[name="addrole"]:checked').val()  == "admin") {
@@ -243,10 +242,8 @@ function main_setupAddButton() {
           $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
           $("#addusername").val('')
-          return false;
       });
       $("#passwordModal").modal('show');
-      return false;
   });
 }
 
@@ -283,7 +280,6 @@ function main_userViewInit() {
           var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
           $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
-          return false;
       });
       $("#passwordModal").modal('show');
   });

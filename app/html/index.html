@@ -11,12 +11,13 @@
     <link href="css/admin.css" rel="stylesheet">
   </head>
   <body>
+    <iframe id="remember" name="remember" class="hidden" src="blank"></iframe>
 
     <div class="container-fluid">
 
       <div id="loginbox">
 
-        <form id="loginform" class="form-auth" role="form">
+        <form id="loginform" class="form-auth" role="form" target="remember" action="blank">
           <img class="visible-xs-block" src="img/logo-small.png" alt="logo" />
           <div class="loginspacer hidden-xs">&nbsp;</div>
           <div class="loginspacer hidden-xs hidden-sm">&nbsp;</div>
@@ -60,7 +61,7 @@
         <div class="modal fade" id="passwordModal" tabindex="-1" role="dialog">
           <div class="modal-dialog">
             <div class="modal-content">
-              <form id="changepwform" role="form">
+              <form id="changepwform" role="form" target="remember" action="blank">
                 <div class="modal-header">
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                   <h4 class="modal-title">New Password for <strong id="changepw-userfield"></strong>...</h4>

@@ -42,13 +42,16 @@ function auth_loginSuccess(data) {
      sessionStorage.setItem("auth_lastchanged", auth_lastchanged.toISOString());
      sessionStorage.setItem("auth_session", auth_session);
 
+     $('#loginbox').slideUp();
+     $("#username").val('');
+     $("#password").val('');
+
      $('#username-field').text(auth_username);
      if (auth_admin == true) {
        $('#role-field').text("Admin");
      } else {
        $('#role-field').text("User");
      }
-     $('#loginbox').slideUp();
      $('#mainwindow').fadeIn();
      main_init();
    } else {
@@ -143,7 +146,11 @@ function main_getUpdateButton(user) {
           var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
           $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
+          $('#changepw-username').val('');
+          $("#newpassword").val('');
+          $("#newpassword-retype").val('');
       });
+      $("#changepwform").find('button[type="submit"]').text("Change");
       $("#passwordModal").modal('show');
   });
 }
@@ -241,8 +248,12 @@ function main_setupAddButton() {
           var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
           $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
-          $("#addusername").val('')
+          $("#addusername").val('');
+          $('#changepw-username').val('');
+          $("#newpassword").val('');
+          $("#newpassword-retype").val('');
       });
+      $("#changepwform").find('button[type="submit"]').text("Add");
       $("#passwordModal").modal('show');
   });
 }
@@ -280,7 +291,11 @@ function main_userViewInit() {
           var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
           $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError)
           $("#passwordModal").modal('hide');
+          $('#changepw-username').val('');
+          $("#newpassword").val('');
+          $("#newpassword-retype").val('');
       });
+      $("#changepwform").find('button[type="submit"]').text("Change");
       $("#passwordModal").modal('show');
   });
 

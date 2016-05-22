@@ -32,6 +32,8 @@ var auth_session = null;
 
 function auth_loginSuccess(data) {
   if (data.session) {
+    $("#loginsubmit").click(); // tell browser to store the password
+
     auth_username = data.username;
     auth_admin = data.admin;
     auth_lastchanged = new Date(data.lastchanged);
@@ -43,8 +45,6 @@ function auth_loginSuccess(data) {
     sessionStorage.setItem("auth_session", auth_session);
 
     $('#loginbox').slideUp();
-    $("#username").val('');
-    $("#password").val('');
 
     $('#username-field').text(auth_username);
     if (auth_admin == true) {
@@ -101,10 +101,12 @@ function auth_init() {
     $("#loginbox").fadeIn();
     $("#mainwindow").hide();
   }
-  $("#loginform").submit(function(event) {
+  $("#loginbtn").click(function(event) {
     var data = JSON.stringify({ username: $("#username").val(), password: $("#password").val() })
     $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
   });
+  $("#username").keypress(function(event) { overrideEnter(event, $("#loginbtn")); });
+  $("#password").keypress(function(event) { overrideEnter(event, $("#loginbtn")); });
 }
 
 function auth_cleanup() {
@@ -324,6 +326,13 @@ function getDateTimeString(d) {
   datetimestr += ':' + Number(d.getMinutes()).pad(2);
   datetimestr += ':' + Number(d.getSeconds()).pad(2);
   return datetimestr
+}
+
+function overrideEnter(event, btn) {
+  if(event.which == 13 || event.keyCode == 13) {
+    event.preventDefault();
+    btn.click();
+  }
 }
 
 function main_reqError(req, status, error) {

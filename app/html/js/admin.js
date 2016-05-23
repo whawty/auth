@@ -32,7 +32,7 @@ var auth_session = null;
 
 function auth_loginSuccess(data) {
   if (data.session) {
-    $("#loginsubmit").click(); // tell browser to store the password
+    $("#login-submit").click(); // tell browser to store the password
 
     auth_username = data.username;
     auth_admin = data.admin;
@@ -44,7 +44,7 @@ function auth_loginSuccess(data) {
     sessionStorage.setItem("auth_lastchanged", auth_lastchanged.toISOString());
     sessionStorage.setItem("auth_session", auth_session);
 
-    $('#loginbox').slideUp();
+    $('#login-box').slideUp();
 
     $('#username-field').text(auth_username);
     if (auth_admin == true) {
@@ -55,7 +55,7 @@ function auth_loginSuccess(data) {
     $('#mainwindow').fadeIn();
     main_init();
   } else {
-    alertbox.error('loginbox', "Error logging in", data.errorstring);
+    alertbox.error('login-box', "Error logging in", data.errorstring);
     auth_cleanup();
   }
 }
@@ -65,20 +65,20 @@ function auth_loginError(req, status, error) {
   if(req.status == 401) {
     message = "username and/or password are wrong!";
   }
-  alertbox.error('loginbox', "Error logging in", message);
-  $("#password").val('');
+  alertbox.error('login-box', "Error logging in", message);
+  $("#login-password").val('');
 }
 
 function auth_logout() {
   auth_cleanup();
 
   $(".alert").alert('close');
-  $("#username").val('');
-  $("#password").val('');
+  $("#login-username").val('');
+  $("#login-password").val('');
   $("#mainwindow").fadeOut();
   $('#username-field').text('');
   $('#role-field').text('');
-  $('#loginbox').slideDown();
+  $('#login-box').slideDown();
 }
 
 function auth_init() {
@@ -88,7 +88,7 @@ function auth_init() {
   auth_session = sessionStorage.getItem("auth_session");
 
   if(auth_session && auth_username) {
-    $("#loginbox").hide();
+    $("#login-box").hide();
     $('#username-field').text(auth_username);
     if (auth_admin == true) {
       $('#role-field').text("Admin");
@@ -98,15 +98,15 @@ function auth_init() {
     $("#mainwindow").fadeIn();
     main_init();
   } else {
-    $("#loginbox").fadeIn();
+    $("#login-box").fadeIn();
     $("#mainwindow").hide();
   }
-  $("#loginbtn").click(function(event) {
-    var data = JSON.stringify({ username: $("#username").val(), password: $("#password").val() })
+  $("#login-btn").click(function(event) {
+    var data = JSON.stringify({ username: $("#login-username").val(), password: $("#login-password").val() })
     $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
   });
-  $("#username").keypress(function(event) { overrideEnter(event, $("#loginbtn")); });
-  $("#password").keypress(function(event) { overrideEnter(event, $("#loginbtn")); });
+  $("#login-username").keypress(function(event) { overrideEnter(event, $("#login-btn")); });
+  $("#login-password").keypress(function(event) { overrideEnter(event, $("#login-btn")); });
 }
 
 function auth_cleanup() {
@@ -120,8 +120,8 @@ function auth_cleanup() {
   auth_lastchanged = null;
   auth_session = null;
 
-  $("#username").val('').focus();
-  $("#password").val('');
+  $("#login-username").val('').focus();
+  $("#login-password").val('');
 }
 
 /*
@@ -131,6 +131,9 @@ function auth_cleanup() {
  */
 
 function main_updateSuccess(data) {
+  if(data.username == auth_username) {
+    $("#changepw-submit").click(); // tell browser to update it's password store, but only if it is ours...
+  }
   alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
   main_updateUserlist()
 }
@@ -142,18 +145,17 @@ function main_getUpdateButton(user) {
     main_cleanupPasswordModal()
 
     $('#changepw-userfield').text(user);
-    $('#changepw-username').val(user); // tell the browser to update it's the password store
-    $("#changepwform").submit(function(event) {
-      var newpassword = $("#newpassword").val()
+    $('#changepw-username').val(user); // tell the browser to update it's password store
+    $("#changepw-btn").click(function(event) {
+      var newpassword = $("#changepw-password").val()
       var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
       $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError)
-      $("#passwordModal").modal('hide');
-      $('#changepw-username').val('');
-      $("#newpassword").val('');
-      $("#newpassword-retype").val('');
+      $("#changepw-modal").modal('hide');
     });
-    $("#changepwform").find('button[type="submit"]').text("Change");
-    $("#passwordModal").modal('show');
+    $("#changepw-btn").text("Change");
+    $("#changepw-password").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-password-retype").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-modal").modal('show');
   });
 }
 
@@ -228,6 +230,7 @@ function main_userlistSuccess(data) {
 }
 
 function main_addSuccess(data) {
+  // we don't want the browser to update it's password store -> don't submit the form!
   alertbox.success('mainwindow', "Add User", "successfully added user " + data.username);
   main_updateUserlist()
 }
@@ -244,19 +247,21 @@ function main_setupAddButton() {
     main_cleanupPasswordModal()
 
     $('#changepw-userfield').text(user);
-    $('#changepw-username').val(user); // tell the browser to update it's the password store
-    $("#changepwform").submit(function(event) {
-      var newpassword = $("#newpassword").val()
+    $('#changepw-username').val(''); // we don't want the browser to add this user to it's password store...
+    $("#changepw-btn").click(function(event) {
+      var newpassword = $("#changepw-password").val()
       var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
       $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError)
-      $("#passwordModal").modal('hide');
+      $("#changepw-modal").modal('hide');
       $("#addusername").val('');
-      $('#changepw-username').val('');
-      $("#newpassword").val('');
-      $("#newpassword-retype").val('');
+      $('#changepw-userfield').text('');
+      $("#changepw-password").val(''); // we don't want the browser to add this user to it's password store...
+      $("#changepw-password-retype").val('');
     });
-    $("#changepwform").find('button[type="submit"]').text("Add");
-    $("#passwordModal").modal('show');
+    $("#changepw-btn").text("Add");
+    $("#changepw-password").keypress(function(event) { overrideEnter(event); });
+    $("#changepw-password-retype").keypress(function(event) { overrideEnter(event); });
+    $("#changepw-modal").modal('show');
   });
 }
 
@@ -277,6 +282,7 @@ function main_adminViewInit() {
  */
 
 function main_userUpdateSuccess(data) {
+  $("#changepw-submit").click(); // tell browser to update it's password store
   alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
 }
 
@@ -287,20 +293,18 @@ function main_userViewInit() {
     main_cleanupPasswordModal()
 
     $('#changepw-userfield').text(auth_username);
-    $('#changepw-username').val(auth_username); // tell the browser to update it's the password store
-    $("#changepwform").submit(function(event) {
-      var newpassword = $("#newpassword").val()
+    $('#changepw-username').val(auth_username); // tell the browser to update it's password store
+    $("#changepw-btn").click(function(event) {
+      var newpassword = $("#changepw-password").val()
       var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
       $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError)
-      $("#passwordModal").modal('hide');
-      $('#changepw-username').val('');
-      $("#newpassword").val('');
-      $("#newpassword-retype").val('');
+      $("#changepw-modal").modal('hide');
     });
-    $("#changepwform").find('button[type="submit"]').text("Change");
-    $("#passwordModal").modal('show');
+    $("#changepw-btn").text("Change");
+    $("#changepw-password").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-password-retype").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-modal").modal('show');
   });
-
 }
 
 /*
@@ -331,7 +335,9 @@ function getDateTimeString(d) {
 function overrideEnter(event, btn) {
   if(event.which == 13 || event.keyCode == 13) {
     event.preventDefault();
-    btn.click();
+    if(typeof btn !== 'undefined' && btn.prop('disabled') == false) {
+      btn.click();
+    }
   }
 }
 
@@ -347,33 +353,33 @@ function main_reqError(req, status, error) {
   if(req.status == 401) {
     var user = auth_username;
     auth_logout();
-    $("#username").val(user);
-    $("#password").focus();
-    alertbox.error('loginbox', "Authentication failure", message);
+    $("#login-username").val(user);
+    $("#login-password").focus();
+    alertbox.error('login-box', "Authentication failure", message);
   } else {
     alertbox.error('mainwindow', "API Error", message);
   }
 }
 
 function main_cleanupPasswordModal() {
-  $('#newpassword').parent().attr('class', 'form-group');
-  $("#newpassword").val('');
-  $("#newpassword").trigger('input');
-  $("#newpassword").focus();
-  $("#newpassword-retype").parent().attr('class', 'form-group');
-  $("#newpassword-retype").val('')
-  $("#passwordModal .alertbox").text('');
-  $("#changepwform").off('submit');
-  $("#changepwform").find('button[type="submit"]').prop('disabled', true);
+  $('#changepw-password').parent().attr('class', 'form-group');
+  $("#changepw-password").val('');
+  $("#changepw-password").trigger('input');
+  $("#changepw-password").focus();
+  $("#changepw-password-retype").parent().attr('class', 'form-group');
+  $("#changepw-password-retype").val('')
+  $("#changepw-modal .alertbox").text('');
+  $("#changepw-btn").off('click');
+  $("#changepw-btn").prop('disabled', true);
 }
 
 function main_comparePasswords() {
-  if($("#newpassword").val() == "" || $("#newpassword").val() != $("#newpassword-retype").val()) {
-    $('#newpassword-retype').parent().attr('class', 'form-group has-error');
-    $("#changepwform").find('button[type="submit"]').prop('disabled', true);
+  if($("#changepw-password").val() == "" || $("#changepw-password").val() != $("#changepw-password-retype").val()) {
+    $('#changepw-password-retype').parent().attr('class', 'form-group has-error');
+    $("#changepw-btn").prop('disabled', true);
   } else {
-    $('#newpassword-retype').parent().attr('class', 'form-group has-success');
-    $("#changepwform").find('button[type="submit"]').prop('disabled', false);
+    $('#changepw-password-retype').parent().attr('class', 'form-group has-success');
+    $("#changepw-btn").prop('disabled', false);
   }
 }
 
@@ -392,7 +398,7 @@ main_PWStrengthLevel[3] = 'success';
 main_PWStrengthLevel[4] = 'success';
 
 function main_enablePWChecks() {
-  $('#newpassword').on('input', function() {
+  $('#changepw-password').on('input', function() {
     main_comparePasswords();
 
     var res = zxcvbn($(this).val(), [ $('#changepw-userfield').text(), 'whawty' ]);
@@ -423,7 +429,7 @@ function main_enablePWChecks() {
     $("#pwstrengthtips").html(tips);
   });
 
-  $('#newpassword-retype').on('input', main_comparePasswords);
+  $('#changepw-password-retype').on('input', main_comparePasswords);
 }
 
 function main_init() {

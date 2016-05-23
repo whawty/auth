@@ -11,23 +11,23 @@
     <link href="css/admin.css" rel="stylesheet">
   </head>
   <body>
-    <iframe id="remember" name="remember" class="hidden" src="blank"></iframe>
+    <iframe id="remember" name="remember" class="hidden"></iframe>
 
     <div class="container-fluid">
 
-      <div id="loginbox">
+      <div id="login-box">
 
-        <form id="loginform" class="form-auth" role="form" target="remember" action="blank">
+        <form id="login-form" class="form-auth" role="form" target="remember" action="blank">
           <img class="visible-xs-block" src="img/logo-small.png" alt="logo" />
           <div class="loginspacer hidden-xs">&nbsp;</div>
           <div class="loginspacer hidden-xs hidden-sm">&nbsp;</div>
           <img class="hidden-xs" src="img/logo.png" alt="logo" />
           <h1 class="form-auth-heading">WHAWTY auth</h1>
-          <input id="username" type="text" class="form-control" placeholder="Username" required autofocus>
-          <input id="password" type="password" class="form-control" placeholder="Password" required>
+          <input id="login-username" type="text" class="form-control" placeholder="Username" required autofocus>
+          <input id="login-password" type="password" class="form-control" placeholder="Password" required>
           <div class="alertbox"></div>
-          <button id="loginbtn" type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span>&nbsp;&nbsp;Log In</button>
-          <button id="loginsubmit" type="submit" class="hidden"></button>
+          <button id="login-btn" type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span>&nbsp;&nbsp;Log In</button>
+          <button id="login-submit" type="submit" class="hidden"></button>
         </form>
 
       </div>
@@ -59,10 +59,10 @@
 
         <div class="alertbox"></div>
 
-        <div class="modal fade" id="passwordModal" tabindex="-1" role="dialog">
+        <div class="modal fade" id="changepw-modal" tabindex="-1" role="dialog">
           <div class="modal-dialog">
             <div class="modal-content">
-              <form id="changepwform" role="form" target="remember" action="blank">
+              <form id="changepw-form" role="form" target="remember" action="blank">
                 <div class="modal-header">
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                   <h4 class="modal-title">New Password for <strong id="changepw-userfield"></strong>...</h4>
@@ -70,20 +70,21 @@
                 <div class="modal-body">
                   <div class="form-group">
                     <input id="changepw-username" type="text" class="hidden">
-                    <input id="newpassword" type="password" class="form-control" placeholder="Password" required>
+                    <input id="changepw-password" type="password" class="form-control" placeholder="Password" required>
                     <div id="pwstrength">
                       <div id="pwestimatedcracktime" class="pull-left"></div>
                       <div id="pwstrengthindicator" class="pull-right"></div>
                     </div>
                   </div>
                   <div class="form-group">
-                    <input id="newpassword-retype" type="password" class="form-control" placeholder="Retype Password" required>
+                    <input id="changepw-password-retype" type="password" class="form-control" placeholder="Retype Password" required>
                   </div>
                   <div id="pwstrengthtips"></div>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-primary">Change</button>
+                  <button id="changepw-btn" type="submit" class="btn btn-primary">Change</button>
+                  <button id="changepw-submit" type="submit" class="hidden"></button>
                 </div>
               </form>
             </div>
@@ -93,7 +94,7 @@
         <div id="admin-view">
 
           <div class="row" id="adduser-row">
-            <form id="adduserform" role="form">
+            <form id="adduser-form" role="form">
               <div class="col-md-2"></div>
               <div class="col-md-2">
                 <div class="btn-group btn-group-justified" data-toggle="buttons">
@@ -106,7 +107,7 @@
                 </div>
               </div>
               <div class="col-md-4">
-                <input id="addusername" type="text" class="form-control" placeholder="Username" required>
+                <input id="adduser-name" type="text" class="form-control" placeholder="Username" required>
               </div>
               <div class="col-md-2">
                 <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;&nbsp;Add</button>

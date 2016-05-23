@@ -2,7 +2,7 @@ body {
   background-color: #eee;
 }
 
-#loginbox, #mainwindow {
+#login-box, #mainwindow {
   display: none;
 }
 

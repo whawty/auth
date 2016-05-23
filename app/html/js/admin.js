@@ -19,12 +19,12 @@ alertbox.success = function (dest, heading, message) {
   $('#' + dest + ' .alertbox').html('<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
 }
 
+
 /*
  *
  * Login
  *
  */
-
 var auth_username = null;
 var auth_admin = false;
 var auth_lastchanged = new Date();
@@ -124,12 +124,12 @@ function auth_cleanup() {
   $("#login-password").val('');
 }
 
+
 /*
  *
  * Main: admin view
  *
  */
-
 function main_updateSuccess(data) {
   if(data.username == auth_username) {
     $("#changepw-submit").click(); // tell browser to update it's password store, but only if it is ours...
@@ -275,12 +275,12 @@ function main_adminViewInit() {
   main_updateUserlist();
 }
 
+
 /*
  *
  * Main: user view
  *
  */
-
 function main_userUpdateSuccess(data) {
   $("#changepw-submit").click(); // tell browser to update it's password store
   alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
@@ -306,6 +306,7 @@ function main_userViewInit() {
     $("#changepw-modal").modal('show');
   });
 }
+
 
 /*
  *

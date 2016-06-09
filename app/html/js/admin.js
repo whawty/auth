@@ -78,7 +78,9 @@ function auth_logout() {
   $("#mainwindow").fadeOut();
   $('#username-field').text('');
   $('#role-field').text('');
-  $('#login-box').slideDown();
+  $('#login-box').slideDown(function() {
+    $("#login-username").focus();
+  });
 }
 
 function auth_init() {
@@ -120,7 +122,7 @@ function auth_cleanup() {
   auth_lastchanged = null;
   auth_session = null;
 
-  $("#login-username").val('').focus();
+  $("#login-username").val('');
   $("#login-password").val('');
 }
 

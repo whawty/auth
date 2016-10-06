@@ -40,14 +40,29 @@ A whawty.auth agent may upgrade the hashing algorithm to an other (newer/stronge
 format during authentication.
 However if an agent supports this it must be possible to disable upgrades.
 
-The contents of the files depend on the hashing algorithm but use the following
-header:
+## File Format
+
+The first line of the file contains the password hash which has the following format:
 
     <format-identifier>:<last-change>:<format specific string>
 
 `format-identifier` is a unique identifier for the hashing format. This id must
 not include a `:`. `last-change` is a unix time stamp and represents the last
 date/time when the password has been modified.
+
+The contents of the following lines are reserved for auxiliary data organized
+as key value pairs. A file may contain 0 or more lines of axiliary data each of
+which start with a unique identifier:
+
+    <identifier>: <base64(data)>
+
+`identifier` must not contain a `:` and must be unique (see table below). For now
+aux-data is only used for 2/multi-factor authentication schemes but might be used
+for other purposes as well. The values are base64 encoded and besides this encoding
+shouldn't be mangled with by a whawty.auth agent.
+
+
+## Hashing formats
 
 For now the only supported algorithm is scrypt inside hmac-sha256 which has the
 following structure:
@@ -68,3 +83,11 @@ soft upgrades of passwords. This algorithm needs the following parameters:
 function:
 
     hmac_sha256(scrypt(user_password, salt, N, r, p), server_key)
+
+
+## Axuiliary Data
+
+| Identifier | Description                                  |
+|------------|----------------------------------------------|
+| `u2f`      | FIDO Universal 2nd Factor Token              |
+| `totp`     | Timebased One-Time Password Token (RFC6238)  |

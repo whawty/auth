@@ -56,7 +56,6 @@ type initRequest struct {
 }
 
 type checkResult struct {
-	ok  bool
 	err error
 }
 
@@ -373,14 +372,14 @@ func (s *StoreChan) Init(username, password string) error {
 	return res.err
 }
 
-func (s *StoreChan) Check() (bool, error) {
+func (s *StoreChan) Check() error {
 	resCh := make(chan checkResult)
 	req := checkRequest{}
 	req.response = resCh
 	s.checkChan <- req
 
 	res := <-resCh
-	return res.ok, res.err
+	return res.err
 }
 
 func (s *StoreChan) Add(username, password string, isAdmin bool) error {

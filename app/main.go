@@ -117,12 +117,9 @@ func cmdCheck(c *cli.Context) error {
 		return cli.NewExitError(fmt.Sprintf("Error opening whawty store: %s", err), 3)
 	}
 
-	if ok, err := s.GetInterface().Check(); err != nil {
+	if err := s.GetInterface().Check(); err != nil {
 		return cli.NewExitError(fmt.Sprintf("Error checking whawty store: %s", err), 3)
-	} else if !ok {
-		return cli.NewExitError(fmt.Sprintf("whawty store is invalid!"), 1)
 	}
-
 	return cli.NewExitError(fmt.Sprintf("whawty store is ok!"), 0)
 }
 
@@ -137,10 +134,8 @@ func openAndCheck(c *cli.Context) (*Store, error) {
 		return s, nil
 	}
 
-	if ok, err := s.GetInterface().Check(); err != nil {
+	if err := s.GetInterface().Check(); err != nil {
 		return nil, fmt.Errorf("Error checking whawty store: %s", err)
-	} else if !ok {
-		return nil, fmt.Errorf("Error whawty store is invalid!")
 	}
 	return s, nil
 }

@@ -37,6 +37,7 @@
 package store
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -93,6 +94,25 @@ func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d.Scryptauth.Contexts = make(map[uint]*scryptauth.Context)
 	err = d.fromConfig(configfile)
 	return
+}
+
+// makeDefaultContext() initialized a store with a default context of
+//  id 1 and a cryptographically-random, 256 bits HMAC key.
+func (dir *Dir) makeDefaultContext() error {
+	if _, ctxExists := dir.Scryptauth.Contexts[dir.Scryptauth.DefaultCtxID]; ctxExists {
+		return fmt.Errorf("whawty.auth.store: the store already has a default context")
+	}
+
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return err
+	}
+
+	dir.Scryptauth.DefaultCtxID = 1
+	ctx, _ := scryptauth.New(14, b)
+	dir.Scryptauth.Contexts[dir.Scryptauth.DefaultCtxID] = ctx
+	return nil
 }
 
 func openDir(path string) (*os.File, error) {

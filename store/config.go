@@ -68,7 +68,7 @@ func readConfig(configfile string) (*config, error) {
 
 	jsondata, err := ioutil.ReadAll(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error opening store config file: %v", err)
 	}
 
 	c := &config{}

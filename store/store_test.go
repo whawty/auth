@@ -199,7 +199,7 @@ func TestInitDir(t *testing.T) {
 func TestCheckDir(t *testing.T) {
 	store := NewDir(testBaseDir)
 
-	if ok, err := store.Check(); err == nil && ok == true {
+	if err := store.Check(); err == nil {
 		t.Fatalf("check should return an error for not existing directory")
 	}
 
@@ -209,7 +209,7 @@ func TestCheckDir(t *testing.T) {
 		file.Close()
 	}
 
-	if ok, err := store.Check(); err == nil && ok == true {
+	if err := store.Check(); err == nil {
 		t.Fatalf("check should return an error if path is not a directory")
 	}
 
@@ -221,7 +221,7 @@ func TestCheckDir(t *testing.T) {
 	}
 	defer os.RemoveAll(testBaseDir)
 
-	if ok, err := store.Check(); err == nil && ok == true {
+	if err := store.Check(); err == nil {
 		t.Fatalf("check should return an error if directory is not accessable")
 	}
 
@@ -229,7 +229,7 @@ func TestCheckDir(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 
-	if ok, err := store.Check(); err == nil && ok == true {
+	if err := store.Check(); err == nil {
 		t.Fatalf("check should return an error for an empty directory")
 	}
 
@@ -242,7 +242,7 @@ func TestCheckDir(t *testing.T) {
 		t.Fatal("init should succeed on an empty directory:", err)
 	}
 
-	if ok, err := store.Check(); err != nil || ok != true {
+	if err := store.Check(); err != nil {
 		t.Fatal("check should succeed in a freshly-created base:", err)
 	}
 
@@ -250,7 +250,7 @@ func TestCheckDir(t *testing.T) {
 		t.Fatal("Unexpected error:", err)
 	}
 
-	if ok, err := store.Check(); err != nil || ok != true {
+	if err := store.Check(); err != nil {
 		t.Fatal("check should succeed without .tmp/:", err)
 	}
 

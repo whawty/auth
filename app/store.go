@@ -160,10 +160,7 @@ func (s *Store) reload() {
 		wl.Printf("store: reload failed: %v, keeping current configuration", err)
 		return
 	}
-	if ok, err := newdir.Check(); err != nil || !ok {
-		if err == nil {
-			err = errors.New("this is not a valid store")
-		}
+	if err := newdir.Check(); err != nil {
 		wl.Printf("store: reload failed: %v, keeping current configuration", err)
 		return
 	}
@@ -187,7 +184,7 @@ func (s *Store) init(username, password string) (result initResult) {
 }
 
 func (s *Store) check() (result checkResult) {
-	result.ok, result.err = s.dir.Check()
+	result.err = s.dir.Check()
 	return
 }
 

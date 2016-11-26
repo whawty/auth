@@ -309,18 +309,14 @@ func (d *Dir) Init(admin, password string) error {
 }
 
 // Check tests if the directory is a valid whawty.auth base directory.
-func (d *Dir) Check() (ok bool, err error) {
+func (d *Dir) Check() error {
 	dir, err := openDir(d.BaseDir)
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer dir.Close()
 
-	if err := checkSupportedAdminHashes(dir); err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return checkSupportedAdminHashes(dir)
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.

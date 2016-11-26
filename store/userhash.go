@@ -32,9 +32,9 @@
 package store
 
 import (
+	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -68,8 +68,10 @@ func readHashStr(filename string) (string, time.Time, string, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
+	reader := bufio.NewReader(file)
+
+	data, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
 		return "", time.Unix(0, 0), "", err
 	}
 

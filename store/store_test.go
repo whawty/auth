@@ -180,6 +180,10 @@ func TestInitDir(t *testing.T) {
 	if err := store.Init(adminuser, password); err != nil {
 		t.Fatalf("unexpected error")
 	}
+
+	if exists, err := fileExists(filepath.Join(testBaseDir, ".tmp")); err != nil || exists != true {
+		t.Fatalf("A freshly-created base should contain .tmp")
+	}
 }
 
 func TestCheckDir(t *testing.T) {

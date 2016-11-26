@@ -9,7 +9,7 @@ addons:
     packages:
       - libpam0g-dev
 
-sudo: required
+sudo: False
 dist: trusty
 
 install:

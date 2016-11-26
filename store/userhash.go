@@ -175,12 +175,9 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 		return err
 	}
 
-	// Create a reader for the original file
-	reader := bufio.NewReader(file)
-
-	// Skip the first line
-	_, err = reader.ReadString('\n')
-	if err != nil && err != io.EOF {
+	// Get a reader for the user data
+	reader, err := rawUserDataReader(file)
+	if err != nil {
 		return err
 	}
 

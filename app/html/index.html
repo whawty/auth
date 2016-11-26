@@ -70,20 +70,20 @@
                 <div class="modal-body">
                   <div class="form-group">
                     <input id="changepw-username" type="text" class="hidden">
-                    <input id="changepw-password" type="password" class="form-control" placeholder="Password" required>
+                    <input id="changepw-password" type="password" tabindex="1" class="form-control" placeholder="Password" required>
                     <div id="pwstrength">
                       <div id="pwestimatedcracktime" class="pull-left"></div>
                       <div id="pwstrengthindicator" class="pull-right"></div>
                     </div>
                   </div>
                   <div class="form-group">
-                    <input id="changepw-password-retype" type="password" class="form-control" placeholder="Retype Password" required>
+                    <input id="changepw-password-retype" type="password" tabindex="2" class="form-control" placeholder="Retype Password" required>
                   </div>
                   <div id="pwstrengthtips"></div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                  <button id="changepw-btn" type="submit" class="btn btn-primary">Change</button>
+                  <button type="button" tabindex="4" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                  <button id="changepw-btn" type="button" tabindex="3" class="btn btn-primary">Change</button>
                   <button id="changepw-submit" type="submit" class="hidden"></button>
                 </div>
               </form>

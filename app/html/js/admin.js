@@ -81,6 +81,8 @@ function auth_logout() {
   $('#login-box').slideDown(function() {
     $("#login-username").focus();
   });
+
+  window.location.replace("/"); // make chrome use newly changed passwords..
 }
 
 function auth_init() {
@@ -251,13 +253,13 @@ function main_setupAddButton() {
     $('#changepw-username').val(''); // we don't want the browser to add this user to it's password store...
     $("#changepw-btn").click(function(event) {
       var newpassword = $("#changepw-password").val();
-      var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin });
-      $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError);
-      $("#changepw-modal").modal('hide');
       $("#adduser-name").val('');
       $('#changepw-userfield').text('');
       $("#changepw-password").val(''); // we don't want the browser to add this user to it's password store...
       $("#changepw-password-retype").val('');
+      var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin });
+      $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError);
+      $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Add");
     $("#changepw-password").keypress(function(event) { overrideEnter(event); });

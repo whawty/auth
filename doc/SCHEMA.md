@@ -18,7 +18,7 @@ Normal users may only update their own password.
 However this mechanism is not intended as a replacement for a real authorisation
 database but should only be used by management interfaces of a whawty.auth agent.
 You may want to take a look at [whawty.groups](https://github.com/whawty/groups)
-if you need an authorisation databsase.
+if you need an authorisation database.
 
 The directory must not contain any other files. A valid whawty.auth base
 directory contains at least one admin file which uses a supported hashing
@@ -48,7 +48,7 @@ The first line of the file contains the password hash which has the following fo
     <format-identifier>:<last-change>:<format specific string>
 
 `format-identifier` is a unique identifier for the hashing format. This id must
-not include a `:`. `last-change` is a unix time stamp and represents the last
+not include a `:`. `last-change` is a UNIX time stamp and represents the last
 date/time when the password has been modified.
 
 The rest of the file (first line excluded) is reserved for auxiliary data.
@@ -96,4 +96,4 @@ shouldn't be mangled with by a whawty.auth agent.
 | Identifier | Description                                  |
 |------------|----------------------------------------------|
 | `u2f`      | FIDO Universal 2nd Factor Token              |
-| `totp`     | Timebased One-Time Password Token (RFC6238)  |
+| `totp`     | Time-based One-Time Password Token (RFC6238) |

@@ -14,7 +14,7 @@ This socket is also used by the **PAM** module which can be used to bring whawty
 
 The whawty.auth app can be configured to automatically do upgrades to newer hash algorithms when a user logs
 in. This way it is possible to smoothly upgrade to newer/stronger hashing formats. The app also supports
-synchronisation between multiple hosts. A sample setup for this can be found [here](app/sync/README.md).
+synchronization between multiple hosts. A sample setup for this can be found [here](app/sync/README.md).
 
 ## golang API
 

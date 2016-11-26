@@ -1,13 +1,13 @@
 # whawty.auth store sync
 
-As the whawty.auth store is just a simple directory you may synchronise multiple
+As the whawty.auth store is just a simple directory you may synchronize multiple
 instances using rsync. One way to do this is documented here.
 
 ## Introduction
 
-The synchronisation is based on a simple master slave system. The master host is an app
+The synchronization is based on a simple master slave system. The master host is an app
 running on one machine which might be configured to do local upgrades (see below). One or
-more slaves use systemd.timer, rsync and ssh to synchronise the local file store with
+more slaves use systemd.timer, rsync and ssh to synchronize the local file store with
 the one on the (remote) master host.
 
 ### context upgrades
@@ -16,7 +16,7 @@ The whawty.auth app can be configured to automatically upgrade passwords hashes 
 authenticate against it. For this to work the storage backend compares the current default
 hashing format and default `context-id`, as set by the store configuration, with the one which
 was used to generate the current hash. If the format or `context-id`'s differ it marks the
-hash as upgradeable. After a successful authentication the app now does one of the following:
+hash as upgrade-able. After a successful authentication the app now does one of the following:
 
 - **do nothing:** no upgrade will be done, the hash files will stay untouched
 - **local upgrades:** do an update operation on the local store
@@ -82,16 +82,16 @@ hashes from the master using the following command:
 
     # sudo -u whawty-auth rsync -rlptv --delete -e ssh whawty-auth-master::store /var/lib/whawty/auth/store
 
-On the first connection you will get asked to accept the ssh fingreprint of the master. If you run
-the command a second time no errors/warnings shoulb be shown.
-After that you can enable the synchronisation by copying the files `whawty-auth-sync.service` and
+On the first connection you will get asked to accept the ssh fingerprint of the master. If you run
+the command a second time no errors/warnings should be shown.
+After that you can enable the synchronization by copying the files `whawty-auth-sync.service` and
 `whawty-auth-sync.timer` to `/etc/systemd/system` and enabling the timer using the following commands:
 
     # systemctl daemon-reload
     # systemctl enable whawty-auth-sync.timer
     # systemctl start whawty-auth-sync.timer
 
-If you also want to have automatic `context-id` upgrades on succesfull logins you need to configure the
+If you also want to have automatic `context-id` upgrades on successful logins you need to configure the
 slave to do remote upgrades using the the following as an argument to the `--do-upgrades` command line option:
 
     https://whawty-auth-master.example.com/api/update

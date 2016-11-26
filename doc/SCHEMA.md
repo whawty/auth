@@ -51,7 +51,7 @@ not include a `:`. `last-change` is a unix time stamp and represents the last
 date/time when the password has been modified.
 
 The contents of the following lines are reserved for auxiliary data organized
-as key value pairs. A file may contain 0 or more lines of axiliary data each of
+as key value pairs. A file may contain 0 or more lines of auxiliary data each of
 which start with a unique identifier:
 
     <identifier>: <base64(data)>
@@ -85,7 +85,7 @@ function:
     hmac_sha256(scrypt(user_password, salt, N, r, p), server_key)
 
 
-## Axuiliary Data
+## Auxiliary Data
 
 | Identifier | Description                                  |
 |------------|----------------------------------------------|

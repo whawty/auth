@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/whawty/auth.svg?branch=master)](https://travis-ci.org/whawty/auth)
 
-whawty.auth is a simple file based authentication suite. The **store** uses flat files containing password hashes. These
+whawty.auth is a simple file based authentication suite. It's **store** uses flat files containing password hashes. These
 hashes are currently based on scrypt but the algorithm can be upgraded to newer/stronger formats on the fly.
 To find out more about the storage backend read [this file](doc/SCHEMA.md).
 

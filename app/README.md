@@ -13,6 +13,7 @@ You can install & build the latest development version using `go get`:
 
 ```
 $ mkdir whawty-auth
+$ cd whawty-auth
 $ GOPATH=`pwd` go get github.com/whawty/auth/app
 $ ./bin/app --help
 ```

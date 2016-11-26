@@ -218,6 +218,28 @@ func TestCheckDir(t *testing.T) {
 	if ok, err := store.Check(); err == nil && ok == true {
 		t.Fatalf("check should return an error for an empty directory")
 	}
+
+	// Initialize the store's context
+	store.Scryptauth.DefaultCtxID = 1
+	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+	store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID] = ctx
+
+	if err := store.Init("admin", "admin"); err != nil {
+		t.Fatal("init should succeed on an empty directory:", err)
+	}
+
+	if ok, err := store.Check(); err != nil || ok != true {
+		t.Fatal("check should succeed in a freshly-created base:", err)
+	}
+
+	if err := os.RemoveAll(filepath.Join(testBaseDir, ".tmp")); err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+
+	if ok, err := store.Check(); err != nil || ok != true {
+		t.Fatal("check should succeed without .tmp/:", err)
+	}
+
 	// TODO: add more tests
 }
 

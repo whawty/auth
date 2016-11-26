@@ -11,6 +11,15 @@ and normal user.
       equinox.user          ; password hash for user equinox
       fredl.user            ; password hash for user fredl
 
+The difference between admins and normal users is that admin users are
+allowed to add new users. Also granting admin privileges to normal users
+may only be done by admins. An admin is also allowed to change any password.
+Normal users may only update their own password.
+However this mechanism is not intended as a replacement for a real authorisation
+database but should only be used by management interfaces of a whawty.auth agent.
+You may want to take a look at [whawty.groups](https://github.com/whawty/groups)
+if you need an authorisation database.
+
 The directory must not contain any other files. A valid whawty.auth base
 directory contains at least one admin file which uses a supported hashing
 format.
@@ -27,18 +36,10 @@ to act according to the following rules:
 
 Usernames must only contain the following characters: `[-_.@A-Za-z0-9]`
 
-The difference between admins and normal users is that admin users are
-allowed to add new users. Also granting admin privileges to normal users
-may only be done by admins. An admin is also allowed to change any password.
-Normal users may only update their own password.
-However this mechanism is not intended as a replacement for a real authorisation
-database but should only be used by management interfaces of a whawty.auth agent.
-You may want to take a look at [whawty.groups](https://github.com/whawty/groups)
-if you need an authorisation databsase.
-
 A whawty.auth agent may upgrade the hashing algorithm to an other (newer/stronger)
 format during authentication.
 However if an agent supports this it must be possible to disable upgrades.
+
 
 ## File Format
 
@@ -47,19 +48,10 @@ The first line of the file contains the password hash which has the following fo
     <format-identifier>:<last-change>:<format specific string>
 
 `format-identifier` is a unique identifier for the hashing format. This id must
-not include a `:`. `last-change` is a unix time stamp and represents the last
+not include a `:`. `last-change` is a UNIX time stamp and represents the last
 date/time when the password has been modified.
 
-The contents of the following lines are reserved for auxiliary data organized
-as key value pairs. A file may contain 0 or more lines of auxiliary data each of
-which start with a unique identifier:
-
-    <identifier>: <base64(data)>
-
-`identifier` must not contain a `:` and must be unique (see table below). For now
-aux-data is only used for 2/multi-factor authentication schemes but might be used
-for other purposes as well. The values are base64 encoded and besides this encoding
-shouldn't be mangled with by a whawty.auth agent.
+The rest of the file (first line excluded) is reserved for auxiliary data.
 
 
 ## Hashing formats
@@ -87,7 +79,21 @@ function:
 
 ## Auxiliary Data
 
+The auxiliary data associated to a user is stored in the user's file, after the
+first line.  It is organized as key value pairs.
+
+A file may contain 0 or more lines of auxiliary data,
+each of which starts with a unique identifier:
+
+    <identifier>: <base64(data)>
+
+`identifier` must not contain a `:` and must be unique (see table below). For now
+aux-data is only used for 2/multi-factor authentication schemes but might be used
+for other purposes as well. The values are base64 encoded and besides this encoding
+shouldn't be mangled with by a whawty.auth agent.
+
+
 | Identifier | Description                                  |
 |------------|----------------------------------------------|
 | `u2f`      | FIDO Universal 2nd Factor Token              |
-| `totp`     | Timebased One-Time Password Token (RFC6238)  |
+| `totp`     | Time-based One-Time Password Token (RFC6238) |

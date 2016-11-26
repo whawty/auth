@@ -238,10 +238,9 @@ function main_addSuccess(data) {
 }
 
 function main_setupAddButton() {
-  $("#addusername").val('');
   $("#adduser-form").submit(function(event) {
     event.preventDefault();
-    var user = $("#addusername").val();
+    var user = $("#adduser-name").val();
     var admin = false;
     if ( $('input[name="addrole"]:checked').val()  == "admin") {
       admin = true;
@@ -255,7 +254,7 @@ function main_setupAddButton() {
       var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin });
       $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
-      $("#addusername").val('');
+      $("#adduser-name").val('');
       $('#changepw-userfield').text('');
       $("#changepw-password").val(''); // we don't want the browser to add this user to it's password store...
       $("#changepw-password-retype").val('');

@@ -59,6 +59,7 @@ var (
 const (
 	adminExt string = ".admin"
 	userExt  string = ".user"
+	tmpDir   string = ".tmp"
 )
 
 func init() {
@@ -117,7 +118,7 @@ func openDir(path string) (*os.File, error) {
 // getTempFile provides a new, empty file in the base's .tmp directory,
 //  suitable for atomic file updates (by create/write/rename)
 func (dir *Dir) getTempFile() (tmp *os.File, err error) {
-	tmpDir := path.Join(dir.BaseDir, ".tmp")
+	tmpDir := path.Join(dir.BaseDir, tmpDir)
 	err = os.MkdirAll(tmpDir, 0700)
 	if err != nil {
 		return nil, err
@@ -211,7 +212,7 @@ func listSupportedUsers(dir *os.File, list UserList) error {
 
 		for _, name := range names {
 			// Skip the '.tmp' directory
-			if name == ".tmp" {
+			if name == tmpDir {
 				continue
 			}
 

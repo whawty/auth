@@ -170,6 +170,11 @@ func hasSupportedAdminHashes(dir *os.File) (bool, error) {
 		}
 
 		for _, name := range names {
+			// Skip the '.tmp' directory
+			if name == tmpDir {
+				continue
+			}
+
 			valid, user, isAdmin, err := checkUserFile(name)
 			if err != nil {
 				return false, err
@@ -254,6 +259,11 @@ func listAllUsers(dir *os.File, list UserListFull) error {
 		}
 
 		for _, name := range names {
+			// Skip the '.tmp' directory
+			if name == tmpDir {
+				continue
+			}
+
 			var user UserFull
 			var err error
 			var username string

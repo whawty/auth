@@ -85,21 +85,23 @@ function:
 
 ## Auxiliary Data
 
-The auxiliary data associated to a user is stored in the user's file, after the
-first line.  It is organized as key value pairs.
+The auxiliary data associated to a user is stored in the user's file,
+after the first line, and is separated from the password line using the
+YAML document deparator: a single line containing (only) `---`.
 
-A file may contain 0 or more lines of auxiliary data,
-each of which starts with a unique identifier:
-
-    <identifier>: <base64(data)>
-
-`identifier` must not contain a `:` and must be unique (see table below). For now
-aux-data is only used for 2/multi-factor authentication schemes but might be used
-for other purposes as well. The values are base64 encoded and besides this encoding
-shouldn't be mangled with by a whawty.auth agent.
+It is comprised of a single YAML document: an associative array whose
+only valid keys (at the toplevel) are listed in the following registry.
+Each key corresponds to a so-called “extension”, which must document
+its intended use, semantics and (YAML) data format.  The data format
+should be documented as a [JSON Schema] and the schema used for data
+validation.
 
 
-| Identifier | Description                                  |
-|------------|----------------------------------------------|
-| `u2f`      | FIDO Universal 2nd Factor Token              |
-| `totp`     | Time-based One-Time Password Token (RFC6238) |
+| Extension  | Description               |
+|------------|---------------------------|
+| `2fa`      | 2nd Factor Authentication |
+| `ssh`      | SSH public keys for user  |
+| `unix`     | Metadata for UNIX users   |
+
+
+[JSON Schema]: http://json-schema.org/

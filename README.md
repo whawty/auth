@@ -26,7 +26,7 @@ synchronisation between multiple hosts. A sample setup for this can be found [he
 
 [![GoDoc](https://godoc.org/github.com/whawty/auth/sasl?status.svg)](https://godoc.org/github.com/whawty/auth/sasl)
 
-## Licence
+## License
 
     3-clause BSD
 
@@ -34,4 +34,4 @@ synchronisation between multiple hosts. A sample setup for this can be found [he
     © 2016 Markus Grüneis <gimpf@gimpf.org>
 
     whawty.auth makes use of zxcvbn from https://github.com/dropbox/zxcvbn.
-    The licence of zxcvbn can be found in the file LICENSE.zxcvbn
+    The license of zxcvbn can be found in the file LICENSE.zxcvbn

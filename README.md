@@ -2,13 +2,13 @@
 
 [![Build Status](https://travis-ci.org/whawty/auth.svg?branch=master)](https://travis-ci.org/whawty/auth)
 
-whawty.auth is a simple file based authentication suite. It's **store** uses flat files containing password hashes. These
+whawty.auth is a simple file based authentication suite. Its **store** uses flat files containing password hashes. These
 hashes are currently based on scrypt but the algorithm can be upgraded to newer/stronger formats on the fly.
 To find out more about the storage backend read [this file](doc/SCHEMA.md).
 
 This repository contains a golang **app** which can act as a whawty.auth agent. You can use this app to manage
-usernames using a simple web UI.
-Install instructions can be found [here](app/README.md)
+users using a simple web UI.
+Install instructions can be found [here](app/README.md).
 It also offers a **saslauthd** compatible unix socket to authenticate against it.
 This socket is also used by the **PAM** module which can be used to bring whawty.auth to PAM applications.
 

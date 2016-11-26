@@ -7,7 +7,10 @@ fi
 
 HMAC_KEY=`dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64`
 
-echo '{ "ID": '$1', "hmackey": "'$HMAC_KEY'", "pwcost": '$2' }'
+echo "    - id: $1"
+echo "      hmackey: \"$HMAC_KEY\""
+echo "      pwcost: $2"
+
 
 exit 0
 

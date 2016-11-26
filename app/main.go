@@ -449,7 +449,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "store",
-			Value:  "/etc/whawty/auth-store.json",
+			Value:  "/etc/whawty/auth-store.yaml",
 			Usage:  "path to the store configuration file",
 			EnvVar: "WHAWTY_AUTH_STORE_CONFIG",
 		},

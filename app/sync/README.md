@@ -101,7 +101,7 @@ slave to do remote upgrades using the the following as an argument to the `--do-
 
 In order to create a new context for the store backend you have to generate it. This can be done using the
 script `gen-auth-context.sh`. You have to specify a `context-id` and a `pwcost` parameter for this context.
-The script will print the new context to STDOUT. Add this line to the auth-store.json config.
+The script will print the new context to STDOUT. Add this line to the auth-store.yaml config.
 At first add the new context to all the slaves' store configurations. Also don't forget to set the default
 context parameter in the config to the new `context-id`. You need to reload the whawty.auth app store config
 using SIGHUP for the changes to take effect.

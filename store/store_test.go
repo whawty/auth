@@ -48,43 +48,86 @@ var (
 )
 
 func TestNewDirFromConfig(t *testing.T) {
-	jsonData := []struct {
+	yamlData := []struct {
 		s     string
 		valid bool
 	}{
 		{"", false},
-		{"{}", false},
-		{`{ "BaseDir": "/tmp" }`, true},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 0 } }`, true},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17 } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 0, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 13, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 17, "hmackey": "", "pwcost": 12 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 17, "hmackey": "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA==", "pwcost": 12 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 17, "hmackey": "$$invalid§§", "pwcost": 12 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 33 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 0, "contexts": [
-         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14 }
-     ] } }`, false},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 }
-     ] } }`, true},
-		{`{ "BaseDir": "/tmp", "scryptauth": { "defaultctx": 17, "contexts": [
-         { "ID": 17, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 12 },
-         { "ID": 18, "hmackey": "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI=", "pwcost": 14, "p": 7, "r": 2 }
-     ] } }`, true},
+		{`basedir: "/tmp"`, true},
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 0`, true},
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17`, false}, // default ctx is set to 17 but it does not exist
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 0
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 12`, false}, // default ctx is set to 17 but does not exist, also context id 0 is invalid
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 13
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 12`, false}, // default ctx is set to 17 but does not exist
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 17
+      hmackey: ""
+      pwcost: 12`, false}, // HMAC Key is empty
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 17
+      hmackey: "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA=="
+      pwcost: 12`, false}, // HMAC Key is too short
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 17
+      hmackey: "$$invalid§§"
+      pwcost: 12`, false}, // invalid HMAC Key
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 17
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 33`, false}, // invalid PW-Cost parameter
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 0
+  contexts:
+    - id: 17
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 14`, false}, // no default context but there is at least one context defined
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 17
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 12`, true},
+		{`basedir: "/tmp"
+scryptauth:
+  defaultctx: 17
+  contexts:
+    - id: 17
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 12
+    - id: 18
+      hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
+      pwcost: 14
+      p: 7
+      r: 2`, true},
 	}
 
 	file, err := ioutil.TempFile("", "whawty-auth-config")
@@ -94,24 +137,24 @@ func TestNewDirFromConfig(t *testing.T) {
 	defer file.Close()
 	defer os.Remove(file.Name())
 
-	for _, json := range jsonData {
+	for _, yaml := range yamlData {
 		if _, err := file.Seek(0, 0); err != nil {
 			t.Fatal("unexpected error:", err)
 		}
 		if err := file.Truncate(0); err != nil {
 			t.Fatal("unexpected error:", err)
 		}
-		if _, err := file.WriteString(json.s); err != nil {
+		if _, err := file.WriteString(yaml.s); err != nil {
 			t.Fatal("unexpected error:", err)
 		}
 
-		if json.valid {
+		if yaml.valid {
 			if _, err := NewDirFromConfig(file.Name()); err != nil {
-				t.Fatalf("NewDirFromConfig returned an unexpected error for '%s': %s", json.s, err)
+				t.Fatalf("NewDirFromConfig returned an unexpected error for '%s': %s", yaml.s, err)
 			}
 		} else {
 			if _, err := NewDirFromConfig(file.Name()); err == nil {
-				t.Fatalf("NewDirFromConfig didn't return with an error for '%s'", json.s)
+				t.Fatalf("NewDirFromConfig didn't return with an error for '%s'", yaml.s)
 			}
 		}
 	}

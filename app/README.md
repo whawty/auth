@@ -23,7 +23,7 @@ This will create a `app` binary in the `bin` folder, which corresponds to the `w
 Since *go get* won't copy static files, you need to specify their location in case you want to run the web app:
 
 ```
-./bin/app --web-static-dir ./src/github.com/whawty/auth/app/html --store ./auth-store-config.json run --web-addr :4242
+./bin/app --web-static-dir ./src/github.com/whawty/auth/app/html --store ./auth-store-config.yaml run --web-addr :4242
 ```
 
 

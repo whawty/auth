@@ -37,8 +37,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 const (
@@ -120,6 +118,18 @@ func TestNewDirFromConfig(t *testing.T) {
 	}
 }
 
+func TestMakeDefaultContext(t *testing.T) {
+	store := NewDir(testBaseDir)
+
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatalf("makeDefaultContext() failed:", err)
+	}
+
+	if err := store.makeDefaultContext(); err == nil {
+		t.Fatal("makeDefaultContext() should fail on initialized contexts")
+	}
+}
+
 func TestInitDir(t *testing.T) {
 	adminuser := "root"
 	password := "verysecret"
@@ -173,9 +183,9 @@ func TestInitDir(t *testing.T) {
 		t.Fatalf("Initializing a directory without a context should give an error")
 	}
 
-	store.Scryptauth.DefaultCtxID = 1
-	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID] = ctx
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
 
 	if err := store.Init(adminuser, password); err != nil {
 		t.Fatalf("unexpected error")
@@ -224,9 +234,9 @@ func TestCheckDir(t *testing.T) {
 	}
 
 	// Initialize the store's context
-	store.Scryptauth.DefaultCtxID = 1
-	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID] = ctx
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
 
 	if err := store.Init("admin", "admin"); err != nil {
 		t.Fatal("init should succeed on an empty directory:", err)
@@ -266,9 +276,9 @@ func TestList(t *testing.T) {
 		t.Fatalf("list should return an empty user list for an empty directory")
 	}
 
-	store.Scryptauth.DefaultCtxID = 1
-	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID] = ctx
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
 
 	if err := store.Init(adminuser, password); err != nil {
 		t.Fatalf("unexpected error")
@@ -326,9 +336,11 @@ func TestMain(m *testing.M) {
 	}
 
 	testStoreUserHash = NewDir(testBaseDirUserHash)
-	testStoreUserHash.Scryptauth.DefaultCtxID = 1
-	ctx, _ := scryptauth.New(14, []byte("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-	testStoreUserHash.Scryptauth.Contexts[testStoreUserHash.Scryptauth.DefaultCtxID] = ctx
+
+	if err := testStoreUserHash.makeDefaultContext(); err != nil {
+		fmt.Println("Error initializing default context:", err)
+		os.Exit(-1)
+	}
 
 	ret := m.Run()
 

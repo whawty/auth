@@ -42,7 +42,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -118,7 +117,7 @@ func openDir(path string) (*os.File, error) {
 // getTempFile provides a new, empty file in the base's .tmp directory,
 //  suitable for atomic file updates (by create/write/rename)
 func (dir *Dir) getTempFile() (tmp *os.File, err error) {
-	tmpDir := path.Join(dir.BaseDir, tmpDir)
+	tmpDir := filepath.Join(dir.BaseDir, tmpDir)
 	err = os.MkdirAll(tmpDir, 0700)
 	if err != nil {
 		return nil, err

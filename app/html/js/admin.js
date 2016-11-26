@@ -239,7 +239,7 @@ function main_addSuccess(data) {
 
 function main_setupAddButton() {
   $("#addusername").val('');
-  $("#adduserform").submit(function(event) {
+  $("#adduser-form").submit(function(event) {
     event.preventDefault();
     var user = $("#addusername").val();
     var admin = false;

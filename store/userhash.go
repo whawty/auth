@@ -106,9 +106,14 @@ func isFormatSupportedFull(filename string) (supported bool, formatID string, la
 }
 
 // IsFormatSupported checks if the format of the hash file is supported
-func IsFormatSupported(filename string) (supported bool, err error) {
-	supported, _, _, _, err = isFormatSupportedFull(filename)
-	return
+func IsFormatSupported(filename string) error {
+	supported, format, _, _, err := isFormatSupportedFull(filename)
+
+	if err == nil && !supported {
+		return fmt.Errorf("'%s' is not a supported format", format)
+	}
+
+	return err
 }
 
 // UserHash is the representation of a single user hash file inside the store.
@@ -214,8 +219,8 @@ func (u *UserHash) Update(password string) error {
 		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
-	if ok, err := IsFormatSupported(u.getFilename(isAdmin)); err != nil || !ok {
-		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format")
+	if err := IsFormatSupported(u.getFilename(isAdmin)); err != nil {
+		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format", err)
 	}
 
 	return u.writeHashStr(password, isAdmin, false)

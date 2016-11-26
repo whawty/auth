@@ -210,7 +210,7 @@ func hasSupportedAdminHashes(dir *os.File) (bool, error) {
 				return false, fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
 			}
 
-			if ok, _ := IsFormatSupported(filepath.Join(dir.Name(), name)); ok {
+			if IsFormatSupported(filepath.Join(dir.Name(), name)) == nil  {
 				success = true
 			}
 		}

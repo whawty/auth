@@ -32,7 +32,7 @@ synchronisation between multiple hosts. A sample setup for this can be found [he
 
     © 2016 Christian Pointner <equinox@spreadspace.org>
     © 2016 Markus Grüneis <gimpf@gimpf.org>
-    © 2016 whawty contributors (see [AUTHORS](AUTHORS))
+    © 2016 whawty contributors (see AUTHORS file)
 
     whawty.auth makes use of zxcvbn from https://github.com/dropbox/zxcvbn.
     The license of zxcvbn can be found in the file LICENSE.zxcvbn

@@ -51,16 +51,7 @@ The first line of the file contains the password hash which has the following fo
 not include a `:`. `last-change` is a unix time stamp and represents the last
 date/time when the password has been modified.
 
-The contents of the following lines are reserved for auxiliary data organized
-as key value pairs. A file may contain 0 or more lines of auxiliary data each of
-which start with a unique identifier:
-
-    <identifier>: <base64(data)>
-
-`identifier` must not contain a `:` and must be unique (see table below). For now
-aux-data is only used for 2/multi-factor authentication schemes but might be used
-for other purposes as well. The values are base64 encoded and besides this encoding
-shouldn't be mangled with by a whawty.auth agent.
+The rest of the file (first line excluded) is reserved for auxiliary data.
 
 
 ## Hashing formats
@@ -87,6 +78,20 @@ function:
 
 
 ## Auxiliary Data
+
+The auxiliary data associated to a user is stored in the user's file, after the
+first line.  It is organized as key value pairs.
+
+A file may contain 0 or more lines of auxiliary data,
+each of which starts with a unique identifier:
+
+    <identifier>: <base64(data)>
+
+`identifier` must not contain a `:` and must be unique (see table below). For now
+aux-data is only used for 2/multi-factor authentication schemes but might be used
+for other purposes as well. The values are base64 encoded and besides this encoding
+shouldn't be mangled with by a whawty.auth agent.
+
 
 | Identifier | Description                                  |
 |------------|----------------------------------------------|

@@ -32,30 +32,30 @@ package store
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"gopkg.in/spreadspace/scryptauth.v2"
+	"gopkg.in/yaml.v2"
 )
 
 type cfgScryptauthCtx struct {
-	ID            uint   `json:"id"`
-	HmacKeyBase64 string `json:"hmackey"`
-	PwCost        uint   `json:"pwcost"`
-	R             int    `json:"r"`
-	P             int    `json:"p"`
+	ID            uint   `yaml:"id"`
+	HmacKeyBase64 string `yaml:"hmackey"`
+	PwCost        uint   `yaml:"pwcost"`
+	R             int    `yaml:"r"`
+	P             int    `yaml:"p"`
 }
 
 type cfgScryptauth struct {
-	DefaultCtx uint               `json:"defaultctx"`
-	Contexts   []cfgScryptauthCtx `json:"contexts"`
+	DefaultCtx uint               `yaml:"defaultctx"`
+	Contexts   []cfgScryptauthCtx `yaml:"contexts"`
 }
 
 type config struct {
-	BaseDir    string        `json:"BaseDir"`
-	Scryptauth cfgScryptauth `json:"scryptauth"`
+	BaseDir    string        `yaml:"basedir"`
+	Scryptauth cfgScryptauth `yaml:"scryptauth"`
 }
 
 func readConfig(configfile string) (*config, error) {
@@ -65,14 +65,14 @@ func readConfig(configfile string) (*config, error) {
 	}
 	defer file.Close()
 
-	jsondata, err := ioutil.ReadAll(file)
+	yamldata, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("Error opening store config file: %v", err)
 	}
 
 	c := &config{}
-	if jsonerr := json.Unmarshal(jsondata, c); jsonerr != nil {
-		return nil, fmt.Errorf("Error parsing config file: %s", jsonerr)
+	if yamlerr := yaml.Unmarshal(yamldata, c); yamlerr != nil {
+		return nil, fmt.Errorf("Error parsing config file: %s", yamlerr)
 	}
 	return c, nil
 }

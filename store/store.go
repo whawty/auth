@@ -88,7 +88,7 @@ func NewDir(BaseDir string) (d *Dir) {
 	return
 }
 
-// NewDirFromConfig creates a new whawty.auth store from json config file.
+// NewDirFromConfig creates a new whawty.auth store from yaml config file.
 func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d = &Dir{}
 	d.DefaultFormat = scryptauthFormatID

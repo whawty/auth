@@ -34,9 +34,9 @@ The following global options can be passed to *whawty-auth*.
 *-v | --version*::
     Print version information and exit.
 
-*--store* '</path/to/config.json>'::
+*--store* '</path/to/config.yaml>'::
     This sets the path to store configuration file. By default *whawty-auth* uses
-    the file '/etc/whawty/auth-store.json'. This may also be configured using
+    the file '/etc/whawty/auth-store.yaml'. This may also be configured using
     the environment variable 'WHAWTY_AUTH_STORE_CONFIG'. If both the environment variable
     and the command line option are supplied the latter is used.
 

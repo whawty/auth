@@ -4,7 +4,7 @@ WHAWTY_AUTH_STORE="/var/lib/whawty/auth/store"
 WHAWTY_AUTH_USER="whawty-auth"
 WHAWTY_AUTH_GROUP="whawty-auth"
 
-WHAWTY_AUTH_CONF="/etc/whawty/auth-store.json"
+WHAWTY_AUTH_CONF="/etc/whawty/auth-store.yaml"
 
 WHAWTY_AUTH_BIN="/usr/bin/whawty-auth"
 
@@ -20,15 +20,13 @@ WHAWTY_AUTH_CONF_DIR=`dirname "$WHAWTY_AUTH_CONF"`
 /bin/chown $WHAWTY_AUTH_USER:root "$WHAWTY_AUTH_CONF"
 /bin/chmod 400 "$WHAWTY_AUTH_CONF"
 /bin/cat <<EOF > "$WHAWTY_AUTH_CONF"
-{
-    "basedir": "$WHAWTY_AUTH_STORE",
-    "scryptauth": {
-        "defaultctx": 1,
-        "contexts": [
-            { "ID": 1, "hmackey": "$HMAC_KEY", "pwcost": 12 }
-        ]
-    }
-}
+basedir: "$WHAWTY_AUTH_STORE"
+scryptauth:
+  defaultctx: 1
+  contexts:
+    - id: 1
+      hmackey: "$HMAC_KEY"
+      pwcost: 12
 EOF
 
 /bin/mkdir -p "$WHAWTY_AUTH_STORE"

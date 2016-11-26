@@ -210,6 +210,11 @@ func listSupportedUsers(dir *os.File, list UserList) error {
 		}
 
 		for _, name := range names {
+			// Skip the '.tmp' directory
+			if name == ".tmp" {
+				continue
+			}
+
 			valid, user, isAdmin, err := checkUserFile(name)
 			if err != nil {
 				return err

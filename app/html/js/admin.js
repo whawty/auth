@@ -1,23 +1,23 @@
 'use strict';
 
 function admin_init() {
-  auth_init()
+  auth_init();
   main_enablePWChecks();
 }
 
-var alertbox = function() {}
+var alertbox = function() {};
 alertbox.warning = function (dest, heading, message) {
   $('#' + dest + ' .alertbox').html('<div class="alert alert-warning"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
-}
+};
 alertbox.error = function (dest, heading, message) {
   $('#' + dest + ' .alertbox').html('<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
-}
+};
 alertbox.info = function (dest, heading, message) {
   $('#' + dest + ' .alertbox').html('<div class="alert alert-info"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
-}
+};
 alertbox.success = function (dest, heading, message) {
   $('#' + dest + ' .alertbox').html('<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
-}
+};
 
 
 /*
@@ -137,21 +137,21 @@ function main_updateSuccess(data) {
     $("#changepw-submit").click(); // tell browser to update it's password store, but only if it is ours...
   }
   alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
-  main_updateUserlist()
+  main_updateUserlist();
 }
 
 function main_getUpdateButton(user) {
-  var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm")
-  btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Password')
+  var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm");
+  btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Password');
   return btn.click(function() {
-    main_cleanupPasswordModal()
+    main_cleanupPasswordModal();
 
     $('#changepw-userfield').text(user);
     $('#changepw-username').val(user); // tell the browser to update it's password store
     $("#changepw-btn").click(function(event) {
-      var newpassword = $("#changepw-password").val()
-      var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword })
-      $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError)
+      var newpassword = $("#changepw-password").val();
+      var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword });
+      $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");
@@ -163,29 +163,29 @@ function main_getUpdateButton(user) {
 
 function main_removeSuccess(data) {
   alertbox.success('mainwindow', "Remove User", "successfully removed user " + data.username);
-  main_updateUserlist()
+  main_updateUserlist();
 }
 
 function main_getRemoveButton(user) {
-  var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm")
+  var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm");
   btn.html('<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>&nbsp;&nbsp;Remove')
   return btn.click(function() {
-    var data = JSON.stringify({ session: auth_session, username: user })
-    $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError)
+    var data = JSON.stringify({ session: auth_session, username: user });
+    $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError);
   });
 }
 
 function main_setadminSuccess(data) {
-  main_updateUserlist()
+  main_updateUserlist();
 }
 
 function main_getSetAdminButton(user, oldstate) {
-  var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm")
+  var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm");
   btn.html('<span class="glyphicon glyphicon-random" aria-hidden="true"></span>&nbsp;&nbsp;Role')
   var newstate = !oldstate;
   return btn.click(function() {
-    var data = JSON.stringify({ session: auth_session, username: user, admin: newstate })
-    $.post("/api/set-admin", data, main_setadminSuccess, 'json').fail(main_reqError)
+    var data = JSON.stringify({ session: auth_session, username: user, admin: newstate });
+    $.post("/api/set-admin", data, main_setadminSuccess, 'json').fail(main_reqError);
   });
 }
 
@@ -234,26 +234,26 @@ function main_userlistSuccess(data) {
 function main_addSuccess(data) {
   // we don't want the browser to update it's password store -> don't submit the form!
   alertbox.success('mainwindow', "Add User", "successfully added user " + data.username);
-  main_updateUserlist()
+  main_updateUserlist();
 }
 
 function main_setupAddButton() {
-  $("#addusername").val('')
+  $("#addusername").val('');
   $("#adduserform").submit(function(event) {
     event.preventDefault();
-    var user = $("#addusername").val()
-    var admin = false
+    var user = $("#addusername").val();
+    var admin = false;
     if ( $('input[name="addrole"]:checked').val()  == "admin") {
       admin = true;
     }
-    main_cleanupPasswordModal()
+    main_cleanupPasswordModal();
 
     $('#changepw-userfield').text(user);
     $('#changepw-username').val(''); // we don't want the browser to add this user to it's password store...
     $("#changepw-btn").click(function(event) {
-      var newpassword = $("#changepw-password").val()
-      var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin })
-      $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError)
+      var newpassword = $("#changepw-password").val();
+      var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin });
+      $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
       $("#addusername").val('');
       $('#changepw-userfield').text('');
@@ -268,8 +268,8 @@ function main_setupAddButton() {
 }
 
 function main_updateUserlist() {
-  var data = JSON.stringify({ session: auth_session, })
-  $.post("/api/list-full", data, main_userlistSuccess, 'json').fail(main_reqError)
+  var data = JSON.stringify({ session: auth_session });
+  $.post("/api/list-full", data, main_userlistSuccess, 'json').fail(main_reqError);
 }
 
 function main_adminViewInit() {
@@ -292,14 +292,14 @@ function main_userViewInit() {
   $("#user-view .username").text(auth_username);
   $("#user-view .lastchange").text(getDateTimeString(auth_lastchanged));
   $('#user-view .btn').click(function() {
-    main_cleanupPasswordModal()
+    main_cleanupPasswordModal();
 
     $('#changepw-userfield').text(auth_username);
     $('#changepw-username').val(auth_username); // tell the browser to update it's password store
     $("#changepw-btn").click(function(event) {
-      var newpassword = $("#changepw-password").val()
-      var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword })
-      $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError)
+      var newpassword = $("#changepw-password").val();
+      var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword });
+      $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");
@@ -332,7 +332,7 @@ function getDateTimeString(d) {
   datetimestr += ' ' + Number(d.getHours()).pad(2);
   datetimestr += ':' + Number(d.getMinutes()).pad(2);
   datetimestr += ':' + Number(d.getSeconds()).pad(2);
-  return datetimestr
+  return datetimestr;
 }
 
 function overrideEnter(event, btn) {
@@ -370,7 +370,7 @@ function main_cleanupPasswordModal() {
   $("#changepw-password").trigger('input');
   $("#changepw-password").focus();
   $("#changepw-password-retype").parent().attr('class', 'form-group');
-  $("#changepw-password-retype").val('')
+  $("#changepw-password-retype").val('');
   $("#changepw-modal .alertbox").text('');
   $("#changepw-btn").off('click');
   $("#changepw-btn").prop('disabled', true);

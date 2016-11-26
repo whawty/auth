@@ -32,9 +32,9 @@
 package store
 
 import (
+	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -68,8 +68,10 @@ func readHashStr(filename string) (string, time.Time, string, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
+	reader := bufio.NewReader(file)
+
+	data, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
 		return "", time.Unix(0, 0), "", err
 	}
 
@@ -132,7 +134,7 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 	return filename + userExt
 }
 
-func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error {
+func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) error {
 	formatID := u.store.DefaultFormat
 
 	var hashStr string
@@ -147,14 +149,49 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, flags int) error 
 		return fmt.Errorf("whawty.auth.store: default hash file fromat ID '%s' is not supported", formatID)
 	}
 
+	// Set the flags based on whether we expect to create the file
+	// The file is opened read-only, since we write to a tmp file and atomically move it in place.
+	flags := os.O_RDONLY | os.O_EXCL
+	if mayCreate {
+		flags = flags | os.O_CREATE
+	}
+
 	file, err := os.OpenFile(u.getFilename(isAdmin), flags, 0600)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	_, err = io.WriteString(file, fmt.Sprintf("%s:%d:%s\n", formatID, time.Now().Unix(), hashStr)) // TODO: retry if write was short??
-	return err
+	tmp, err := u.store.getTempFile()
+	if err != nil {
+		return err
+	}
+	defer tmp.Close()
+	defer os.Remove(tmp.Name()) // Ensure that the file gets removed in case of failure
+
+	// Write the new password hash
+	_, err = io.WriteString(tmp, fmt.Sprintf("%s:%d:%s\n", formatID, time.Now().Unix(), hashStr)) // TODO: retry if write was short??
+	if err != nil {
+		return err
+	}
+
+	// Create a reader for the original file
+	reader := bufio.NewReader(file)
+
+	// Skip the first line
+	_, err = reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return err
+	}
+
+	// Write the rest of the old file to the new one
+	_, err = reader.WriteTo(tmp)
+	if err != nil {
+		return err
+	}
+
+	// Atomically move the new file in place
+	return os.Rename(tmp.Name(), file.Name())
 }
 
 // Add creates the hash file. It is an error if the user already exists.
@@ -165,7 +202,7 @@ func (u *UserHash) Add(password string, isAdmin bool) error {
 	} else if exists {
 		return fmt.Errorf("whawty.auth.store: user '%s' already exists", u.user)
 	}
-	return u.writeHashStr(password, isAdmin, os.O_WRONLY|os.O_CREATE|os.O_EXCL)
+	return u.writeHashStr(password, isAdmin, true)
 }
 
 // Update changes the password for user.
@@ -181,7 +218,7 @@ func (u *UserHash) Update(password string) error {
 		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format")
 	}
 
-	return u.writeHashStr(password, isAdmin, os.O_WRONLY|os.O_TRUNC)
+	return u.writeHashStr(password, isAdmin, false)
 }
 
 // SetAdmin changes the admin status of user.

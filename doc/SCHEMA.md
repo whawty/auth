@@ -20,6 +20,12 @@ database but should only be used by management interfaces of a whawty.auth agent
 You may want to take a look at [whawty.groups](https://github.com/whawty/groups)
 if you need an authorisation database.
 
+The directory may also contains a `.tmp` directory: agents that update
+the whawty.auth base must perform file modifications atomically by
+writing new files, with a random name, in that directory, then
+atomically moving them to their final destination.  As such, `.tmp`
+should be backed by the same filesystem as the whawty.auth base.
+
 The directory must not contain any other files. A valid whawty.auth base
 directory contains at least one admin file which uses a supported hashing
 format.

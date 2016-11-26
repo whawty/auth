@@ -118,6 +118,18 @@ func TestNewDirFromConfig(t *testing.T) {
 	}
 }
 
+func TestMakeDefaultContext(t *testing.T) {
+	store := NewDir(testBaseDir)
+
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatalf("makeDefaultContext() failed:", err)
+	}
+
+	if err := store.makeDefaultContext(); err == nil {
+		t.Fatal("makeDefaultContext() should fail on initialized contexts")
+	}
+}
+
 func TestInitDir(t *testing.T) {
 	adminuser := "root"
 	password := "verysecret"

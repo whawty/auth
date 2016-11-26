@@ -1,6 +1,5 @@
 //
-// Copyright (c) 2016 Christian Pointner <equinox@spreadspace.org>
-//               2016 Markus Grüneis <gimpf@gimpf.org>
+// Copyright (c) 2016 whawty contributors (see AUTHORS file)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without

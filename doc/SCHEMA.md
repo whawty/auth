@@ -15,10 +15,10 @@ The difference between admins and normal users is that admin users are
 allowed to add new users. Also granting admin privileges to normal users
 may only be done by admins. An admin is also allowed to change any password.
 Normal users may only update their own password.
-However this mechanism is not intended as a replacement for a real authorisation
+However this mechanism is not intended as a replacement for a real authorization
 database but should only be used by management interfaces of a whawty.auth agent.
 You may want to take a look at [whawty.groups](https://github.com/whawty/groups)
-if you need an authorisation database.
+if you need an authorization database.
 
 The directory may also contains a `.tmp` directory: agents that update
 the whawty.auth base must perform file modifications atomically by

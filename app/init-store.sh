@@ -12,6 +12,8 @@ set -e
 
 HMAC_KEY=`dd if=/dev/urandom bs=32 count=1 2> /dev/null | base64`
 
+WHAWTY_AUTH_CONF_DIR=`dirname "$WHAWTY_AUTH_CONF"`
+/bin/mkdir -p "${WHAWTY_AUTH_CONF_DIR}"
 /bin/touch "$WHAWTY_AUTH_CONF"
 /bin/chown $WHAWTY_AUTH_USER:root "$WHAWTY_AUTH_CONF"
 /bin/chmod 400 "$WHAWTY_AUTH_CONF"

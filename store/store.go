@@ -38,6 +38,7 @@ package store
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -52,8 +53,9 @@ import (
 )
 
 var (
-	wl         = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
-	userNameRe = regexp.MustCompile("^[-_.@A-Za-z0-9]+$")
+	wl              = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
+	userNameRe      = regexp.MustCompile("^[-_.@A-Za-z0-9]+$")
+	noSupportedHash = errors.New("No admin has a supported password hash")
 )
 
 const (
@@ -176,50 +178,41 @@ func checkUserFile(filename string) (valid bool, user string, isAdmin bool, err 
 	return
 }
 
-func hasSupportedAdminHashes(dir *os.File) (bool, error) {
-	success := false
-	for {
-		last := false
-		names, err := dir.Readdirnames(3)
+func checkSupportedAdminHashes(dir *os.File) error {
+	names, err := dir.Readdirnames(0)
+	if err != nil && err != io.EOF {
+		return err
+	}
+
+	for _, name := range names {
+		// Skip the '.tmp' directory
+		if name == tmpDir {
+			continue
+		}
+
+		valid, user, isAdmin, err := checkUserFile(name)
 		if err != nil {
-			if err == io.EOF {
-				last = true
-			} else {
-				return false, err
-			}
+			return err
 		}
 
-		for _, name := range names {
-			// Skip the '.tmp' directory
-			if name == tmpDir {
-				continue
-			}
-
-			valid, user, isAdmin, err := checkUserFile(name)
-			if err != nil {
-				return false, err
-			}
-
-			if !valid {
-				wl.Printf("ignoring file for invalid username: '%s'", user)
-			}
-			if !isAdmin {
-				continue
-			}
-			if exists, _ := fileExists(filepath.Join(dir.Name(), user) + userExt); exists {
-				return false, fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
-			}
-
-			if IsFormatSupported(filepath.Join(dir.Name(), name)) == nil  {
-				success = true
-			}
+		if !valid {
+			wl.Printf("ignoring file for invalid username: '%s'", user)
 		}
 
-		if last {
-			break
+		if !isAdmin {
+			continue
+		}
+
+		if exists, _ := fileExists(filepath.Join(dir.Name(), user) + userExt); exists {
+			return fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
+		}
+
+		if IsFormatSupported(filepath.Join(dir.Name(), name)) == nil {
+			return nil
 		}
 	}
-	return success, nil
+
+	return noSupportedHash
 }
 
 func listSupportedUsers(dir *os.File, list UserList) error {
@@ -323,7 +316,11 @@ func (d *Dir) Check() (ok bool, err error) {
 	}
 	defer dir.Close()
 
-	return hasSupportedAdminHashes(dir)
+	if err := checkSupportedAdminHashes(dir); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.

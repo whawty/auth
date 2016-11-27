@@ -1,7 +1,7 @@
 # whawty.auth storage schema
 
 The whawty.auth store consists of a single directory which contains all
-usernames and password hashes in flat files. Password files are named
+user names and password hashes in flat files. Password files are named
 after the user. The file extension is used to distinguish between admin
 and normal user.
 
@@ -24,7 +24,7 @@ The directory may also contains a `.tmp` directory: agents that update
 the whawty.auth base must perform file modifications atomically by
 writing new files, with a random name, in that directory, then
 atomically moving them to their final destination.  As such, `.tmp`
-should be backed by the same filesystem as the whawty.auth base.
+should be backed by the same file system as the whawty.auth base.
 
 The directory must not contain any other files. A valid whawty.auth base
 directory contains at least one admin file which uses a supported hashing
@@ -40,7 +40,9 @@ to act according to the following rules:
 - **on update:** report an error (won't overwrite unsupported formats)
 - **on delete:** delete the file (a warning may be shown)
 
-Usernames must only contain the following characters: `[-_.@A-Za-z0-9]`
+The following regular expression must match for a user name to be valid:
+
+    [A-Za-z0-9][-_.@A-Za-z0-9]*
 
 A whawty.auth agent may upgrade the hashing algorithm to an other (newer/stronger)
 format during authentication.

@@ -53,7 +53,7 @@ import (
 
 var (
 	wl              = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
-	userNameRe      = regexp.MustCompile("^[-_.@A-Za-z0-9]+$")
+	userNameRe      = regexp.MustCompile("^[A-Za-z0-9][-_.@A-Za-z0-9]*$")
 	noSupportedHash = errors.New("No admin has a supported password hash")
 )
 

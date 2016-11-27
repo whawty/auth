@@ -299,6 +299,51 @@ func TestCheckDir(t *testing.T) {
 	// TODO: add more tests
 }
 
+func TestAddUser(t *testing.T) {
+	adminuser := "root"
+	password := "verysecret"
+
+	store := NewDir(testBaseDir)
+
+	if err := os.Mkdir(testBaseDir, 0755); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer os.RemoveAll(testBaseDir)
+
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+
+	if err := store.Init(adminuser, password); err != nil {
+		t.Fatalf("unexpected error")
+	}
+
+	users := []struct {
+		name  string
+		valid bool
+	}{
+		{"", false},
+		{"_", false},
+		{"hugo", true},
+		{"hugo%", false},
+		{"@hugo", false},
+		{"hugo@example.com", true},
+		{"my_Name", true},
+		{"WhyHasn'tAnybodyWrittenThisYet", false},
+		{"WhyHasn_tAnybodyWrittenThisY@", true},
+		{"hello_SPAMMERS@my-domain.net", true},
+	}
+
+	for _, u := range users {
+		err := store.AddUser(u.name, password, false)
+		if u.valid && err != nil {
+			t.Fatalf("AddUser returned and unexpected error for '%s': %v", u.name, err)
+		} else if !u.valid && err == nil {
+			t.Fatalf("AddUser didn't return an error for ivalid user '%s'", u.name)
+		}
+	}
+}
+
 func TestList(t *testing.T) {
 	adminuser := "root"
 	password := "verysecret"

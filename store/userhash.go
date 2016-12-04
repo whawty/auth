@@ -174,8 +174,8 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	defer os.Remove(tmp.Name()) // Ensure that the file gets removed in case of failure
 
 	// Write the new password hash
-	_, err = io.WriteString(tmp, fmt.Sprintf("%s:%d:%s\n", formatID, time.Now().Unix(), hashStr)) // TODO: retry if write was short??
-	if err != nil {
+	if _, err := io.WriteString(tmp, fmt.Sprintf("%s:%d:%s\n", formatID, time.Now().Unix(), hashStr)); err != nil {
+		// TODO: retry if write was short??
 		return err
 	}
 
@@ -183,14 +183,12 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	reader := bufio.NewReader(file)
 
 	// Skip the first line
-	_, err = reader.ReadString('\n')
-	if err != nil && err != io.EOF {
+	if _, err := reader.ReadString('\n'); err != nil && err != io.EOF {
 		return err
 	}
 
 	// Write the rest of the old file to the new one
-	_, err = reader.WriteTo(tmp)
-	if err != nil {
+	if _, err := reader.WriteTo(tmp); err != nil {
 		return err
 	}
 

@@ -194,8 +194,24 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 		return err
 	}
 
+	// Flush the file's contents to disk
+	if err := tmp.Sync(); err != nil {
+		return err
+	}
+
 	// Atomically move the new file in place
-	return os.Rename(tmp.Name(), file.Name())
+	if err := os.Rename(tmp.Name(), file.Name()); err != nil {
+		return err
+	}
+
+	// Flush the move to disk
+	dir, err := os.Open(filepath.Dir(file.Name()))
+	defer dir.Close()
+	if err != nil {
+		return err
+	} else {
+		return dir.Sync()
+	}
 }
 
 // Add creates the hash file. It is an error if the user already exists.

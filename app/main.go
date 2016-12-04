@@ -122,7 +122,7 @@ func cmdCheck(c *cli.Context) error {
 	return cli.NewExitError(fmt.Sprintf("whawty store is ok!"), 0)
 }
 
-func openAndCheck(c *cli.Context) (*Store, error) {
+func openAndCheck(c *cli.Context) (*store, error) {
 	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
@@ -246,7 +246,7 @@ func cmdSetAdmin(c *cli.Context) error {
 	}
 }
 
-func cmdListFull(s *StoreChan) error {
+func cmdListFull(s *Store) error {
 	lst, err := s.ListFull()
 	if err != nil {
 		return fmt.Errorf("Error listing user: %s\n", err)
@@ -272,7 +272,7 @@ func cmdListFull(s *StoreChan) error {
 	return nil
 }
 
-func cmdListSupported(s *StoreChan) error {
+func cmdListSupported(s *Store) error {
 	lst, err := s.List()
 	if err != nil {
 		return fmt.Errorf("Error listing user: %s\n", err)

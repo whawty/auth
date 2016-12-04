@@ -37,7 +37,7 @@ import (
 	"github.com/whawty/auth/sasl"
 )
 
-func callback(login, password, service, realm, path string, store *StoreChan) (ok bool, msg string, err error) {
+func callback(login, password, service, realm, path string, store *Store) (ok bool, msg string, err error) {
 	wdl.Printf("auth request on '%s': [user=%s] [service=%s] [realm=%s]", path, login, service, realm)
 
 	ok, _, _, err = store.Authenticate(login, password)
@@ -53,7 +53,7 @@ func callback(login, password, service, realm, path string, store *StoreChan) (o
 	return ok, msg, nil
 }
 
-func runSaslAuthSocket(path string, store *StoreChan) error {
+func runSaslAuthSocket(path string, store *Store) error {
 	os.Remove(path)
 	s, err := sasl.NewServer(path, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
 		return callback(log, pwd, srv, rlm, path, store)
@@ -70,7 +70,7 @@ func runSaslAuthSocket(path string, store *StoreChan) error {
 	return nil
 }
 
-func runSaslAuthSocketListener(listener *net.UnixListener, store *StoreChan) error {
+func runSaslAuthSocketListener(listener *net.UnixListener, store *Store) error {
 	path := listener.Addr().String()
 	s, err := sasl.NewServerFromListener(listener, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
 		return callback(log, pwd, srv, rlm, path, store)

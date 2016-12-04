@@ -38,7 +38,7 @@ import (
 	_ "net/http/pprof"
 	"time"
 
-	"github.com/whawty/auth/store"
+	storeLib "github.com/whawty/auth/store"
 )
 
 type webAuthenticateRequest struct {
@@ -54,7 +54,7 @@ type webAuthenticateResponse struct {
 	Error       string    `json:"error,omitempty"`
 }
 
-func handleWebAuthenticate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebAuthenticate(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got AUTHENTICATE request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -104,7 +104,7 @@ type webAddResponse struct {
 	Error    string `json:"error,omitempty"`
 }
 
-func handleWebAdd(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebAdd(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got ADD request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -158,7 +158,7 @@ type webRemoveResponse struct {
 	Error    string `json:"error,omitempty"`
 }
 
-func handleWebRemove(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebRemove(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got REMOVE request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -213,7 +213,7 @@ type webUpdateResponse struct {
 	Error    string `json:"error,omitempty"`
 }
 
-func handleWebUpdate(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebUpdate(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got UPDATE request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -296,7 +296,7 @@ type webSetAdminResponse struct {
 	Error    string `json:"error,omitempty"`
 }
 
-func handleWebSetAdmin(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebSetAdmin(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got SET_ADMIN request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -345,11 +345,11 @@ type webListRequest struct {
 }
 
 type webListResponse struct {
-	List  store.UserList `json:"list"`
-	Error string         `json:"error,omitempty"`
+	List  storeLib.UserList `json:"list"`
+	Error string            `json:"error,omitempty"`
 }
 
-func handleWebList(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebList(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -397,11 +397,11 @@ type webListFullRequest struct {
 }
 
 type webListFullResponse struct {
-	List  store.UserListFull `json:"list"`
-	Error string             `json:"error,omitempty"`
+	List  storeLib.UserListFull `json:"list"`
+	Error string                `json:"error,omitempty"`
 }
 
-func handleWebListFull(store *StoreChan, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+func handleWebListFull(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
 	wdl.Printf("web-api: got LIST_FULL request from %s", r.RemoteAddr)
 
 	decoder := json.NewDecoder(r.Body)
@@ -452,9 +452,9 @@ func sendWebResponse(w http.ResponseWriter, status int, respdata interface{}) {
 }
 
 type webHandler struct {
-	store    *StoreChan
+	store    *Store
 	sessions *webSessionFactory
-	H        func(*StoreChan, *webSessionFactory, http.ResponseWriter, *http.Request)
+	H        func(*Store, *webSessionFactory, http.ResponseWriter, *http.Request)
 }
 
 func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -476,7 +476,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func runWebApi(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
+func runWebApi(listener *net.TCPListener, store *Store, staticDir string) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -505,7 +505,7 @@ func runWebApi(listener *net.TCPListener, store *StoreChan, staticDir string) (e
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 
-func runWebAddr(addr string, store *StoreChan, staticDir string) (err error) {
+func runWebAddr(addr string, store *Store, staticDir string) (err error) {
 	if addr == "" {
 		addr = ":http"
 	}
@@ -516,6 +516,6 @@ func runWebAddr(addr string, store *StoreChan, staticDir string) (err error) {
 	return runWebApi(ln.(*net.TCPListener), store, staticDir)
 }
 
-func runWebListener(listener *net.TCPListener, store *StoreChan, staticDir string) (err error) {
+func runWebListener(listener *net.TCPListener, store *Store, staticDir string) (err error) {
 	return runWebApi(listener, store, staticDir)
 }

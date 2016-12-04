@@ -41,7 +41,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/whawty/auth/store"
+	lib "github.com/whawty/auth/store"
 )
 
 type initResult struct {
@@ -103,7 +103,7 @@ type setAdminRequest struct {
 }
 
 type listResult struct {
-	list store.UserList
+	list lib.UserList
 	err  error
 }
 
@@ -112,7 +112,7 @@ type listRequest struct {
 }
 
 type listFullResult struct {
-	list store.UserListFull
+	list lib.UserListFull
 	err  error
 }
 
@@ -134,9 +134,9 @@ type authenticateRequest struct {
 	response chan<- authenticateResult
 }
 
-type Store struct {
+type store struct {
 	configfile       string
-	dir              *store.Dir
+	dir              *lib.Dir
 	policy           PolicyChecker
 	hooks            *HooksCaller
 	initChan         chan initRequest
@@ -151,9 +151,9 @@ type Store struct {
 	upgradeChan      chan updateRequest
 }
 
-func (s *Store) reload() {
+func (s *store) reload() {
 	wdl.Printf("store: reloading store config from '%s'", s.configfile)
-	newdir, err := store.NewDirFromConfig(s.configfile)
+	newdir, err := lib.NewDirFromConfig(s.configfile)
 	if err != nil {
 		wl.Printf("store: reload failed: %v, keeping current configuration", err)
 		return
@@ -168,7 +168,7 @@ func (s *Store) reload() {
 	wl.Printf("store: successfully reloaded")
 }
 
-func (s *Store) init(username, password string) (result initResult) {
+func (s *store) init(username, password string) (result initResult) {
 	if ok, err := s.policy.Check(password, username); !ok || err != nil {
 		if err != nil {
 			result.err = err
@@ -181,12 +181,12 @@ func (s *Store) init(username, password string) (result initResult) {
 	return
 }
 
-func (s *Store) check() (result checkResult) {
+func (s *store) check() (result checkResult) {
 	result.err = s.dir.Check()
 	return
 }
 
-func (s *Store) add(username, password string, isAdmin bool) (result addResult) {
+func (s *store) add(username, password string, isAdmin bool) (result addResult) {
 	if ok, err := s.policy.Check(password, username); !ok || err != nil {
 		if err != nil {
 			result.err = err
@@ -202,13 +202,13 @@ func (s *Store) add(username, password string, isAdmin bool) (result addResult) 
 	return
 }
 
-func (s *Store) remove(username string) (result removeResult) {
+func (s *store) remove(username string) (result removeResult) {
 	s.dir.RemoveUser(username)
 	s.hooks.Notify <- true
 	return
 }
 
-func (s *Store) update(username, password string) (result updateResult) {
+func (s *store) update(username, password string) (result updateResult) {
 	if ok, err := s.policy.Check(password, username); !ok || err != nil {
 		if err != nil {
 			result.err = err
@@ -224,7 +224,7 @@ func (s *Store) update(username, password string) (result updateResult) {
 	return
 }
 
-func (s *Store) setAdmin(username string, isAdmin bool) (result setAdminResult) {
+func (s *store) setAdmin(username string, isAdmin bool) (result setAdminResult) {
 	result.err = s.dir.SetAdmin(username, isAdmin)
 	if result.err == nil {
 		s.hooks.Notify <- true
@@ -232,22 +232,22 @@ func (s *Store) setAdmin(username string, isAdmin bool) (result setAdminResult) 
 	return
 }
 
-func (s *Store) list() (result listResult) {
+func (s *store) list() (result listResult) {
 	result.list, result.err = s.dir.List()
 	return
 }
 
-func (s *Store) listFull() (result listFullResult) {
+func (s *store) listFull() (result listFullResult) {
 	result.list, result.err = s.dir.ListFull()
 	return
 }
 
-func (s *Store) authenticate(username, password string) (result authenticateResult, upgradeable bool) {
+func (s *store) authenticate(username, password string) (result authenticateResult, upgradeable bool) {
 	result.ok, result.isAdmin, upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
 	return
 }
 
-func (s *Store) dispatchRequests() {
+func (s *store) dispatchRequests() {
 	reload := make(chan os.Signal, 1)
 	signal.Notify(reload, syscall.SIGHUP)
 
@@ -347,7 +347,7 @@ func runRemoteUpgrader(remote string) (upgradeChan chan updateRequest, err error
 // *********************************************************
 // Public Interface
 
-type StoreChan struct {
+type Store struct {
 	initChan         chan<- initRequest
 	checkChan        chan<- checkRequest
 	addChan          chan<- addRequest
@@ -359,7 +359,7 @@ type StoreChan struct {
 	authenticateChan chan<- authenticateRequest
 }
 
-func (s *StoreChan) Init(username, password string) error {
+func (s *Store) Init(username, password string) error {
 	resCh := make(chan initResult)
 	req := initRequest{}
 	req.username = username
@@ -371,7 +371,7 @@ func (s *StoreChan) Init(username, password string) error {
 	return res.err
 }
 
-func (s *StoreChan) Check() error {
+func (s *Store) Check() error {
 	resCh := make(chan checkResult)
 	req := checkRequest{}
 	req.response = resCh
@@ -381,7 +381,7 @@ func (s *StoreChan) Check() error {
 	return res.err
 }
 
-func (s *StoreChan) Add(username, password string, isAdmin bool) error {
+func (s *Store) Add(username, password string, isAdmin bool) error {
 	resCh := make(chan addResult)
 	req := addRequest{}
 	req.username = username
@@ -394,7 +394,7 @@ func (s *StoreChan) Add(username, password string, isAdmin bool) error {
 	return res.err
 }
 
-func (s *StoreChan) Remove(username string) error {
+func (s *Store) Remove(username string) error {
 	resCh := make(chan removeResult)
 	req := removeRequest{}
 	req.username = username
@@ -405,7 +405,7 @@ func (s *StoreChan) Remove(username string) error {
 	return res.err
 }
 
-func (s *StoreChan) Update(username, password string) error {
+func (s *Store) Update(username, password string) error {
 	resCh := make(chan updateResult)
 	req := updateRequest{}
 	req.username = username
@@ -417,7 +417,7 @@ func (s *StoreChan) Update(username, password string) error {
 	return res.err
 }
 
-func (s *StoreChan) SetAdmin(username string, isAdmin bool) error {
+func (s *Store) SetAdmin(username string, isAdmin bool) error {
 	resCh := make(chan setAdminResult)
 	req := setAdminRequest{}
 	req.username = username
@@ -429,7 +429,7 @@ func (s *StoreChan) SetAdmin(username string, isAdmin bool) error {
 	return res.err
 }
 
-func (s *StoreChan) List() (store.UserList, error) {
+func (s *Store) List() (lib.UserList, error) {
 	resCh := make(chan listResult)
 	req := listRequest{}
 	req.response = resCh
@@ -439,7 +439,7 @@ func (s *StoreChan) List() (store.UserList, error) {
 	return res.list, res.err
 }
 
-func (s *StoreChan) ListFull() (store.UserListFull, error) {
+func (s *Store) ListFull() (lib.UserListFull, error) {
 	resCh := make(chan listFullResult)
 	req := listFullRequest{}
 	req.response = resCh
@@ -449,7 +449,7 @@ func (s *StoreChan) ListFull() (store.UserListFull, error) {
 	return res.list, res.err
 }
 
-func (s *StoreChan) Authenticate(username, password string) (bool, bool, time.Time, error) {
+func (s *Store) Authenticate(username, password string) (bool, bool, time.Time, error) {
 	resCh := make(chan authenticateResult)
 	req := authenticateRequest{}
 	req.username = username
@@ -461,8 +461,8 @@ func (s *StoreChan) Authenticate(username, password string) (bool, bool, time.Ti
 	return res.ok, res.isAdmin, res.lastChanged, res.err
 }
 
-func (s *Store) GetInterface() *StoreChan {
-	ch := &StoreChan{}
+func (s *store) GetInterface() *Store {
+	ch := &Store{}
 	ch.initChan = s.initChan
 	ch.checkChan = s.checkChan
 	ch.addChan = s.addChan
@@ -475,9 +475,9 @@ func (s *Store) GetInterface() *StoreChan {
 	return ch
 }
 
-func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir string) (s *Store, err error) {
-	s = &Store{}
-	if s.dir, err = store.NewDirFromConfig(configfile); err != nil {
+func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir string) (s *store, err error) {
+	s = &store{}
+	if s.dir, err = lib.NewDirFromConfig(configfile); err != nil {
 		return
 	}
 	s.configfile = configfile

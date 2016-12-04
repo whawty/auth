@@ -105,8 +105,7 @@ func (dir *Dir) makeDefaultContext() error {
 	}
 
 	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
+	if _, err := rand.Read(b); err != nil {
 		return err
 	}
 
@@ -139,17 +138,11 @@ func openDir(path string) (*os.File, error) {
 //  suitable for atomic file updates (by create/write/rename)
 func (dir *Dir) getTempFile() (tmp *os.File, err error) {
 	tmpDir := filepath.Join(dir.BaseDir, tmpDir)
-	err = os.MkdirAll(tmpDir, 0700)
-	if err != nil {
+	if err := os.MkdirAll(tmpDir, 0700); err != nil {
 		return nil, err
 	}
 
-	tmp, err = ioutil.TempFile(tmpDir, "")
-	if err != nil {
-		return tmp, err
-	}
-
-	return tmp, nil
+	return ioutil.TempFile(tmpDir, "")
 }
 
 func isDirEmpty(dir *os.File) bool {

@@ -260,9 +260,9 @@ func (u *UserHash) Remove() {
 // the user's hash file format is not supported
 func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
 	filename := filepath.Join(u.store.BaseDir, u.user)
-	var ok bool
-	if ok, err = fileExists(filename + adminExt); err != nil {
-		return
+
+	if ok, err := fileExists(filename + adminExt); err != nil {
+		return false, false, err
 	} else if ok {
 		return true, true, nil
 	}

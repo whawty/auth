@@ -20,7 +20,7 @@ database but should only be used by management interfaces of a whawty.auth agent
 You may want to take a look at [whawty.groups](https://github.com/whawty/groups)
 if you need an authorization database.
 
-The directory may also contains a `.tmp` directory: agents that update
+The directory may also contain a `.tmp` directory: agents that update
 the whawty.auth base must perform file modifications atomically by
 writing new files, with a random name, in that directory, then
 atomically moving them to their final destination.  As such, `.tmp`
@@ -44,7 +44,7 @@ The following regular expression must match for a user name to be valid:
 
     [A-Za-z0-9][-_.@A-Za-z0-9]*
 
-A whawty.auth agent may upgrade the hashing algorithm to an other (newer/stronger)
+A whawty.auth agent may upgrade the hashing algorithm to another (newer/stronger)
 format during authentication.
 However if an agent supports this it must be possible to disable upgrades.
 

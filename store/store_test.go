@@ -230,7 +230,7 @@ func TestInitDir(t *testing.T) {
 	}
 
 	if err := store.Init(adminuser, password); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	}
 
 	if exists, err := fileExists(filepath.Join(testBaseDir, ".tmp")); err != nil || exists != true {
@@ -315,7 +315,7 @@ func TestAddUser(t *testing.T) {
 	}
 
 	if err := store.Init(adminuser, password); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	}
 
 	users := []struct {
@@ -358,7 +358,7 @@ func TestList(t *testing.T) {
 	defer os.RemoveAll(testBaseDir)
 
 	if list, err := store.List(); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	} else if len(list) != 0 {
 		t.Fatalf("list should return an empty user list for an empty directory")
 	}
@@ -368,11 +368,11 @@ func TestList(t *testing.T) {
 	}
 
 	if err := store.Init(adminuser, password); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	}
 
 	if list, err := store.List(); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	} else if len(list) != 1 {
 		t.Fatalf("list should return a list of length 1")
 	} else {
@@ -382,11 +382,11 @@ func TestList(t *testing.T) {
 	}
 
 	if err := store.AddUser(user1, password1, false); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	}
 
 	if list, err := store.List(); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	} else if len(list) != 2 {
 		t.Fatalf("list should return a list of length 2")
 	} else {
@@ -399,11 +399,11 @@ func TestList(t *testing.T) {
 	}
 
 	if err := store.SetAdmin(user1, true); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	}
 
 	if list, err := store.List(); err != nil {
-		t.Fatalf("unexpected error")
+		t.Fatal("unexpected error:", err)
 	} else if len(list) != 2 {
 		t.Fatalf("list should return a list of length 2")
 	} else {

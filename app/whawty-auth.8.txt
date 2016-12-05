@@ -41,7 +41,7 @@ The following global options can be passed to *whawty-auth*.
     and the command line option are supplied the latter is used.
 
 *--do-check*'[=(true|false)]'::
-    Run basic consistency check on the whawty store on startup. By default checks
+    Run basic consistency check on the whawty store on start up. By default checks
     are enabled. This can also be configured using the environment variable
     'WHAWTY_AUTH_DO_CHECK'. If both the environment variable and the command line
     option are supplied the latter is used.
@@ -56,9 +56,9 @@ The following global options can be passed to *whawty-auth*.
 *--do-upgrades* '(local|<remote-url>)'::
      This enables local or remote upgrades for password hashes. By default no upgrades will
      be done. 'local' means direct upgrades on the local store. 'remote' upgrades can be
-     configured by specifying the url to a remote *whawy-auth* instance. The url must point to
+     configured by specifying the url to a remote *whawty-auth* instance. The url must point to
      the web-api endpoint on that host (i.e. 'https://whawty-master.example.com/api/update').
-     For any password hash which is upgradeable an update call to the remote host will be
+     For any password hash which is upgrade able an update call to the remote host will be
      initialized after the user is successfully authenticated. This is done in a opportunistic
      way. This means errors while calling the remote update will be ignored.
      You may as well use the environment variable 'WHAWTY_AUTH_DO_UPGRADES' to configure
@@ -88,7 +88,7 @@ The following global options can be passed to *whawty-auth*.
 
 *--hooks-dir* '</path/to/hooks>'::
      Whenever there is a change in the store (add, remove, update or set-admin) *whawty-auth* will
-     run all exectuables inside this directory. This can for example be used to request a resync of
+     run all executables inside this directory. This can for example be used to request a re-sync of
      the local store with remote copies.
      If this option is omitted there won't be any hooks called. Hooks are called with a sole argument
      'update'. The base directory of the store can be fetched from the environment variable
@@ -108,7 +108,7 @@ init '<adminname>' '[<password>]'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *init* can be used to initialize a whawty auth store. For this to work the directory
-must exist, be writeable by the user who runs the program and must be empty. The first
+must exist, be write able by the user who runs the program and must be empty. The first
 argument is the name of the admin user which will get created. The password of the
 user can be supplied using a second optional argument. If no password is supplied on
 the command line *whawty-auth* will prompt the user for it.
@@ -140,7 +140,7 @@ update '<username>' '[<password>]'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This can be used to change the password of an existing user. The first argument
-specifies the username. The new password may be specified as a second argument.
+specifies the user name. The new password may be specified as a second argument.
 If no password is set using the command line the user will be prompted for it.
 Mind that to change a password via the command-line you don't need to know the
 old password.
@@ -150,7 +150,7 @@ set-admin  '<username>' '(true|false)'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *set-admin* can be used to change the admin status of a user. The first argument
-is the username. The second argument should reflect the new status. *true* or *1*
+is the user name. The second argument should reflect the new status. *true* or *1*
 enables the admin flag. *false* or *0* disables it.
 
 
@@ -162,14 +162,14 @@ This prints a list of all users in the store.
 *--full*::
     This option tells *whawty-auth* to print additional info for each user. By default
     only the name, admin status and last change date are printed. This also prints
-    users which have an unsupported hash formats. These users are ingored by the normal
+    users which have an unsupported hash formats. These users are ignored by the normal
     list command.
 
 
 authenticate '<username>' '[<password>]'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*authenticate* runs a full auth-check for the given user. The username in question needs
+*authenticate* runs a full auth-check for the given user. The user name in question needs
 to be supplied as a first argument. The second optional argument is the password. If
 no password is specified the user will be prompted for it. If the authentication was
 successful the result code will be 0. On error the result code will be 1.
@@ -184,7 +184,7 @@ This instructs *whawty-auth* to run as an authentication service.
      Open a saslauthd compatible unix socket. This option might be supplied several times.
      *whawty-auth* will listen on all sockets for authentication requests. In addition
      to this, paths may be specified using the environment variable 'WHAWTY_AUTH_SASL_SOCK'
-     as a comma-seperated list. All sockets defined on command line and via the environment
+     as a comma-separated list. All sockets defined on command line and via the environment
      are merged and *whawty-auth* will listen on all sockets simultaneously.
 
 *--web-addr* '[<addr>]:<port>'::
@@ -206,7 +206,7 @@ SIGNALS
 -------
 
 On HUP *whawty-auth* tries to reload the store configuration. I also runs a basic
-consistency check. If there is any error during that process the old configurtion
+consistency check. If there is any error during that process the old configuration
 will be kept.
 
 

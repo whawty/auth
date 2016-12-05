@@ -334,6 +334,7 @@ func runRemoteUpgrader(remote string) (upgradeChan chan updateRequest, err error
 	}
 	switch r.Scheme {
 	case "http":
+		wl.Printf("upgrade(remote): Warning using unsecure url for remote updates: %s", remote)
 		fallthrough
 	case "https":
 		upgradeChan = make(chan updateRequest, 10)

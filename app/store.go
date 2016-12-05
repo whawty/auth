@@ -242,8 +242,12 @@ func (s *store) listFull() (result listFullResult) {
 	return
 }
 
-func (s *store) authenticate(username, password string) (result authenticateResult, upgradeable bool) {
+func (s *store) authenticate(username, password string) (result authenticateResult) {
+	var upgradeable bool
 	result.ok, result.isAdmin, upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
+	if result.ok && upgradeable && s.upgradeChan != nil {
+		s.upgradeChan <- updateRequest{username: username, password: password}
+	}
 	return
 }
 
@@ -281,11 +285,7 @@ func (s *store) dispatchRequests() {
 		case req := <-s.listFullChan:
 			req.response <- s.listFull()
 		case req := <-s.authenticateChan:
-			resp, upgradeable := s.authenticate(req.username, req.password)
-			req.response <- resp
-			if resp.ok && upgradeable && s.upgradeChan != nil {
-				s.upgradeChan <- updateRequest{username: req.username, password: req.password}
-			}
+			req.response <- s.authenticate(req.username, req.password)
 		}
 	}
 }

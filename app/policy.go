@@ -95,7 +95,7 @@ func NewZXCVBNPolicy(condition string) (p ZXCVBNPolicy, err error) {
 	case "time":
 		p.condition = ZXCVBNConditionTime
 	default:
-		err = fmt.Errorf("invalid condtion value '%s', must be one of score, entropy, time", c[0])
+		err = fmt.Errorf("invalid condition value '%s', must be one of score, entropy, time", c[0])
 		return
 	}
 	return

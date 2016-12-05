@@ -482,17 +482,18 @@ func runWebApi(listener *net.TCPListener, store *Store, staticDir string) (err e
 		return err
 	}
 
-	http.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
-	http.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
-	http.Handle("/api/remove", webHandler{store, sessions, handleWebRemove})
-	http.Handle("/api/update", webHandler{store, sessions, handleWebUpdate})
-	http.Handle("/api/set-admin", webHandler{store, sessions, handleWebSetAdmin})
-	http.Handle("/api/list", webHandler{store, sessions, handleWebList})
-	http.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
+	mux := http.NewServeMux()
+	mux.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
+	mux.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
+	mux.Handle("/api/remove", webHandler{store, sessions, handleWebRemove})
+	mux.Handle("/api/update", webHandler{store, sessions, handleWebUpdate})
+	mux.Handle("/api/set-admin", webHandler{store, sessions, handleWebSetAdmin})
+	mux.Handle("/api/list", webHandler{store, sessions, handleWebList})
+	mux.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
-	http.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.Dir(staticDir))))
+	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.Dir(staticDir))))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
@@ -501,7 +502,7 @@ func runWebApi(listener *net.TCPListener, store *Store, staticDir string) (err e
 	})
 
 	wl.Printf("web-api: listening on '%s'", listener.Addr())
-	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	server := &http.Server{Handler: mux, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 

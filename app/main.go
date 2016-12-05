@@ -348,7 +348,7 @@ func cmdAuthenticate(c *cli.Context) error {
 		return cli.NewExitError(fmt.Sprintf("Error wrong password for user '%s'", username), 1)
 	}
 
-	// wait for potential upgrades - this might still be to fast for remote upgrades
+	// wait for potential upgrades - this might still be too fast for remote upgrades
 	// TODO: find a better way to handle this situation
 	time.Sleep(100 * time.Millisecond)
 
@@ -365,16 +365,17 @@ func cmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
-	webAddr := c.String("web-addr")
+	webAddrs := c.StringSlice("web-addr")
 	saslPaths := c.StringSlice("sock")
 
 	var wg sync.WaitGroup
-	if webAddr != "" {
+	for _, webAddr := range webAddrs {
+		a := webAddr
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := runWebAddr(webAddr, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
-				fmt.Printf("warning running web interface failed: %s\n", err)
+			if err := runWebAddr(a, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+				fmt.Printf("warning running web interface(%s) failed: %s\n", a, err)
 			}
 		}()
 	}
@@ -552,7 +553,7 @@ func main() {
 					Usage:  "path to saslauthd compatible unix socket interface",
 					EnvVar: "WHAWTY_AUTH_SASL_SOCK",
 				},
-				cli.StringFlag{
+				cli.StringSliceFlag{
 					Name:   "web-addr",
 					Usage:  "address to listen on for web API",
 					EnvVar: "WHAWTY_AUTH_WEB_ADDR",

@@ -165,8 +165,13 @@ will listen on all sockets simultaneously\&.
 .PP
 \fB\-\-web\-addr\fR \fI[<addr>]:<port>\fR
 .RS 4
-Also start a small web interface on the specified address\&. This can also be specified using the environment variable
-\fIWHAWTY_AUTH_WEB_ADDR\fR\&. If both the command line option as well as the environment variable are supplied the value of the command line option will be used\&.
+Also start a small web interface on the specified address\&. This option might be supplied several times\&.
+\fBwhawty\-auth\fR
+will listen simultaneously on all addresses for incoming requests\&. This can also be specified using the environment variable
+\fIWHAWTY_AUTH_WEB_ADDR\fR
+as a comma\-separated list\&. All addresses defined on command line and via the environment are merged and
+\fBwhawty\-auth\fR
+will listen on all addresses simultaneously\&.
 .RE
 .SS "runsa"
 .sp

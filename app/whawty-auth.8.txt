@@ -188,11 +188,11 @@ This instructs *whawty-auth* to run as an authentication service.
      are merged and *whawty-auth* will listen on all sockets simultaneously.
 
 *--web-addr* '[<addr>]:<port>'::
-     Also start a small web interface on the specified address. This can also be specified
-     using the environment variable 'WHAWTY_AUTH_WEB_ADDR'. If both the command line option
-     as well as the environment variable are supplied the value of the command line option
-     will be used.
-
+     Also start a small web interface on the specified address. This option might be supplied
+     several times. *whawty-auth* will listen simultaneously on all addresses for incoming
+     requests. This can also be specified using the environment variable 'WHAWTY_AUTH_WEB_ADDR'
+     as a comma-separated list. All addresses defined on command line and via the environment
+     are merged and *whawty-auth* will listen on all addresses simultaneously.
 
 runsa
 ~~~~~

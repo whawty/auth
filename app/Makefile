@@ -29,6 +29,9 @@
 ##
 
 GOCMD := go
+ifdef GOROOT
+GOCMD = $(GOROOT)/bin/go
+endif
 EXECUTEABLE := whawty-auth
 
 LIBS := "github.com/whawty/auth/store" \
@@ -56,6 +59,9 @@ updatelibs:
 
 build: getlibs
 	$(GOCMD) build -o $(EXECUTEABLE)
+
+build-static: getlibs
+	$(GOCMD) build -tags netgo -o $(EXECUTEABLE)
 
 distclean: clean
 	rm -f $(EXECUTEABLE).8

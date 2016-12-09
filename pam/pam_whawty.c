@@ -111,6 +111,7 @@ int _whawty_parse_args(whawty_ctx_t* ctx, int argc, const char **argv)
       if(strlen(argv[i]) < 6)
         _whawty_logf(ctx, LOG_WARNING, "ignoring invalid argument [%s]", argv[i]);
       else {
+        _pam_drop(ctx->sockpath_); // in case the sock= parameter is set multiple times
         ctx->sockpath_ = strdup(&(argv[i][5]));
         if(ctx->sockpath_ == NULL)
           return PAM_BUF_ERR;

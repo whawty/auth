@@ -15,13 +15,14 @@ dist: trusty
 install:
   - go get -v -t ./...
   - go get golang.org/x/tools/cmd/cover
+  - go get github.com/modocache/gover
   - go get github.com/mattn/goveralls
 
 script:
-  - go test -v ./store -covermode=count -coverprofile=coverage-store.out
-  - $HOME/gopath/bin/goveralls -coverprofile=coverage-store.out -service=travis-ci -repotoken $COVERALLS_TOKEN
-  - go test -v ./sasl -covermode=count -coverprofile=coverage-sasl.out
-  - $HOME/gopath/bin/goveralls -coverprofile=coverage-sasl.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+  - go test -v ./store -covermode=count -coverprofile=./store/.coverprofile
+  - go test -v ./sasl -covermode=count -coverprofile=./sasl/.coverprofile
+  - $HOME/gopath/bin/gover
+  - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci -repotoken $COVERALLS_TOKEN
   - make -C app
   - make -C pam
 

@@ -58,7 +58,7 @@ func fileExists(path string) (bool, error) {
 	return true, err
 }
 
-// readHashStr returns the contents of the user hash file seperated into format id
+// readHashStr returns the contents of the user hash file separated into format id
 // string, change time and the whole hash string.
 func readHashStr(filename string) (string, time.Time, string, error) {
 	file, err := os.Open(filename)
@@ -233,7 +233,7 @@ func (u *UserHash) Update(password string) error {
 	}
 
 	if err := IsFormatSupported(u.getFilename(isAdmin)); err != nil {
-		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format", err)
+		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format: %v", err)
 	}
 
 	return u.writeHashStr(password, isAdmin, false)

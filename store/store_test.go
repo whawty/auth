@@ -164,7 +164,7 @@ func TestMakeDefaultContext(t *testing.T) {
 	store := NewDir(testBaseDir)
 
 	if err := store.makeDefaultContext(); err != nil {
-		t.Fatalf("makeDefaultContext() failed:", err)
+		t.Fatal("makeDefaultContext() failed:", err)
 	}
 
 	if err := store.makeDefaultContext(); err == nil {
@@ -264,7 +264,7 @@ func TestCheckDir(t *testing.T) {
 	defer os.RemoveAll(testBaseDir)
 
 	if err := store.Check(); err == nil {
-		t.Fatalf("check should return an error if directory is not accessable")
+		t.Fatalf("check should return an error if directory is not accessible")
 	}
 
 	if err := os.Chmod(testBaseDir, 0755); err != nil {

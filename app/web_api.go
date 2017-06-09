@@ -263,7 +263,7 @@ func handleWebUpdate(store *Store, sessions *webSessionFactory, w http.ResponseW
 			return
 		}
 		if reqdata.NewPassword == "" {
-			// TODO: return Error if upgrades are disabled since this makes only sence for upgrading password contexts
+			// TODO: return Error if upgrades are disabled since this makes only sense for upgrading password contexts
 			respdata.Username = reqdata.Username
 			sendWebResponse(w, http.StatusOK, respdata)
 			return

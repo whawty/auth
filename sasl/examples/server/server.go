@@ -59,7 +59,7 @@ func main() {
 	os.Remove("/tmp/whawty-sasl.sock")
 	s, err := sasl.NewServer("/tmp/whawty-sasl.sock", callback)
 	if err != nil {
-		fmt.Printf("error initalizing server: %s\n", err)
+		fmt.Printf("error initializing server: %s\n", err)
 		return
 	}
 	if err := s.Run(); err != nil {

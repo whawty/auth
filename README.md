@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/whawty/auth.svg?branch=master)](https://travis-ci.org/whawty/auth)
 [![Coverage Status](https://coveralls.io/repos/github/whawty/auth/badge.svg?branch=master)](https://coveralls.io/github/whawty/auth?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/whawty/auth)](https://goreportcard.com/report/github.com/whawty/auth)
 
 whawty.auth is a simple file based authentication suite. Its **store** uses flat files containing password hashes. These
 hashes are currently based on scrypt but the algorithm can be upgraded to newer/stronger formats on the fly.

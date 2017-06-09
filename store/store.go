@@ -69,7 +69,7 @@ func init() {
 	}
 }
 
-// Dir represents a directoy containing a whawty.auth password hash store. Use NewDir to create it.
+// Dir represents a directory containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
 	BaseDir       string
 	DefaultFormat string
@@ -286,7 +286,7 @@ func listAllUsers(dir *os.File, list UserListFull) error {
 	return nil
 }
 
-// Init initalizes the store by creating a password file for an admin user.
+// Init initializes the store by creating a password file for an admin user.
 func (d *Dir) Init(admin, password string) error {
 	dir, err := openDir(d.BaseDir)
 	if err != nil {

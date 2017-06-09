@@ -176,7 +176,7 @@ func (r *Request) Marshal() (data []byte, err error) {
 	return
 }
 
-// Unmarshal decodes the request values from it's byte representaion.
+// Unmarshal decodes the request values from it's byte representation.
 func (r *Request) Unmarshal(data []byte) (err error) {
 	buf := bytes.NewBuffer(data)
 	err = r.Decode(buf)
@@ -243,7 +243,7 @@ func (r *Response) Marshal() (data []byte, err error) {
 	return
 }
 
-// Unmarshal decodes the response from the it's byte representaion.
+// Unmarshal decodes the response from the it's byte representation.
 func (r *Response) Unmarshal(data []byte) (err error) {
 	buf := bytes.NewBuffer(data)
 	err = r.Decode(buf)

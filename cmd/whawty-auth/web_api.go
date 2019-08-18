@@ -39,6 +39,7 @@ import (
 	"time"
 
 	storeLib "github.com/whawty/auth/store"
+	"github.com/whawty/auth/ui"
 )
 
 type webAuthenticateRequest struct {
@@ -476,7 +477,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func runWebApi(listener *net.TCPListener, store *Store, staticDir string) (err error) {
+func runWebApi(listener *net.TCPListener, store *Store) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -491,7 +492,7 @@ func runWebApi(listener *net.TCPListener, store *Store, staticDir string) (err e
 	mux.Handle("/api/list", webHandler{store, sessions, handleWebList})
 	mux.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
-	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.Dir(staticDir))))
+	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(ui.Assets)))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -506,7 +507,7 @@ func runWebApi(listener *net.TCPListener, store *Store, staticDir string) (err e
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 
-func runWebAddr(addr string, store *Store, staticDir string) (err error) {
+func runWebAddr(addr string, store *Store) (err error) {
 	if addr == "" {
 		addr = ":http"
 	}
@@ -514,9 +515,9 @@ func runWebAddr(addr string, store *Store, staticDir string) (err error) {
 	if err != nil {
 		return err
 	}
-	return runWebApi(ln.(*net.TCPListener), store, staticDir)
+	return runWebApi(ln.(*net.TCPListener), store)
 }
 
-func runWebListener(listener *net.TCPListener, store *Store, staticDir string) (err error) {
-	return runWebApi(listener, store, staticDir)
+func runWebListener(listener *net.TCPListener, store *Store) (err error) {
+	return runWebApi(listener, store)
 }

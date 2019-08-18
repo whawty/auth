@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016 whawty contributors (see AUTHORS file)
+// Copyright (c) 2016-2019 whawty contributors (see AUTHORS file)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -374,7 +374,7 @@ func cmdRun(c *cli.Context) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := runWebAddr(a, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+			if err := runWebAddr(a, s.GetInterface()); err != nil {
 				fmt.Printf("warning running web interface(%s) failed: %s\n", a, err)
 			}
 		}()
@@ -429,7 +429,7 @@ func cmdRunSa(c *cli.Context) error {
 			ln := listener.(*net.TCPListener)
 			go func() {
 				defer wg.Done()
-				if err := runWebListener(ln, s.GetInterface(), c.GlobalString("web-static-dir")); err != nil {
+				if err := runWebListener(ln, s.GetInterface()); err != nil {
 					fmt.Printf("error running web-api: %s", err)
 				}
 			}()
@@ -458,12 +458,6 @@ func main() {
 			Name:   "do-check",
 			Usage:  "run check on base directory before executing command",
 			EnvVar: "WHAWTY_AUTH_DO_CHECK",
-		},
-		cli.StringFlag{
-			Name:   "web-static-dir",
-			Value:  "/usr/share/whawty/auth-admin/",
-			Usage:  "path to static files for the web API",
-			EnvVar: "WHAWTY_AUTH_WEB_STATIC_DIR",
 		},
 		cli.StringFlag{
 			Name:   "do-upgrades",

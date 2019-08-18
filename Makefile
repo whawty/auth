@@ -36,7 +36,7 @@ endif
 EXECUTEABLE := whawty-auth
 
 all: build
-.PHONY: vet format build clean distclean
+.PHONY: vet format ui build clean distclean
 
 vet:
 	$(GOCMD) vet ./...
@@ -44,13 +44,20 @@ vet:
 format:
 	$(GOCMD) fmt ./...
 
-build:
+ui:
+	$(GOCMD) generate ./ui
+
+build: ui
 	$(GOCMD) build -o $(EXECUTEABLE) ./cmd/whawty-auth
+
+dev:
+	$(GOCMD) build -o $(EXECUTEABLE) -tags=dev ./cmd/whawty-auth
 
 clean:
 	rm -f $(EXECUTEABLE)
 
 distclean: clean
+	rm -f ui/assets_vfsdata.go
 	rm -f doc/man/$(EXECUTEABLE).8
 
 manpage: doc/man/$(EXECUTEABLE).8

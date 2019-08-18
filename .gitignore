@@ -1,6 +1,5 @@
 /whawty-auth
 /cmd/whawty-auth/whawty-auth
-/cmd/whawty-auth/test/
 /pam/*.o
 /pam/*.d
 /pam/*.d.*
@@ -12,3 +11,5 @@
 /sasl/examples/marshal/marshal
 /sasl/examples/client/client
 /sasl/examples/server/server
+/contrib/test/
+/vendor/

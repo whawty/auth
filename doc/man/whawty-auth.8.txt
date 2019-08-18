@@ -46,13 +46,6 @@ The following global options can be passed to *whawty-auth*.
     'WHAWTY_AUTH_DO_CHECK'. If both the environment variable and the command line
     option are supplied the latter is used.
 
-*--web-static-dir* '</path/to/whawty/admin/interface>'::
-     This sets the path to the static files of the admin web-interface. By default the path
-     '/usr/share/whawty/auth-admin/' will be used. This can also be specified using the
-     environment variable 'WHAWTY_AUTH_WEB_STATIC_DIR'. If both the command line option as well
-     as the environment variable are supplied the value of the command line option will be
-     used.
-
 *--do-upgrades* '(local|<remote-url>)'::
      This enables local or remote upgrades for password hashes. By default no upgrades will
      be done. 'local' means direct upgrades on the local store. 'remote' upgrades can be

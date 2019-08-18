@@ -1,4 +1,4 @@
-basedir: "test"
+basedir: "contrib/test"
 scryptauth:
   defaultctx: 19
   contexts:

@@ -11,6 +11,4 @@ echo "    - id: $1"
 echo "      hmackey: \"$HMAC_KEY\""
 echo "      pwcost: $2"
 
-
 exit 0
-

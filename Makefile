@@ -1,5 +1,5 @@
 ##
-## Copyright (c) 2016 whawty contributors (see AUTHORS file)
+## Copyright (c) 2016-2019 whawty contributors (see AUTHORS file)
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -32,44 +32,28 @@ GOCMD := go
 ifdef GOROOT
 GOCMD = $(GOROOT)/bin/go
 endif
-EXECUTEABLE := whawty-auth
 
-LIBS := "github.com/whawty/auth/store" \
-        "github.com/whawty/auth/sasl" \
-        "github.com/codegangsta/cli" \
-        "github.com/coreos/go-systemd/activation" \
-        "github.com/gosuri/uitable" \
-        "github.com/howeyc/gopass" \
-        "github.com/nbutton23/zxcvbn-go"
+EXECUTEABLE := whawty-auth
 
 all: build
 .PHONY: vet format build clean distclean
 
 vet:
-	$(GOCMD) vet
+	$(GOCMD) vet ./...
 
 format:
-	$(GOCMD) fmt
+	$(GOCMD) fmt ./...
 
-getlibs:
-	@$(foreach lib,$(LIBS), echo "fetching lib: $(lib)"; $(GOCMD) get $(lib);)
-
-updatelibs:
-	@$(foreach lib,$(LIBS), echo "updating lib: $(lib)"; $(GOCMD) get -u $(lib);)
-
-build: getlibs
-	$(GOCMD) build -o $(EXECUTEABLE)
-
-build-static: getlibs
-	$(GOCMD) build -tags netgo -o $(EXECUTEABLE)
-
-distclean: clean
-	rm -f $(EXECUTEABLE).8
+build:
+	$(GOCMD) build -o $(EXECUTEABLE) ./cmd/whawty-auth
 
 clean:
 	rm -f $(EXECUTEABLE)
 
-manpage: $(EXECUTEABLE).8
+distclean: clean
+	rm -f doc/man/$(EXECUTEABLE).8
 
-$(EXECUTEABLE).8: $(EXECUTEABLE).8.txt
+manpage: doc/man/$(EXECUTEABLE).8
+
+doc/man/$(EXECUTEABLE).8: doc/man/$(EXECUTEABLE).8.txt
 	a2x -f manpage $<

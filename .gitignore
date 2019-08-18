@@ -1,5 +1,6 @@
-/app/whawty-auth
-/app/test/
+/whawty-auth
+/cmd/whawty-auth/whawty-auth
+/cmd/whawty-auth/test/
 /pam/*.o
 /pam/*.d
 /pam/*.d.*

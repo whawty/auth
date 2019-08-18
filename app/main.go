@@ -41,10 +41,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/coreos/go-systemd/activation"
 	"github.com/gosuri/uitable"
 	"github.com/howeyc/gopass"
+	"github.com/urfave/cli"
 )
 
 var (
@@ -400,7 +400,7 @@ func cmdRunSa(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
-	listeners, err := activation.Listeners(true)
+	listeners, err := activation.Listeners()
 	if err != nil {
 		return cli.NewExitError(fmt.Sprintf("fetching socket listeners from systemd failed: %s", err), 2)
 	}

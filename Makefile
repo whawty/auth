@@ -38,16 +38,19 @@ EXECUTEABLE := whawty-auth
 all: build
 .PHONY: vet format ui build clean distclean
 
+format:
+	$(GOCMD) fmt ./...
+
 vet:
 	$(GOCMD) vet ./...
 
-format:
-	$(GOCMD) fmt ./...
+test: vet
+	$(GOCMD) test ./...
 
 ui:
 	$(GOCMD) generate ./ui
 
-build: ui
+build: test ui
 	$(GOCMD) build -o $(EXECUTEABLE) ./cmd/whawty-auth
 
 dev:

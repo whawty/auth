@@ -13,6 +13,8 @@ require (
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
+	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
+	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/urfave/cli v1.21.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect

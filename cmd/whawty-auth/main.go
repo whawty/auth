@@ -367,14 +367,43 @@ func cmdRun(c *cli.Context) error {
 
 	webAddrs := c.StringSlice("web-addr")
 	saslPaths := c.StringSlice("sock")
+	ssoAuthAddrs := c.StringSlice("sso-auth-addr")
+	ssoLoginAddrs := c.StringSlice("sso-login-addr")
 
 	var wg sync.WaitGroup
+	var sessions *webSessionFactory
+	if len(ssoAuthAddrs) > 0 || len(ssoLoginAddrs) > 0 || len(webAddrs) > 0 {
+		var err error
+		if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
+			return err
+		}
+	}
+	for _, ssoAuth := range ssoAuthAddrs {
+		a := ssoAuth
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := runSSOAuthAddr(a, s.GetInterface(), sessions); err != nil {
+				fmt.Printf("warning running sso login interface(%s) failed: %s\n", a, err)
+			}
+		}()
+	}
+	for _, ssoLogin := range ssoLoginAddrs {
+		a := ssoLogin
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := runSSOLoginAddr(a, s.GetInterface(), sessions); err != nil {
+				fmt.Printf("warning running sso auth interface(%s) failed: %s\n", a, err)
+			}
+		}()
+	}
 	for _, webAddr := range webAddrs {
 		a := webAddr
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := runWebAddr(a, s.GetInterface()); err != nil {
+			if err := runWebAddr(a, s.GetInterface(), sessions); err != nil {
 				fmt.Printf("warning running web interface(%s) failed: %s\n", a, err)
 			}
 		}()
@@ -411,6 +440,7 @@ func cmdRunSa(c *cli.Context) error {
 	}
 
 	var wg sync.WaitGroup
+	var sessions *webSessionFactory
 	for idx, listener := range listeners {
 		switch listener.(type) {
 		case *net.UnixListener:
@@ -425,11 +455,18 @@ func cmdRunSa(c *cli.Context) error {
 			}()
 		case *net.TCPListener:
 			fmt.Printf("listener[%d]: is a TCP socket (-> HTTP)\n", idx)
+			if sessions == nil {
+				sessions, err = NewWebSessionFactory(10 * time.Minute) // TODO
+				if err != nil {
+					fmt.Printf("warning: running web-api failed: web session factory failed: %v\n", err)
+					continue
+				}
+			}
 			wg.Add(1)
 			ln := listener.(*net.TCPListener)
 			go func() {
 				defer wg.Done()
-				if err := runWebListener(ln, s.GetInterface()); err != nil {
+				if err := runWebListener(ln, s.GetInterface(), sessions); err != nil {
 					fmt.Printf("error running web-api: %s", err)
 				}
 			}()
@@ -551,6 +588,16 @@ func main() {
 					Name:   "web-addr",
 					Usage:  "address to listen on for web API",
 					EnvVar: "WHAWTY_AUTH_WEB_ADDR",
+				},
+				cli.StringSliceFlag{
+					Name:   "sso-auth-addr",
+					Usage:  "address to listen on for nginx auth_request queries",
+					EnvVar: "WHAWTY_SSO_AUTH_ADDR",
+				},
+				cli.StringSliceFlag{
+					Name:   "sso-login-addr",
+					Usage:  "address to listen on for form-based login to auth-request",
+					EnvVar: "WHAWTY_SSO_LOGIN_ADDR",
 				},
 			},
 			Action: cmdRun,

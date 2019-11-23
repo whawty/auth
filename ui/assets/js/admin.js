@@ -29,6 +29,7 @@ var auth_username = null;
 var auth_admin = false;
 var auth_lastchanged = new Date();
 var auth_session = null;
+var auth_basepath = "/api/";
 
 function auth_loginSuccess(data) {
   if (data.session) {
@@ -107,7 +108,7 @@ function auth_init() {
   }
   $("#login-btn").click(function(event) {
     var data = JSON.stringify({ username: $("#login-username").val(), password: $("#login-password").val() })
-    $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
+    $.post(auth_basepath + "authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
   });
   $("#login-username").keypress(function(event) { overrideEnter(event, $("#login-btn")); });
   $("#login-password").keypress(function(event) { overrideEnter(event, $("#login-btn")); });
@@ -153,7 +154,7 @@ function main_getUpdateButton(user) {
     $("#changepw-btn").click(function(event) {
       var newpassword = $("#changepw-password").val();
       var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword });
-      $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError);
+      $.post(auth_basepath + "update", data, main_updateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");
@@ -173,7 +174,7 @@ function main_getRemoveButton(user) {
   btn.html('<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>&nbsp;&nbsp;Remove')
   return btn.click(function() {
     var data = JSON.stringify({ session: auth_session, username: user });
-    $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError);
+    $.post(auth_basepath + "remove", data, main_removeSuccess, 'json').fail(main_reqError);
   });
 }
 
@@ -187,7 +188,7 @@ function main_getSetAdminButton(user, oldstate) {
   var newstate = !oldstate;
   return btn.click(function() {
     var data = JSON.stringify({ session: auth_session, username: user, admin: newstate });
-    $.post("/api/set-admin", data, main_setadminSuccess, 'json').fail(main_reqError);
+    $.post(auth_basepath + "set-admin", data, main_setadminSuccess, 'json').fail(main_reqError);
   });
 }
 
@@ -258,7 +259,7 @@ function main_setupAddButton() {
       $("#changepw-password").val(''); // we don't want the browser to add this user to it's password store...
       $("#changepw-password-retype").val('');
       var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin });
-      $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError);
+      $.post(auth_basepath + "add", data, main_addSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Add");
@@ -270,7 +271,7 @@ function main_setupAddButton() {
 
 function main_updateUserlist() {
   var data = JSON.stringify({ session: auth_session });
-  $.post("/api/list-full", data, main_userlistSuccess, 'json').fail(main_reqError);
+  $.post(auth_basepath + "list-full", data, main_userlistSuccess, 'json').fail(main_reqError);
 }
 
 function main_adminViewInit() {
@@ -300,7 +301,7 @@ function main_userViewInit() {
     $("#changepw-btn").click(function(event) {
       var newpassword = $("#changepw-password").val();
       var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword });
-      $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError);
+      $.post(auth_basepath + "update", data, main_userUpdateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");

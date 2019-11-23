@@ -33,9 +33,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"strings"
 	"time"
 
 	storeLib "github.com/whawty/auth/store"
@@ -477,12 +479,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func runWebApi(listener *net.TCPListener, store *Store) (err error) {
-	var sessions *webSessionFactory
-	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
-		return err
-	}
-
+func runWebListener(listener *net.TCPListener, store *Store, sessions *webSessionFactory) (err error) {
 	mux := http.NewServeMux()
 	mux.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
 	mux.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
@@ -492,6 +489,25 @@ func runWebApi(listener *net.TCPListener, store *Store) (err error) {
 	mux.Handle("/api/list", webHandler{store, sessions, handleWebList})
 	mux.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
+	mux.Handle("/admin/js/admin.js", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		baseURI := r.Header.Get("X-BaseURI")
+		if baseURI == "" {
+			baseURI = "/"
+		}
+		f, err := ui.Assets.Open("js/admin.js")
+		if err != nil {
+			panic("invalid path to compile-time asset specified")
+		}
+		content, _ := ioutil.ReadAll(f)
+		content = []byte(strings.Replace(
+			string(content),
+			`var auth_basepath = "/api/";`,
+			fmt.Sprintf(`var auth_basepath = "%sapi/";`, baseURI),
+			1))
+		w.Header().Add("Content-Type", "applicatin/javascript")
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}))
 	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(ui.Assets)))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -499,7 +515,11 @@ func runWebApi(listener *net.TCPListener, store *Store) (err error) {
 			http.NotFound(w, r)
 			return
 		}
-		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
+		baseURI := r.Header.Get("X-BaseURI")
+		if baseURI == "" {
+			baseURI = "/"
+		}
+		http.Redirect(w, r, fmt.Sprintf("%sadmin/", baseURI), http.StatusTemporaryRedirect)
 	})
 
 	wl.Printf("web-api: listening on '%s'", listener.Addr())
@@ -507,7 +527,7 @@ func runWebApi(listener *net.TCPListener, store *Store) (err error) {
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 
-func runWebAddr(addr string, store *Store) (err error) {
+func runWebAddr(addr string, store *Store, sessions *webSessionFactory) (err error) {
 	if addr == "" {
 		addr = ":http"
 	}
@@ -515,9 +535,5 @@ func runWebAddr(addr string, store *Store) (err error) {
 	if err != nil {
 		return err
 	}
-	return runWebApi(ln.(*net.TCPListener), store)
-}
-
-func runWebListener(listener *net.TCPListener, store *Store) (err error) {
-	return runWebApi(listener, store)
+	return runWebListener(ln.(*net.TCPListener), store, sessions)
 }

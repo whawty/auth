@@ -45,7 +45,11 @@ vet:
 	$(GOCMD) vet ./...
 
 test: vet
-	$(GOCMD) test ./...
+	$(GOCMD) test `$(GOCMD) list ./... | grep -v 'sasl/examples'`
+
+cover:
+	$(GOCMD) test `$(GOCMD) list ./... | grep -v 'sasl/examples'` -covermode=count -coverprofile=.coverprofile
+	$(GOCMD) tool cover -html=.coverprofile
 
 ui:
 	$(GOCMD) generate ./ui

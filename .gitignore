@@ -13,3 +13,4 @@
 /sasl/examples/server/server
 /contrib/test/
 /vendor/
+.coverprofile

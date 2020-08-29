@@ -52,9 +52,9 @@ import (
 )
 
 var (
-	wl              = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
-	userNameRe      = regexp.MustCompile("^[A-Za-z0-9][-_.@A-Za-z0-9]*$")
-	noSupportedHash = errors.New("No admin has a supported password hash")
+	wl                 = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
+	userNameRe         = regexp.MustCompile("^[A-Za-z0-9][-_.@A-Za-z0-9]*$")
+	errNoSupportedHash = errors.New("No admin has a supported password hash")
 )
 
 const (
@@ -136,8 +136,8 @@ func openDir(path string) (*os.File, error) {
 
 // getTempFile provides a new, empty file in the base's .tmp directory,
 //  suitable for atomic file updates (by create/write/rename)
-func (dir *Dir) getTempFile() (tmp *os.File, err error) {
-	tmpDir := filepath.Join(dir.BaseDir, tmpDir)
+func (d *Dir) getTempFile() (tmp *os.File, err error) {
+	tmpDir := filepath.Join(d.BaseDir, tmpDir)
 	if err := os.MkdirAll(tmpDir, 0700); err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func checkSupportedAdminHashes(dir *os.File) error {
 		}
 	}
 
-	return noSupportedHash
+	return errNoSupportedHash
 }
 
 func listSupportedUsers(dir *os.File, list UserList) error {

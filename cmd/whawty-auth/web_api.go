@@ -458,8 +458,8 @@ type webHandler struct {
 	H        func(*Store, *webSessionFactory, http.ResponseWriter, *http.Request)
 }
 
-func (self webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	self.H(self.store, self.sessions, w, r)
+func (h webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.H(h.store, h.sessions, w, r)
 }
 
 // This is from golang http package - why is this not exported?

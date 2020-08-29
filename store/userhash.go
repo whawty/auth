@@ -207,9 +207,8 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	defer dir.Close()
 	if err != nil {
 		return err
-	} else {
-		return dir.Sync()
 	}
+	return dir.Sync()
 }
 
 // Add creates the hash file. It is an error if the user already exists.

@@ -296,6 +296,62 @@ func TestCheckDir(t *testing.T) {
 		t.Fatal("check should succeed without .tmp/:", err)
 	}
 
+	if err := store.AddUser("foo", "bar", false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if err := store.Check(); err != nil {
+		t.Fatal("check should succeed after adding regular user:", err)
+	}
+
+	// invalid userhash filenames
+	if file, err := os.Create(filepath.Join(testBaseDir, "blub")); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+	if err := store.Check(); err == nil {
+		t.Fatal("check should fail if a file with no extension is found")
+	}
+	if err := os.Remove(filepath.Join(testBaseDir, "blub")); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if file, err := os.Create(filepath.Join(testBaseDir, "blub.invalid")); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+	if err := store.Check(); err == nil {
+		t.Fatal("check should fail if a file with invalid extension is found")
+	}
+	if err := os.Remove(filepath.Join(testBaseDir, "blub.invalid")); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if file, err := os.Create(filepath.Join(testBaseDir, "admin.user")); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+	if err := store.Check(); err == nil {
+		t.Fatal("check should fail if admin and user hash for the same user exist")
+	}
+	if err := os.Remove(filepath.Join(testBaseDir, "admin.user")); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if file, err := os.Create(filepath.Join(testBaseDir, "foo.admin")); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else {
+		file.Close()
+	}
+	if err := store.Check(); err == nil {
+		t.Fatal("check should fail if admin and user hash for the same user exist")
+	}
+	if err := os.Remove(filepath.Join(testBaseDir, "foo.admin")); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
 	// TODO: add more tests
 }
 

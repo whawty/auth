@@ -54,7 +54,7 @@ import (
 var (
 	wl                 = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
 	userNameRe         = regexp.MustCompile("^[A-Za-z0-9][-_.@A-Za-z0-9]*$")
-	errNoSupportedHash = errors.New("No admin has a supported password hash")
+	errNoSupportedHash = errors.New("No admin with supported password hash found")
 )
 
 const (
@@ -176,6 +176,7 @@ func checkSupportedAdminHashes(dir *os.File) error {
 		return err
 	}
 
+	result := errNoSupportedHash
 	for _, name := range names {
 		// Skip the '.tmp' directory
 		if name == tmpDir {
@@ -191,20 +192,23 @@ func checkSupportedAdminHashes(dir *os.File) error {
 			wl.Printf("ignoring file for invalid username: '%s'", user)
 		}
 
-		if !isAdmin {
+		if isAdmin {
+			if exists, _ := fileExists(filepath.Join(dir.Name(), user) + userExt); exists {
+				return fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
+			}
+		} else {
+			if exists, _ := fileExists(filepath.Join(dir.Name(), user) + adminExt); exists {
+				return fmt.Errorf("both '%s' and '%s' exist", name, user+adminExt)
+			}
 			continue
 		}
 
-		if exists, _ := fileExists(filepath.Join(dir.Name(), user) + userExt); exists {
-			return fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
-		}
-
 		if IsFormatSupported(filepath.Join(dir.Name(), name)) == nil {
-			return nil
+			result = nil
 		}
 	}
 
-	return errNoSupportedHash
+	return result
 }
 
 func listSupportedUsers(dir *os.File, list UserList) error {

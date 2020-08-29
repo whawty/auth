@@ -1,6 +1,6 @@
 module github.com/whawty/auth
 
-go 1.12
+go 1.14
 
 require (
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f

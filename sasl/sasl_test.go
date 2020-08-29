@@ -31,6 +31,7 @@
 package sasl
 
 import (
+	"errors"
 	"net"
 	"os"
 	"path/filepath"
@@ -44,9 +45,15 @@ const (
 	testPassword string = "bar"
 	testService  string = "whawty"
 	testRealm    string = "test"
+
+	errorService string = "error"
 )
 
 func callback(login, password, service, realm string) (ok bool, msg string, err error) {
+	if service == errorService {
+		return true, "success", errors.New("it is an error to use the error service")
+	}
+
 	ok = false
 	if service != testService {
 		return false, "wrong service", nil
@@ -119,58 +126,37 @@ func TestAuthentication(t *testing.T) {
 	}()
 
 	c := NewClient(filepath.Join(testBaseDir, "sock"))
-	ok, msg, err := c.Auth(testUsername, testPassword, testService, testRealm)
-	if err != nil {
-		t.Fatal("unexpected error:", err)
-	}
-	if !ok {
-		t.Fatal("authentication failed")
-	}
-	if msg != "success" {
-		t.Fatal("unexpected message:", msg)
+
+	testVectors := []struct {
+		username string
+		password string
+		service  string
+		realm    string
+		ok       bool
+		msg      string
+	}{
+		{testUsername, testPassword, testService, testRealm, true, "success"},
+		{"nobody", testPassword, testService, testRealm, false, "unknown user: nobody"},
+		{testUsername, "wrong", testService, testRealm, false, "invalid password"},
+		{testUsername, testPassword, "other", testRealm, false, "wrong service"},
+		{testUsername, testPassword, "", testRealm, false, "wrong service"},
+		{testUsername, testPassword, testService, "blub", false, "wrong realm"},
+		{testUsername, testPassword, testService, "", false, "wrong realm"},
+		{"", testPassword, testService, testRealm, false, ""},
+		{testUsername, "", testService, testRealm, false, ""},
+		{testUsername, testPassword, errorService, testRealm, false, "it is an error to use the error service"},
 	}
 
-	ok, msg, err = c.Auth("unknown", testPassword, testService, testRealm)
-	if err != nil {
-		t.Fatal("unexpected error:", err)
-	}
-	if ok {
-		t.Fatal("authentication using unknown user should fail")
-	}
-	if msg != "unknown user: unknown" {
-		t.Fatal("unexpected message:", msg)
-	}
-
-	ok, msg, err = c.Auth(testUsername, "wrong", testService, testRealm)
-	if err != nil {
-		t.Fatal("unexpected error:", err)
-	}
-	if ok {
-		t.Fatal("authentication using wrong password should fail")
-	}
-	if msg != "invalid password" {
-		t.Fatal("unexpected message:", msg)
-	}
-
-	ok, msg, err = c.Auth(testUsername, testPassword, "", testRealm)
-	if err != nil {
-		t.Fatal("unexpected error:", err)
-	}
-	if ok {
-		t.Fatal("authentication to wrong service should fail")
-	}
-	if msg != "wrong service" {
-		t.Fatal("unexpected message:", msg)
-	}
-
-	ok, msg, err = c.Auth(testUsername, testPassword, testService, "")
-	if err != nil {
-		t.Fatal("unexpected error:", err)
-	}
-	if ok {
-		t.Fatal("authentication to wrong realm should fail")
-	}
-	if msg != "wrong realm" {
-		t.Fatal("unexpected message:", msg)
+	for _, vector := range testVectors {
+		ok, msg, err := c.Auth(vector.username, vector.password, vector.service, vector.realm)
+		if err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+		if ok != vector.ok {
+			t.Fatal("authentication failed")
+		}
+		if vector.msg != "" && msg != vector.msg {
+			t.Fatal("unexpected message:", msg)
+		}
 	}
 }

@@ -37,7 +37,7 @@ import (
 	"os"
 
 	"gopkg.in/spreadspace/scryptauth.v2"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type cfgScryptauthCtx struct {

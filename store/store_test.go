@@ -344,6 +344,61 @@ func TestAddUser(t *testing.T) {
 	}
 }
 
+func TestListFull(t *testing.T) {
+	adminuser := "root"
+	password := "verysecret"
+	user1 := "test"
+	password1 := "secret"
+
+	store := NewDir(testBaseDir)
+
+	if err := os.Mkdir(testBaseDir, 0755); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer os.RemoveAll(testBaseDir)
+
+	if list, err := store.ListFull(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if len(list) != 0 {
+		t.Fatalf("listFull should return an empty user list for an empty directory")
+	}
+
+	if err := store.makeDefaultContext(); err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+
+	if err := store.Init(adminuser, password); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if list, err := store.ListFull(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if len(list) != 1 {
+		t.Fatalf("list should return a list of length 1")
+	} else {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != scryptauthFormatID {
+			t.Fatalf("list returned wrong user list: %v", user)
+		}
+	}
+
+	if err := store.AddUser(user1, password1, false); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if list, err := store.ListFull(); err != nil {
+		t.Fatal("unexpected error:", err)
+	} else if len(list) != 2 {
+		t.Fatalf("list should return a list of length 2")
+	} else {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+		if user, ok := list[user1]; !ok || user.IsAdmin {
+			t.Fatalf("list returned wrong user list")
+		}
+	}
+}
+
 func TestList(t *testing.T) {
 	adminuser := "root"
 	password := "verysecret"

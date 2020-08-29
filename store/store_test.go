@@ -52,78 +52,81 @@ func TestNewDirFromConfig(t *testing.T) {
 		s     string
 		valid bool
 	}{
-		{"", false},
+		{"", false},            // empty file with no settings
+		{`basedir: ""`, false}, // empty/no base dir
 		{`basedir: "/tmp"`, true},
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 0`, true},
+defaultctx: 0`, true},
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17`, false}, // default ctx is set to 17 but it does not exist
+defaultctx: 17`, false}, // default ctx is set to 17 but it does not exist
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 0
+defaultctx: 1
+contexts:
+  - id: 1`, false}, // context has no valid algorithm
+		{`basedir: "/tmp"
+contexts:
+  - id: 0
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, false}, // default ctx is set to 17 but does not exist, also context id 0 is invalid
+      pwcost: 12`, false}, // context id 0 is invalid
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 13
+defaultctx: 17
+contexts:
+  - id: 13
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
       pwcost: 12`, false}, // default ctx is set to 17 but does not exist
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+defaultctx: 17
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: ""
       pwcost: 12`, false}, // HMAC Key is empty
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+defaultctx: 17
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA=="
       pwcost: 12`, false}, // HMAC Key is too short
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+defaultctx: 17
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: "$$invalid§§"
       pwcost: 12`, false}, // invalid HMAC Key
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+defaultctx: 17
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
       pwcost: 33`, false}, // invalid PW-Cost parameter
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 0
-  contexts:
-    - id: 17
+defaultctx: 0
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
       pwcost: 14`, false}, // no default context but there is at least one context defined
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+defaultctx: 17
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
       pwcost: 12`, true},
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+defaultctx: 17
+contexts:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
       pwcost: 12
-    - id: 18
+  - id: 18
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
       pwcost: 14
       p: 7

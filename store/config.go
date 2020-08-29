@@ -33,7 +33,6 @@ package store
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/spreadspace/scryptauth.v2"
@@ -41,21 +40,28 @@ import (
 )
 
 type cfgScryptauthCtx struct {
-	ID            uint   `yaml:"id"`
 	HmacKeyBase64 string `yaml:"hmackey"`
 	PwCost        uint   `yaml:"pwcost"`
 	R             int    `yaml:"r"`
 	P             int    `yaml:"p"`
 }
 
-type cfgScryptauth struct {
-	DefaultCtx uint               `yaml:"defaultctx"`
-	Contexts   []cfgScryptauthCtx `yaml:"contexts"`
+// type cfgArgonIDCtx struct {
+// 	Time    uint32 `yaml:"time"`
+// 	Memory  uint32 `yaml:"memory"`
+// 	Threads uint8  `yaml:"threads"`
+// }
+
+type cfgCtx struct {
+	ID         uint              `yaml:"id"`
+	Scryptauth *cfgScryptauthCtx `yaml:"scryptauth"`
+	//	ArgonID    *cfgArgonIDCtx `yaml:"argonid"`
 }
 
 type config struct {
-	BaseDir    string        `yaml:"basedir"`
-	Scryptauth cfgScryptauth `yaml:"scryptauth"`
+	BaseDir    string   `yaml:"basedir"`
+	DefaultCtx uint     `yaml:"defaultctx"`
+	Contexts   []cfgCtx `yaml:"contexts"`
 }
 
 func readConfig(configfile string) (*config, error) {
@@ -65,28 +71,23 @@ func readConfig(configfile string) (*config, error) {
 	}
 	defer file.Close()
 
-	yamldata, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("Error opening store config file: %v", err)
-	}
+	decoder := yaml.NewDecoder(file)
+	decoder.KnownFields(true)
 
 	c := &config{}
-	if yamlerr := yaml.Unmarshal(yamldata, c); yamlerr != nil {
-		return nil, fmt.Errorf("Error parsing config file: %s", yamlerr)
+	if err = decoder.Decode(c); err != nil {
+		return nil, fmt.Errorf("Error parsing config file: %s", err)
 	}
 	return c, nil
 }
 
-func scryptauthContextFromConfig(ctx cfgScryptauthCtx) (*scryptauth.Context, error) {
-	if ctx.ID == 0 {
-		return nil, fmt.Errorf("Error: context ID 0 is not allowed")
-	}
+func scryptauthContextFromConfig(id uint, ctx *cfgScryptauthCtx) (*scryptauth.Context, error) {
 	hk, err := base64.StdEncoding.DecodeString(ctx.HmacKeyBase64)
 	if err != nil {
-		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
+		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", id, err)
 	}
 	if len(hk) != scryptauth.KeyLength {
-		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", ctx.ID, scryptauth.KeyLength, len(hk))
+		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
 	}
 
 	sactx, err := scryptauth.New(ctx.PwCost, hk)
@@ -113,21 +114,30 @@ func (d *Dir) fromConfig(configfile string) error {
 	d.BaseDir = c.BaseDir
 
 	// Format: scryptauth
-	for _, ctx := range c.Scryptauth.Contexts {
-		sactx, err := scryptauthContextFromConfig(ctx)
-		if err != nil {
-			return err
+	for _, ctx := range c.Contexts {
+		if ctx.ID == 0 {
+			return fmt.Errorf("Error: context ID 0 is reserved")
 		}
-		d.Scryptauth.Contexts[ctx.ID] = sactx
+
+		if ctx.Scryptauth != nil {
+			// TODO: error if
+			sactx, err := scryptauthContextFromConfig(ctx.ID, ctx.Scryptauth)
+			if err != nil {
+				return err
+			}
+			d.Scryptauth.Contexts[ctx.ID] = sactx
+		} else {
+			return fmt.Errorf("Error: context ID %d uses unknown algorithm", ctx.ID)
+		}
 	}
-	if c.Scryptauth.DefaultCtx == 0 {
+	if c.DefaultCtx == 0 {
 		if len(d.Scryptauth.Contexts) != 0 {
 			return fmt.Errorf("Error: no default context")
 		}
-	} else if _, exists := d.Scryptauth.Contexts[c.Scryptauth.DefaultCtx]; !exists {
-		return fmt.Errorf("Error: invalid default context %d", c.Scryptauth.DefaultCtx)
+	} else if _, exists := d.Scryptauth.Contexts[c.DefaultCtx]; !exists {
+		return fmt.Errorf("Error: invalid default context %d", c.DefaultCtx)
 	}
-	d.Scryptauth.DefaultCtxID = c.Scryptauth.DefaultCtx
+	d.Scryptauth.DefaultCtxID = c.DefaultCtx
 
 	return nil
 }

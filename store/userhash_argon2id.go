@@ -69,7 +69,7 @@ func argon2IDValid(hashStr string) (bool, error) {
 	return true, nil
 }
 
-func argon2IDGen(password string, ctx *Argon2IDContext) (string, error) {
+func argon2IDGen(password string, params *Argon2IDParameterSet) (string, error) {
 	salt := make([]byte, 16)
 	salt_length, err := rand.Read(salt)
 	if err != nil {
@@ -79,20 +79,20 @@ func argon2IDGen(password string, ctx *Argon2IDContext) (string, error) {
 		return "", fmt.Errorf("Insufficient random bytes for salt")
 	}
 
-	hash := argon2.IDKey([]byte(password), salt, ctx.params.Time, ctx.params.Memory, ctx.params.Threads, ctx.params.Length)
+	hash := argon2.IDKey([]byte(password), salt, params.Time, params.Memory, params.Threads, params.Length)
 
 	b64_salt := base64.URLEncoding.EncodeToString(salt)
 	b64_hash := base64.URLEncoding.EncodeToString(hash)
 	return fmt.Sprintf("%s:%s", b64_salt, b64_hash), nil
 }
 
-func argon2IDCheck(password, hashStr string, ctx *Argon2IDContext) (bool, error) {
+func argon2IDCheck(password, hashStr string, params *Argon2IDParameterSet) (bool, error) {
 	hash, salt, err := argon2IDDecodeBase64(hashStr)
 	if err != nil {
 		return false, err
 	}
 
-	cmp := argon2.IDKey([]byte(password), salt, ctx.params.Time, ctx.params.Memory, ctx.params.Threads, ctx.params.Length)
+	cmp := argon2.IDKey([]byte(password), salt, params.Time, params.Memory, params.Threads, params.Length)
 	if subtle.ConstantTimeCompare(cmp, hash) != 1 {
 		return false, fmt.Errorf("Error: Hash verification failed")
 	}

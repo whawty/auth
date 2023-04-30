@@ -39,30 +39,30 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type cfgScryptAuthCtx struct {
+type cfgScryptAuthParams struct {
 	HmacKeyBase64 string `yaml:"hmackey"`
 	Cost          uint   `yaml:"cost"`
 	R             int    `yaml:"r"`
 	P             int    `yaml:"p"`
 }
 
-type cfgArgon2IDCtx struct {
+type cfgArgon2IDParams struct {
 	Time    uint32 `yaml:"time"`
 	Memory  uint32 `yaml:"memory"`
 	Threads uint8  `yaml:"threads"`
 	Length  uint32 `yaml:"length"`
 }
 
-type cfgCtx struct {
-	ID         uint              `yaml:"id"`
-	Scryptauth *cfgScryptAuthCtx `yaml:"scryptauth"`
-	Argon2ID   *cfgArgon2IDCtx   `yaml:"argon2id"`
+type cfgParams struct {
+	ID         uint                 `yaml:"id"`
+	Scryptauth *cfgScryptAuthParams `yaml:"scryptauth"`
+	Argon2ID   *cfgArgon2IDParams   `yaml:"argon2id"`
 }
 
 type config struct {
-	BaseDir          string   `yaml:"basedir"`
-	DefaultContextID uint     `yaml:"defaultctx"`
-	Contexts         []cfgCtx `yaml:"contexts"`
+	BaseDir string      `yaml:"basedir"`
+	Default uint        `yaml:"default"`
+	Params  []cfgParams `yaml:"params"`
 }
 
 func readConfig(configfile string) (*config, error) {
@@ -82,26 +82,26 @@ func readConfig(configfile string) (*config, error) {
 	return c, nil
 }
 
-func scryptAuthContextFromConfig(id uint, conf *cfgScryptAuthCtx) (*scryptauth.Context, error) {
+func scryptAuthParameterSetFromConfig(id uint, conf *cfgScryptAuthParams) (*scryptauth.Context, error) {
 	hk, err := base64.StdEncoding.DecodeString(conf.HmacKeyBase64)
 	if err != nil {
-		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", id, err)
+		return nil, fmt.Errorf("Error: can't decode HMAC Key for scrypt-auth parameter-set %d: %s", id, err)
 	}
 	if len(hk) != scryptauth.KeyLength {
-		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
+		return nil, fmt.Errorf("Error: HMAC Key for scrypt-auth parameter-set %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
 	}
 
-	ctx, err := scryptauth.New(conf.Cost, hk)
+	sactx, err := scryptauth.New(conf.Cost, hk)
 	if err != nil {
 		return nil, err
 	}
 	if conf.R > 0 {
-		ctx.R = conf.R
+		sactx.R = conf.R
 	}
 	if conf.P > 0 {
-		ctx.P = conf.P
+		sactx.P = conf.P
 	}
-	return ctx, nil
+	return sactx, nil
 }
 
 func (d *Dir) fromConfig(configfile string) error {
@@ -113,43 +113,43 @@ func (d *Dir) fromConfig(configfile string) error {
 		return fmt.Errorf("Error: config file does not contain a base directory")
 	}
 	d.BaseDir = c.BaseDir
-	d.DefaultContextID = c.DefaultContextID
+	d.Default = c.Default
 
-	for _, ctx := range c.Contexts {
-		if ctx.ID == 0 {
-			return fmt.Errorf("Error: context ID 0 is reserved")
+	for _, params := range c.Params {
+		if params.ID == 0 {
+			return fmt.Errorf("Error: parameter-set 0 is reserved")
 		}
 
 		n := 0
-		if ctx.Scryptauth != nil {
+		if params.Scryptauth != nil {
 			n += 1
-			sactx, err := scryptAuthContextFromConfig(ctx.ID, ctx.Scryptauth)
+			sactx, err := scryptAuthParameterSetFromConfig(params.ID, params.Scryptauth)
 			if err != nil {
 				return err
 			}
-			d.Contexts[ctx.ID] = &ScryptAuthContext{sactx}
+			d.Params[params.ID] = &ScryptAuthParameterSet{saCtx: sactx}
 		}
 
-		if ctx.Argon2ID != nil {
+		if params.Argon2ID != nil {
 			n += 1
-			d.Contexts[ctx.ID] = &Argon2IDContext{ctx.Argon2ID}
+			d.Params[params.ID] = &Argon2IDParameterSet{cfgArgon2IDParams: *params.Argon2ID}
 		}
 
 		if n == 0 {
-			return fmt.Errorf("Error: context ID %d uses unknown algorithm", ctx.ID)
+			return fmt.Errorf("Error: parameter-set %d uses unknown algorithm", params.ID)
 		}
 		if n > 1 {
-			return fmt.Errorf("Error: context ID %d has more than one algorithm configured", ctx.ID)
+			return fmt.Errorf("Error: parameter-set %d has more than one algorithm configured", params.ID)
 		}
 	}
-	if c.DefaultContextID == 0 {
-		if len(d.Contexts) != 0 {
-			return fmt.Errorf("Error: no default context")
+	if c.Default == 0 {
+		if len(d.Params) != 0 {
+			return fmt.Errorf("Error: no default parameter-set")
 		}
-	} else if _, exists := d.Contexts[c.DefaultContextID]; !exists {
-		return fmt.Errorf("Error: invalid default context %d", c.DefaultContextID)
+	} else if _, exists := d.Params[c.Default]; !exists {
+		return fmt.Errorf("Error: invalid default parameter-set %d", c.Default)
 	}
-	d.DefaultContextID = c.DefaultContextID
+	d.Default = c.Default
 
 	return nil
 }

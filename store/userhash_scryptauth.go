@@ -48,8 +48,8 @@ func scryptAuthValid(hashStr string) (bool, error) {
 	return true, nil
 }
 
-func scryptAuthGen(password string, ctx *ScryptAuthContext) (string, error) {
-	hash, salt, err := ctx.saCtx.Gen([]byte(password))
+func scryptAuthGen(password string, params *ScryptAuthParameterSet) (string, error) {
+	hash, salt, err := params.saCtx.Gen([]byte(password))
 	if err != nil {
 		return "", err
 	}
@@ -58,12 +58,12 @@ func scryptAuthGen(password string, ctx *ScryptAuthContext) (string, error) {
 	return hashStr, nil
 }
 
-func scryptAuthCheck(password, hashStr string, ctx *ScryptAuthContext) (isAuthenticated bool, err error) {
+func scryptAuthCheck(password, hashStr string, params *ScryptAuthParameterSet) (isAuthenticated bool, err error) {
 	var hash, salt []byte
 	if _, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
 		return
 	}
 
-	isAuthenticated, err = ctx.saCtx.Check(hash, []byte(password), salt)
+	isAuthenticated, err = params.saCtx.Check(hash, []byte(password), salt)
 	return
 }

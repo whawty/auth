@@ -260,7 +260,7 @@ func cmdListFull(s *Store) error {
 
 	table := uitable.New()
 	table.MaxColWidth = 80
-	table.AddRow("NAME", "TYPE", "LAST-CHANGED", "VALID", "SUPPORTED", "FORMAT", "CONTEXT ID")
+	table.AddRow("NAME", "TYPE", "LAST-CHANGED", "VALID", "SUPPORTED", "FORMAT", "PARAMETER-SET")
 	for _, k := range keys {
 		t := "user"
 		if lst[k].IsAdmin {

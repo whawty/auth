@@ -69,27 +69,27 @@ func init() {
 	}
 }
 
-type ScryptAuthContext struct {
+type ScryptAuthParameterSet struct {
 	saCtx *scryptauth.Context
 }
 
-type Argon2IDContext struct {
-	params *cfgArgon2IDCtx
+type Argon2IDParameterSet struct {
+	cfgArgon2IDParams
 }
 
 // Dir represents a directory containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
-	BaseDir          string
-	DefaultContextID uint
-	Contexts         map[uint]interface{}
+	BaseDir string
+	Default uint
+	Params  map[uint]interface{}
 }
 
 // NewDir creates a new whawty.auth store using BaseDir as base directory.
 func NewDir(BaseDir string) (d *Dir) {
 	d = &Dir{}
 	d.BaseDir = filepath.Clean(BaseDir)
-	d.DefaultContextID = 0
-	d.Contexts = make(map[uint]interface{})
+	d.Default = 0
+	d.Params = make(map[uint]interface{})
 	return
 }
 
@@ -97,16 +97,16 @@ func NewDir(BaseDir string) (d *Dir) {
 
 func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d = &Dir{}
-	d.Contexts = make(map[uint]interface{})
+	d.Params = make(map[uint]interface{})
 	err = d.fromConfig(configfile)
 	return
 }
 
-// makeDefaultContext() initialized a store with a default scryptauth
-// context with a cryptographically-random, 256 bits HMAC key.
-func (dir *Dir) makeDefaultContext() error {
-	if _, ctxExists := dir.Contexts[dir.DefaultContextID]; ctxExists {
-		return fmt.Errorf("whawty.auth.store: the store already has a default context")
+// makeDefaultParameterSet() initialized a store with a default scryptauth
+// parameter-set with a cryptographically-random, 256 bits HMAC key.
+func (dir *Dir) makeDefaultParameterSet() error {
+	if _, paramsExists := dir.Params[dir.Default]; paramsExists {
+		return fmt.Errorf("whawty.auth.store: the store already has a default parameter-set")
 	}
 
 	b := make([]byte, 32)
@@ -114,8 +114,8 @@ func (dir *Dir) makeDefaultContext() error {
 		return err
 	}
 
-	ctx, _ := scryptauth.New(14, b)
-	dir.Contexts[dir.DefaultContextID] = &ScryptAuthContext{ctx}
+	sactx, _ := scryptauth.New(14, b)
+	dir.Params[dir.Default] = &ScryptAuthParameterSet{sactx}
 	return nil
 }
 

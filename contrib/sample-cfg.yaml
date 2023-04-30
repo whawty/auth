@@ -1,6 +1,6 @@
 basedir: "contrib/test"
-defaultctx: 20
-contexts:
+default: 20
+params:
   - id: 17
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="

@@ -21,12 +21,12 @@ WHAWTY_AUTH_CONF_DIR=`dirname "$WHAWTY_AUTH_CONF"`
 /bin/chmod 400 "$WHAWTY_AUTH_CONF"
 /bin/cat <<EOF > "$WHAWTY_AUTH_CONF"
 basedir: "$WHAWTY_AUTH_STORE"
-scryptauth:
-  defaultctx: 1
-  contexts:
-    - id: 1
-      hmackey: "$HMAC_KEY"
-      pwcost: 12
+default: 1
+params:
+  scryptauth:
+  - id: 1
+    hmackey: "$HMAC_KEY"
+    cost: 12
 EOF
 
 /bin/mkdir -p "$WHAWTY_AUTH_STORE"

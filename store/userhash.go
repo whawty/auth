@@ -101,7 +101,7 @@ func isFormatSupportedFull(filename string) (supported bool, formatID string, la
 		return
 	}
 
-	// TODO: check if paramID is valid/existing context ID
+	// TODO: check if store paras contains a set with id==paramID
 
 	switch formatID {
 	case scryptAuthFormatID:
@@ -151,28 +151,28 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 }
 
 func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) error {
-	paramID := u.store.DefaultContextID
+	paramID := u.store.Default
 	var hashStr, formatID string
-	defaultCtx := u.store.Contexts[paramID]
-	switch defaultCtx.(type) {
-	case *ScryptAuthContext:
+	defaultParams := u.store.Params[paramID]
+	switch defaultParams.(type) {
+	case *ScryptAuthParameterSet:
 		var err error
-		ctx, _ := defaultCtx.(*ScryptAuthContext)
-		hashStr, err = scryptAuthGen(password, ctx)
+		params, _ := defaultParams.(*ScryptAuthParameterSet)
+		hashStr, err = scryptAuthGen(password, params)
 		if err != nil {
 			return err
 		}
 		formatID = scryptAuthFormatID
-	case *Argon2IDContext:
+	case *Argon2IDParameterSet:
 		var err error
-		ctx, _ := defaultCtx.(*Argon2IDContext)
-		hashStr, err = argon2IDGen(password, ctx)
+		params, _ := defaultParams.(*Argon2IDParameterSet)
+		hashStr, err = argon2IDGen(password, params)
 		if err != nil {
 			return err
 		}
 		formatID = argon2IDFormatID
 	default:
-		return fmt.Errorf("whawty.auth.store: not yet implemented (%+v)!", defaultCtx)
+		return fmt.Errorf("whawty.auth.store: not yet implemented (%+v)!", defaultParams)
 	}
 
 	// Set the flags based on whether we expect to create the file
@@ -323,14 +323,14 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 	if formatID, lastchange, paramID, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
 		return
 	}
-	upgradeable = (u.store.DefaultContextID != paramID)
+	upgradeable = (u.store.Default != paramID)
 
 	switch formatID {
 	case scryptAuthFormatID:
-		isAuthenticated, err = scryptAuthCheck(password, hashStr, u.store.Contexts[paramID].(*ScryptAuthContext))
+		isAuthenticated, err = scryptAuthCheck(password, hashStr, u.store.Params[paramID].(*ScryptAuthParameterSet))
 		return
 	case argon2IDFormatID:
-		isAuthenticated, err = argon2IDCheck(password, hashStr, u.store.Contexts[paramID].(*Argon2IDContext))
+		isAuthenticated, err = argon2IDCheck(password, hashStr, u.store.Params[paramID].(*Argon2IDParameterSet))
 		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)

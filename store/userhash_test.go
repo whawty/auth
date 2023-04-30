@@ -442,6 +442,29 @@ func TestUpdateNonExistent(t *testing.T) {
 	}
 }
 
+func TestArgon2ID(t *testing.T) {
+	username := "test-argon2id"
+	password1 := "secret"
+	password2 := "wrong"
+
+	argon2idParams := cfgArgon2IDParams{Time: 3, Memory: 64 * 1024, Threads: 2, Length: 32}
+	testStoreUserHash.Params[2] = &Argon2IDParameterSet{cfgArgon2IDParams: argon2idParams}
+	testStoreUserHash.Default = 2
+
+	u := NewUserHash(testStoreUserHash, username)
+	if err := u.Add(password1, true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
+		t.Fatal("authentication should succeed with correct password")
+	}
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); isAuthOk {
+		t.Fatal("authentication shouldn't succeed with wrong password")
+	}
+}
+
 func TestUpdateToArgon2ID(t *testing.T) {
 	username := "test-update-argon2id"
 	password1 := "secret"

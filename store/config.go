@@ -41,7 +41,7 @@ import (
 
 type cfgScryptauthCtx struct {
 	HmacKeyBase64 string `yaml:"hmackey"`
-	PwCost        uint   `yaml:"pwcost"`
+	Cost          uint   `yaml:"cost"`
 	R             int    `yaml:"r"`
 	P             int    `yaml:"p"`
 }
@@ -90,7 +90,7 @@ func scryptauthContextFromConfig(id uint, ctx *cfgScryptauthCtx) (*scryptauth.Co
 		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
 	}
 
-	sactx, err := scryptauth.New(ctx.PwCost, hk)
+	sactx, err := scryptauth.New(ctx.Cost, hk)
 	if err != nil {
 		return nil, err
 	}

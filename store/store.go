@@ -98,21 +98,21 @@ func NewDirFromConfig(configfile string) (d *Dir, err error) {
 }
 
 // makeDefaultContext() initialized a store with a default context of
-//  id 1 and a cryptographically-random, 256 bits HMAC key.
+// id 1 and a cryptographically-random, 256 bits HMAC key.
 func (dir *Dir) makeDefaultContext() error {
 	if _, ctxExists := dir.Scryptauth.Contexts[dir.Scryptauth.DefaultCtxID]; ctxExists {
-			return fmt.Errorf("whawty.auth.store: the store already has a default context")
-		}
+		return fmt.Errorf("whawty.auth.store: the store already has a default context")
+	}
 
-		b := make([]byte, 32)
-		if _, err := rand.Read(b); err != nil {
-			return err
-		}
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return err
+	}
 
 	dir.Scryptauth.DefaultCtxID = 1
-		ctx, _ := scryptauth.New(14, b)
+	ctx, _ := scryptauth.New(14, b)
 	dir.Scryptauth.Contexts[dir.Scryptauth.DefaultCtxID] = ctx
-		return nil
+	return nil
 }
 
 func openDir(path string) (*os.File, error) {
@@ -135,7 +135,7 @@ func openDir(path string) (*os.File, error) {
 }
 
 // getTempFile provides a new, empty file in the base's .tmp directory,
-//  suitable for atomic file updates (by create/write/rename)
+// suitable for atomic file updates (by create/write/rename)
 func (d *Dir) getTempFile() (tmp *os.File, err error) {
 	tmpDir := filepath.Join(d.BaseDir, tmpDir)
 	if err := os.MkdirAll(tmpDir, 0700); err != nil {

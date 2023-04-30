@@ -68,67 +68,67 @@ contexts:
   - id: 0
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, false}, // context id 0 is invalid
+      cost: 12`, false}, // context id 0 is invalid
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 13
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, false}, // default ctx is set to 17 but does not exist
+      cost: 12`, false}, // default ctx is set to 17 but does not exist
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 17
     scryptauth:
       hmackey: ""
-      pwcost: 12`, false}, // HMAC Key is empty
+      cost: 12`, false}, // HMAC Key is empty
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 17
     scryptauth:
       hmackey: "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA=="
-      pwcost: 12`, false}, // HMAC Key is too short
+      cost: 12`, false}, // HMAC Key is too short
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 17
     scryptauth:
       hmackey: "$$invalid§§"
-      pwcost: 12`, false}, // invalid HMAC Key
+      cost: 12`, false}, // invalid HMAC Key
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 17
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 33`, false}, // invalid PW-Cost parameter
+      cost: 33`, false}, // invalid PW-Cost parameter
 		{`basedir: "/tmp"
 defaultctx: 0
 contexts:
   - id: 17
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 14`, false}, // no default context but there is at least one context defined
+      cost: 14`, false}, // no default context but there is at least one context defined
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 17
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, true},
+      cost: 12`, true},
 		{`basedir: "/tmp"
 defaultctx: 17
 contexts:
   - id: 17
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12
+      cost: 12
   - id: 18
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 14
+      cost: 14
       p: 7
       r: 2`, true},
 	}

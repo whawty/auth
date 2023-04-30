@@ -69,38 +69,43 @@ func init() {
 	}
 }
 
+type ScryptAuthContext struct {
+	saCtx *scryptauth.Context
+}
+
+type Argon2IDContext struct {
+	params *cfgArgon2IDCtx
+}
+
 // Dir represents a directory containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
-	BaseDir       string
-	DefaultFormat string
-	Scryptauth    struct {
-		Contexts     map[uint]*scryptauth.Context
-		DefaultCtxID uint
-	}
+	BaseDir          string
+	DefaultContextID uint
+	Contexts         map[uint]interface{}
 }
 
 // NewDir creates a new whawty.auth store using BaseDir as base directory.
 func NewDir(BaseDir string) (d *Dir) {
 	d = &Dir{}
 	d.BaseDir = filepath.Clean(BaseDir)
-	d.DefaultFormat = scryptauthFormatID
-	d.Scryptauth.Contexts = make(map[uint]*scryptauth.Context)
+	d.DefaultContextID = 0
+	d.Contexts = make(map[uint]interface{})
 	return
 }
 
 // NewDirFromConfig creates a new whawty.auth store from yaml config file.
+
 func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d = &Dir{}
-	d.DefaultFormat = scryptauthFormatID
-	d.Scryptauth.Contexts = make(map[uint]*scryptauth.Context)
+	d.Contexts = make(map[uint]interface{})
 	err = d.fromConfig(configfile)
 	return
 }
 
-// makeDefaultContext() initialized a store with a default context of
-// id 1 and a cryptographically-random, 256 bits HMAC key.
+// makeDefaultContext() initialized a store with a default scryptauth
+// context with a cryptographically-random, 256 bits HMAC key.
 func (dir *Dir) makeDefaultContext() error {
-	if _, ctxExists := dir.Scryptauth.Contexts[dir.Scryptauth.DefaultCtxID]; ctxExists {
+	if _, ctxExists := dir.Contexts[dir.DefaultContextID]; ctxExists {
 		return fmt.Errorf("whawty.auth.store: the store already has a default context")
 	}
 
@@ -109,9 +114,8 @@ func (dir *Dir) makeDefaultContext() error {
 		return err
 	}
 
-	dir.Scryptauth.DefaultCtxID = 1
 	ctx, _ := scryptauth.New(14, b)
-	dir.Scryptauth.Contexts[dir.Scryptauth.DefaultCtxID] = ctx
+	dir.Contexts[dir.DefaultContextID] = &ScryptAuthContext{ctx}
 	return nil
 }
 
@@ -279,7 +283,7 @@ func listAllUsers(dir *os.File, list UserListFull) error {
 			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
 				return err
 			}
-			user.IsSupported, user.FormatID, user.LastChanged, user.FormatParams, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name))
+			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name))
 			list[username] = user
 		}
 
@@ -366,12 +370,12 @@ func (d *Dir) List() (UserList, error) {
 // UserFull holds additional information about a specific user. This is used as the
 // value type for UserListFull.
 type UserFull struct {
-	IsAdmin      bool      `json:"admin"`
-	LastChanged  time.Time `json:"lastchanged"`
-	IsValid      bool      `json:"valid"`
-	IsSupported  bool      `json:"supported"`
-	FormatID     string    `json:"formatid"`
-	FormatParams string    `json:"formatparams"`
+	IsAdmin     bool      `json:"admin"`
+	LastChanged time.Time `json:"lastchanged"`
+	IsValid     bool      `json:"valid"`
+	IsSupported bool      `json:"supported"`
+	FormatID    string    `json:"formatid"`
+	ParamID     uint      `json:"paramid"`
 }
 
 // UserListFull is the return value of ListFull(). The key of the map is the username.

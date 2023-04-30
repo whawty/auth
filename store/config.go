@@ -39,29 +39,30 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type cfgScryptauthCtx struct {
+type cfgScryptAuthCtx struct {
 	HmacKeyBase64 string `yaml:"hmackey"`
 	Cost          uint   `yaml:"cost"`
 	R             int    `yaml:"r"`
 	P             int    `yaml:"p"`
 }
 
-// type cfgArgonIDCtx struct {
-// 	Time    uint32 `yaml:"time"`
-// 	Memory  uint32 `yaml:"memory"`
-// 	Threads uint8  `yaml:"threads"`
-// }
+type cfgArgon2IDCtx struct {
+	Time    uint32 `yaml:"time"`
+	Memory  uint32 `yaml:"memory"`
+	Threads uint8  `yaml:"threads"`
+	Length  uint32 `yaml:"length"`
+}
 
 type cfgCtx struct {
 	ID         uint              `yaml:"id"`
-	Scryptauth *cfgScryptauthCtx `yaml:"scryptauth"`
-	//	ArgonID    *cfgArgonIDCtx `yaml:"argonid"`
+	Scryptauth *cfgScryptAuthCtx `yaml:"scryptauth"`
+	Argon2ID   *cfgArgon2IDCtx   `yaml:"argon2id"`
 }
 
 type config struct {
-	BaseDir    string   `yaml:"basedir"`
-	DefaultCtx uint     `yaml:"defaultctx"`
-	Contexts   []cfgCtx `yaml:"contexts"`
+	BaseDir          string   `yaml:"basedir"`
+	DefaultContextID uint     `yaml:"defaultctx"`
+	Contexts         []cfgCtx `yaml:"contexts"`
 }
 
 func readConfig(configfile string) (*config, error) {
@@ -81,8 +82,8 @@ func readConfig(configfile string) (*config, error) {
 	return c, nil
 }
 
-func scryptauthContextFromConfig(id uint, ctx *cfgScryptauthCtx) (*scryptauth.Context, error) {
-	hk, err := base64.StdEncoding.DecodeString(ctx.HmacKeyBase64)
+func scryptAuthContextFromConfig(id uint, conf *cfgScryptAuthCtx) (*scryptauth.Context, error) {
+	hk, err := base64.StdEncoding.DecodeString(conf.HmacKeyBase64)
 	if err != nil {
 		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", id, err)
 	}
@@ -90,17 +91,17 @@ func scryptauthContextFromConfig(id uint, ctx *cfgScryptauthCtx) (*scryptauth.Co
 		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
 	}
 
-	sactx, err := scryptauth.New(ctx.Cost, hk)
+	ctx, err := scryptauth.New(conf.Cost, hk)
 	if err != nil {
 		return nil, err
 	}
-	if ctx.R > 0 {
-		sactx.R = ctx.R
+	if conf.R > 0 {
+		ctx.R = conf.R
 	}
-	if ctx.P > 0 {
-		sactx.P = ctx.P
+	if conf.P > 0 {
+		ctx.P = conf.P
 	}
-	return sactx, nil
+	return ctx, nil
 }
 
 func (d *Dir) fromConfig(configfile string) error {
@@ -112,32 +113,43 @@ func (d *Dir) fromConfig(configfile string) error {
 		return fmt.Errorf("Error: config file does not contain a base directory")
 	}
 	d.BaseDir = c.BaseDir
+	d.DefaultContextID = c.DefaultContextID
 
-	// Format: scryptauth
 	for _, ctx := range c.Contexts {
 		if ctx.ID == 0 {
 			return fmt.Errorf("Error: context ID 0 is reserved")
 		}
 
+		n := 0
 		if ctx.Scryptauth != nil {
-			// TODO: error if
-			sactx, err := scryptauthContextFromConfig(ctx.ID, ctx.Scryptauth)
+			n += 1
+			sactx, err := scryptAuthContextFromConfig(ctx.ID, ctx.Scryptauth)
 			if err != nil {
 				return err
 			}
-			d.Scryptauth.Contexts[ctx.ID] = sactx
-		} else {
+			d.Contexts[ctx.ID] = &ScryptAuthContext{sactx}
+		}
+
+		if ctx.Argon2ID != nil {
+			n += 1
+			d.Contexts[ctx.ID] = &Argon2IDContext{ctx.Argon2ID}
+		}
+
+		if n == 0 {
 			return fmt.Errorf("Error: context ID %d uses unknown algorithm", ctx.ID)
 		}
+		if n > 1 {
+			return fmt.Errorf("Error: context ID %d has more than one algorithm configured", ctx.ID)
+		}
 	}
-	if c.DefaultCtx == 0 {
-		if len(d.Scryptauth.Contexts) != 0 {
+	if c.DefaultContextID == 0 {
+		if len(d.Contexts) != 0 {
 			return fmt.Errorf("Error: no default context")
 		}
-	} else if _, exists := d.Scryptauth.Contexts[c.DefaultCtx]; !exists {
-		return fmt.Errorf("Error: invalid default context %d", c.DefaultCtx)
+	} else if _, exists := d.Contexts[c.DefaultContextID]; !exists {
+		return fmt.Errorf("Error: invalid default context %d", c.DefaultContextID)
 	}
-	d.Scryptauth.DefaultCtxID = c.DefaultCtx
+	d.DefaultContextID = c.DefaultContextID
 
 	return nil
 }

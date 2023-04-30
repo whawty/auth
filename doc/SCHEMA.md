@@ -99,12 +99,12 @@ The following parameters are needed:
     time:    number of iterations
     memory:  memory size
     threads: degree of paralellism
-    len:     tag length (should be > 16bytes)
+    length:  tag length (should be > 16bytes)
 
 `salt` is a unique random number with 128bits, `hash` is the output of the following
 function:
 
-    argon2id(user_password, salt, time, memory, threads, len)
+    argon2id(user_password, salt, time, memory, threads, length)
 
 
 # Auxiliary Data

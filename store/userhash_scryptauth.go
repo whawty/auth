@@ -36,47 +36,34 @@ import (
 	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
-func scryptauthSupported(hashStr string) (bool, string, error) {
-	ctxID, hash, salt, err := scryptauth.DecodeBase64(hashStr)
+func scryptauthValid(hashStr string) (bool, error) {
+	_, hash, salt, err := scryptauth.DecodeBase64(hashStr)
 	if err != nil {
-		return false, "", err
+		return false, err
 	}
 
-	if ctxID == 0 || len(hash) == 0 || len(salt) == 0 {
-		return false, "", fmt.Errorf("whawty.auth.store: hash has invalid format")
+	if len(hash) == 0 || len(salt) == 0 {
+		return false, fmt.Errorf("whawty.auth.store: hash has invalid format")
 	}
-	params := fmt.Sprintf("context:%d", ctxID)
-	return true, params, nil
+	return true, nil
 }
 
-func scryptauthGen(password string, store *Dir) (string, error) {
-	ctx, ctxExists := store.Scryptauth.Contexts[store.Scryptauth.DefaultCtxID]
-	if !ctxExists {
-		return "", fmt.Errorf("whawty.auth.store: the store has no default context")
-	}
-	hash, salt, err := ctx.Gen([]byte(password))
+func scryptauthGen(password string, ctx *ScryptAuthContext) (string, error) {
+	hash, salt, err := ctx.saCtx.Gen([]byte(password))
 	if err != nil {
 		return "", err
 	}
 
-	hashStr := scryptauth.EncodeBase64(store.Scryptauth.DefaultCtxID, hash, salt)
+	hashStr := scryptauth.EncodeBase64(0, hash, salt)
 	return hashStr, nil
 }
 
-func scryptauthCheck(password, hashStr string, store *Dir) (isAuthenticated, upgradeable bool, err error) {
-	var ctxID uint
+func scryptauthCheck(password, hashStr string, ctx *ScryptAuthContext) (isAuthenticated bool, err error) {
 	var hash, salt []byte
-	if ctxID, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
+	if _, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
 		return
 	}
 
-	ctx, ctxExists := store.Scryptauth.Contexts[ctxID]
-	if !ctxExists {
-		return false, false, fmt.Errorf("whawty.auth.store: context ID '%d' is unknown", ctxID)
-	}
-
-	upgradeable = (store.Scryptauth.DefaultCtxID != ctxID)
-
-	isAuthenticated, err = ctx.Check(hash, []byte(password), salt)
+	isAuthenticated, err = ctx.saCtx.Check(hash, []byte(password), salt)
 	return
 }

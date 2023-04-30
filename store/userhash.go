@@ -59,11 +59,11 @@ func fileExists(path string) (bool, error) {
 }
 
 // readHashStr returns the contents of the user hash file separated into format id
-// string, change time and the whole hash string.
-func readHashStr(filename string) (string, time.Time, string, error) {
+// string, change time parameter id and the whole hash string.
+func readHashStr(filename string) (string, time.Time, uint, string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return "", time.Unix(0, 0), "", err
+		return "", time.Unix(0, 0), 0, "", err
 	}
 	defer file.Close()
 
@@ -71,32 +71,40 @@ func readHashStr(filename string) (string, time.Time, string, error) {
 
 	data, err := reader.ReadString('\n')
 	if err != nil && err != io.EOF {
-		return "", time.Unix(0, 0), "", err
+		return "", time.Unix(0, 0), 0, "", err
 	}
 
-	parts := strings.SplitN(string(data), ":", 3)
-	if len(parts) != 3 {
-		return "", time.Unix(0, 0), "", fmt.Errorf("whawty.auth.store: hash file is invalid")
+	parts := strings.SplitN(string(data), ":", 4)
+	if len(parts) != 4 {
+		return "", time.Unix(0, 0), 0, "", fmt.Errorf("whawty.auth.store: hash file is invalid")
 	}
 
 	tmpTime, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return "", time.Unix(0, 0), "", fmt.Errorf("whawty.auth.store: hash file is invalid, %v", err)
+		return "", time.Unix(0, 0), 0, "", fmt.Errorf("whawty.auth.store: hash file is invalid, %v", err)
 	}
 	lastchange := time.Unix(tmpTime, 0)
 
-	return parts[0], lastchange, parts[2], nil
+	tmpParamID, err := strconv.ParseUint(parts[2], 10, 0)
+	if err != nil {
+		return "", time.Unix(0, 0), 0, "", fmt.Errorf("whawty.auth.store: hash file is invalid, %v", err)
+	}
+	paramID := uint(tmpParamID)
+
+	return parts[0], lastchange, paramID, parts[3], nil
 }
 
-func isFormatSupportedFull(filename string) (supported bool, formatID string, lastchange time.Time, params string, err error) {
+func isFormatSupportedFull(filename string) (supported bool, formatID string, lastChange time.Time, paramID uint, err error) {
 	var hashStr string
-	if formatID, lastchange, hashStr, err = readHashStr(filename); err != nil {
+	if formatID, lastChange, paramID, hashStr, err = readHashStr(filename); err != nil {
 		return
 	}
 
+	// TODO: check if paramID is valid/existing context ID
+
 	switch formatID {
 	case scryptauthFormatID:
-		supported, params, err = scryptauthSupported(hashStr)
+		supported, err = scryptauthValid(hashStr)
 		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file format ID '%s' is not supported", formatID)
@@ -139,18 +147,20 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 }
 
 func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) error {
-	formatID := u.store.DefaultFormat
-
-	var hashStr string
-	switch formatID {
-	case scryptauthFormatID:
+	paramID := u.store.DefaultContextID
+	var hashStr, formatID string
+	defaultCtx := u.store.Contexts[paramID]
+	switch defaultCtx.(type) {
+	case *ScryptAuthContext:
 		var err error
-		hashStr, err = scryptauthGen(password, u.store)
+		ctx, _ := defaultCtx.(*ScryptAuthContext)
+		hashStr, err = scryptauthGen(password, ctx)
 		if err != nil {
 			return err
 		}
+		formatID = scryptauthFormatID
 	default:
-		return fmt.Errorf("whawty.auth.store: default hash file fromat ID '%s' is not supported", formatID)
+		return fmt.Errorf("whawty.auth.store: not yet implemented (%+v)!", defaultCtx)
 	}
 
 	// Set the flags based on whether we expect to create the file
@@ -174,7 +184,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	defer os.Remove(tmp.Name()) // Ensure that the file gets removed in case of failure
 
 	// Write the new password hash
-	if _, err := io.WriteString(tmp, fmt.Sprintf("%s:%d:%s\n", formatID, time.Now().Unix(), hashStr)); err != nil {
+	if _, err := io.WriteString(tmp, fmt.Sprintf("%s:%d:%d:%s\n", formatID, time.Now().Unix(), paramID, hashStr)); err != nil {
 		// TODO: retry if write was short??
 		return err
 	}
@@ -297,19 +307,18 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 	}
 
 	var formatID, hashStr string
-	if formatID, lastchange, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
+	var paramID uint
+	if formatID, lastchange, paramID, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
 		return
 	}
+	upgradeable = (u.store.DefaultContextID != paramID)
 
 	switch formatID {
 	case scryptauthFormatID:
-		isAuthenticated, upgradeable, err = scryptauthCheck(password, hashStr, u.store)
+		isAuthenticated, err = scryptauthCheck(password, hashStr, u.store.Contexts[paramID].(*ScryptAuthContext))
 		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)
-	}
-	if !upgradeable {
-		upgradeable = (u.store.DefaultFormat != formatID)
 	}
 
 	isAuthenticated = false

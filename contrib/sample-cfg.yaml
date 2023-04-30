@@ -4,20 +4,20 @@ contexts:
   - id: 17
     scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12
+      cost: 12
   - id: 18
     scryptauth:
       hmackey: "1rrhSZPW3v/BBpJOPQ/wd5XcRoZNEaDbHnfXEHOxoSc="
-      pwcost: 12
+      cost: 12
   - id: 19
     scryptauth:
       hmackey: "1m+FsEbJppUMaa0OeK5uMYIbuAb44IfMOxDdeuk+s9Q="
-      pwcost: 12
+      cost: 12
       r: 16
       p: 2
-### not yet supported
-#  - id: 20
-#    argon2id:
-#      time: 1
-#      memory: 65536 ## 64 MB
-#      threads: 4
+  - id: 20
+    argon2id:
+      time: 1
+      memory: 65536 ## 64 MB
+      threads: 4
+      length: 32

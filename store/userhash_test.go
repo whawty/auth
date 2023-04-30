@@ -235,9 +235,10 @@ func TestIsFormatSupported(t *testing.T) {
 		{"hmac_sha256_scrypt:1454709438::d29ybGQ=:aGVsbG8=", false},
 		{"hmac_sha256_scrypt:1454709438:142:d29ybGQ=:", false},
 		{"hmac_sha1_scrypt:1:1454709438:aGVsbG8=:d29ybGQ=", false},
+		{"hmac_sha1_scrypt:1:1454709438:aGVsbG8=:d29ybGQ=", false},
 
-		{"hmac_sha256_scrypt:124142142:42:aGVsbG8=:d29ybGQ=", true},
-		{"hmac_sha256_scrypt:1454709438:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
+		{"hmac_sha256_scrypt:124142142:42:0:aGVsbG8=:d29ybGQ=", true},
+		{"hmac_sha256_scrypt:1454709438:23:0:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
 	}
 
 	u := NewUserHash(testStoreUserHash, username)

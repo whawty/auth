@@ -153,7 +153,7 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) error {
 	paramID := u.store.Default
 	var hashStr, formatID string
-	defaultParams := u.store.Params[paramID]
+	defaultParams := u.store.Params[u.store.Default]
 	switch defaultParams.(type) {
 	case *ScryptAuthParameterSet:
 		var err error
@@ -172,7 +172,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 		}
 		formatID = argon2IDFormatID
 	default:
-		return fmt.Errorf("whawty.auth.store: not yet implemented (%+v)!", defaultParams)
+		return fmt.Errorf("whawty.auth.store: default parameter set is invalid")
 	}
 
 	// Set the flags based on whether we expect to create the file
@@ -327,10 +327,18 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 
 	switch formatID {
 	case scryptAuthFormatID:
-		isAuthenticated, err = scryptAuthCheck(password, hashStr, u.store.Params[paramID].(*ScryptAuthParameterSet))
+		params, ok := u.store.Params[paramID].(*ScryptAuthParameterSet)
+		if !ok {
+			return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: parameter-set %d does not exist or uses different algorithm", paramID)
+		}
+		isAuthenticated, err = scryptAuthCheck(password, hashStr, params)
 		return
 	case argon2IDFormatID:
-		isAuthenticated, err = argon2IDCheck(password, hashStr, u.store.Params[paramID].(*Argon2IDParameterSet))
+		params, ok := u.store.Params[paramID].(*Argon2IDParameterSet)
+		if !ok {
+			return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: parameter-set %d does not exist or uses different algorithm", paramID)
+		}
+		isAuthenticated, err = argon2IDCheck(password, hashStr, params)
 		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)

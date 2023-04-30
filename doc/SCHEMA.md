@@ -107,7 +107,7 @@ function:
     argon2id(user_password, salt, time, memory, threads, len)
 
 
-## Auxiliary Data
+# Auxiliary Data
 
 The auxiliary data associated to a user is stored in the user's file, after the
 first line.  It is organized as key value pairs.

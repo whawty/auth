@@ -31,39 +31,70 @@
 package store
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
 	"fmt"
+	"strings"
 
-	"gopkg.in/spreadspace/scryptauth.v2"
+	"golang.org/x/crypto/argon2"
 )
 
-func scryptAuthValid(hashStr string) (bool, error) {
-	_, hash, salt, err := scryptauth.DecodeBase64(hashStr)
+func argon2IDDecodeBase64(hashStr string) (salt, hash []byte, err error) {
+	parts := strings.Split(hashStr, ":")
+	if len(parts) != 2 {
+		return nil, nil, fmt.Errorf("whawty.auth.store: hash string has invalid format")
+	}
+
+	salt, err = base64.URLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, nil, fmt.Errorf("whawty.auth.store: decoding Argon2id salt failed (%v)", err)
+	}
+	hash, err = base64.URLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, nil, fmt.Errorf("whawty.auth.store: decoding Argon2id hash failed (%v)", err)
+	}
+
+	return hash, salt, nil
+}
+
+func argon2IDValid(hashStr string) (bool, error) {
+	salt, hash, err := argon2IDDecodeBase64(hashStr)
 	if err != nil {
 		return false, err
 	}
-
 	if len(hash) == 0 || len(salt) == 0 {
 		return false, fmt.Errorf("whawty.auth.store: hash has invalid format")
 	}
 	return true, nil
 }
 
-func scryptAuthGen(password string, ctx *ScryptAuthContext) (string, error) {
-	hash, salt, err := ctx.saCtx.Gen([]byte(password))
+func argon2IDGen(password string, ctx *Argon2IDContext) (string, error) {
+	salt := make([]byte, 16)
+	salt_length, err := rand.Read(salt)
 	if err != nil {
 		return "", err
 	}
-
-	hashStr := scryptauth.EncodeBase64(0, hash, salt)
-	return hashStr, nil
-}
-
-func scryptAuthCheck(password, hashStr string, ctx *ScryptAuthContext) (isAuthenticated bool, err error) {
-	var hash, salt []byte
-	if _, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
-		return
+	if salt_length != 16 {
+		return "", fmt.Errorf("Insufficient random bytes for salt")
 	}
 
-	isAuthenticated, err = ctx.saCtx.Check(hash, []byte(password), salt)
-	return
+	hash := argon2.IDKey([]byte(password), salt, ctx.params.Time, ctx.params.Memory, ctx.params.Threads, ctx.params.Length)
+
+	b64_salt := base64.URLEncoding.EncodeToString(salt)
+	b64_hash := base64.URLEncoding.EncodeToString(hash)
+	return fmt.Sprintf("%s:%s", b64_salt, b64_hash), nil
+}
+
+func argon2IDCheck(password, hashStr string, ctx *Argon2IDContext) (bool, error) {
+	hash, salt, err := argon2IDDecodeBase64(hashStr)
+	if err != nil {
+		return false, err
+	}
+
+	cmp := argon2.IDKey([]byte(password), salt, ctx.params.Time, ctx.params.Memory, ctx.params.Threads, ctx.params.Length)
+	if subtle.ConstantTimeCompare(cmp, hash) != 1 {
+		return false, fmt.Errorf("Error: Hash verification failed")
+	}
+	return true, nil
 }

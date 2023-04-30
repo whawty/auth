@@ -42,7 +42,8 @@ import (
 )
 
 const (
-	scryptauthFormatID string = "hmac_sha256_scrypt"
+	scryptAuthFormatID string = "hmac_sha256_scrypt"
+	argon2IDFormatID   string = "argon2id"
 )
 
 // fileExists returns whether the given file or directory exists or not
@@ -103,8 +104,11 @@ func isFormatSupportedFull(filename string) (supported bool, formatID string, la
 	// TODO: check if paramID is valid/existing context ID
 
 	switch formatID {
-	case scryptauthFormatID:
-		supported, err = scryptauthValid(hashStr)
+	case scryptAuthFormatID:
+		supported, err = scryptAuthValid(hashStr)
+		return
+	case argon2IDFormatID:
+		supported, err = argon2IDValid(hashStr)
 		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file format ID '%s' is not supported", formatID)
@@ -154,11 +158,19 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	case *ScryptAuthContext:
 		var err error
 		ctx, _ := defaultCtx.(*ScryptAuthContext)
-		hashStr, err = scryptauthGen(password, ctx)
+		hashStr, err = scryptAuthGen(password, ctx)
 		if err != nil {
 			return err
 		}
-		formatID = scryptauthFormatID
+		formatID = scryptAuthFormatID
+	case *Argon2IDContext:
+		var err error
+		ctx, _ := defaultCtx.(*Argon2IDContext)
+		hashStr, err = argon2IDGen(password, ctx)
+		if err != nil {
+			return err
+		}
+		formatID = argon2IDFormatID
 	default:
 		return fmt.Errorf("whawty.auth.store: not yet implemented (%+v)!", defaultCtx)
 	}
@@ -314,8 +326,11 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 	upgradeable = (u.store.DefaultContextID != paramID)
 
 	switch formatID {
-	case scryptauthFormatID:
-		isAuthenticated, err = scryptauthCheck(password, hashStr, u.store.Contexts[paramID].(*ScryptAuthContext))
+	case scryptAuthFormatID:
+		isAuthenticated, err = scryptAuthCheck(password, hashStr, u.store.Contexts[paramID].(*ScryptAuthContext))
+		return
+	case argon2IDFormatID:
+		isAuthenticated, err = argon2IDCheck(password, hashStr, u.store.Contexts[paramID].(*Argon2IDContext))
 		return
 	default:
 		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)

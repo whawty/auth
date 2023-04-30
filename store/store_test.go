@@ -435,7 +435,7 @@ func TestListFull(t *testing.T) {
 	} else if len(list) != 1 {
 		t.Fatalf("list should return a list of length 1")
 	} else {
-		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != scryptauthFormatID {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != scryptAuthFormatID {
 			t.Fatalf("list returned wrong user list: %v", user)
 		}
 	}

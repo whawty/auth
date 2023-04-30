@@ -226,18 +226,26 @@ func TestIsFormatSupported(t *testing.T) {
 		{"hello", false},
 		{"hmac_sha256_scrypt:214", false},
 		{"hmac_sha256_scrypt:42:aGVsbG8=", false},
+		{"hmac_sha256_scrypt::12:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438::aGVsbG8=", false},
 		{"hmac_sha256_scrypt:1454709438:42:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438:42:0:aGVsbG8=", false},
 		{"hmac_sha256_scrypt:1454709438:0:aGVsbG8=:d29ybGQ=", false},
 		{"hmac_sha256_scrypt:1454709438:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", false},
 		{"hmac_sha256_scrypt:1454709438:17:aGVsbG8=:d29ybGQ=:", false},
-		{"hmac_sha256_scrypt:1454709438:23:aGVsbG8=:abcd$", false},
-		{"hmac_sha256_scrypt:1454709438:12::aGVsbG8=", false},
-		{"hmac_sha256_scrypt:1454709438::d29ybGQ=:aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438:23:0:aGVsbG8=:abcd$", false},
+		{"hmac_sha256_scrypt:1454709438:12:0::aGVsbG8=", false},
+		{"hmac_sha256_scrypt:1454709438:1::d29ybGQ=:aGVsbG8=", false},
 		{"hmac_sha256_scrypt:1454709438:142:d29ybGQ=:", false},
+		{"argon2id:1454709438:3:d29ybGQ=", false},
+		{"argon2id:1454709438:3:d29ybGQ=:", false},
+		{"argon2id:1454709438:3:d29ybGQ=:????", false},
+		{"argon2id:1454709438:3:!xx-no-base64!:????", false},
 		{"hmac_sha1_scrypt:1:1454709438:aGVsbG8=:d29ybGQ=", false},
 
-		{"hmac_sha256_scrypt:124142142:42:aGVsbG8=:d29ybGQ=", true},
-		{"hmac_sha256_scrypt:1454709438:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
+		{"hmac_sha256_scrypt:124142142:42:0:aGVsbG8=:d29ybGQ=", true},
+		{"hmac_sha256_scrypt:1454709438:23:0:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
+		{"argon2id:1682865339:20:t75-Mtlfvw29uwtQoyczow==:Ihn8sS-fGjC3TRlB7GT1PUp76_GdrVQRNYAccQmmXDQ=", true},
 	}
 
 	u := NewUserHash(testStoreUserHash, username)
@@ -317,10 +325,10 @@ func TestAuthenticateNonExistent(t *testing.T) {
 	}
 }
 
-func TestAuthenticateUnknownContext(t *testing.T) {
-	username := "test-auth-unknown-ctx"
+func TestAuthenticateUnknownParameterSet(t *testing.T) {
+	username := "test-auth-unknown-params"
 	password := "secret"
-	hashStr := "hmac_sha256_scrypt:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w="
+	hashStr := "hmac_sha256_scrypt:1454709438:23:0:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w="
 
 	filename := filepath.Join(testBaseDirUserHash, username+".user")
 	file, err := os.Create(filename)
@@ -336,7 +344,7 @@ func TestAuthenticateUnknownContext(t *testing.T) {
 	u := NewUserHash(testStoreUserHash, username)
 
 	if _, _, _, _, err := u.Authenticate(password); err == nil {
-		t.Fatal("authenticating a password which uses an unknown context should give an error")
+		t.Fatal("authenticating a password which uses an unknown parameter-set should give an error")
 	}
 }
 
@@ -431,5 +439,55 @@ func TestUpdateNonExistent(t *testing.T) {
 
 	if err := u.Update(password); err == nil {
 		t.Fatal("updating not exisiting user should be an error")
+	}
+}
+
+func TestArgon2ID(t *testing.T) {
+	username := "test-argon2id"
+	password1 := "secret"
+	password2 := "wrong"
+
+	argon2idParams := cfgArgon2IDParams{Time: 3, Memory: 64 * 1024, Threads: 2, Length: 32}
+	testStoreUserHash.Params[2] = &Argon2IDParameterSet{cfgArgon2IDParams: argon2idParams}
+	testStoreUserHash.Default = 2
+
+	u := NewUserHash(testStoreUserHash, username)
+	if err := u.Add(password1, true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
+		t.Fatal("authentication should succeed with correct password")
+	}
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); isAuthOk {
+		t.Fatal("authentication shouldn't succeed with wrong password")
+	}
+}
+
+func TestUpdateToArgon2ID(t *testing.T) {
+	username := "test-update-argon2id"
+	password1 := "secret"
+	password2 := "mosecret"
+
+	u := NewUserHash(testStoreUserHash, username)
+
+	if err := u.Add(password1, true); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	defer u.Remove()
+
+	argon2idParams := cfgArgon2IDParams{Time: 3, Memory: 64 * 1024, Threads: 2, Length: 32}
+	testStoreUserHash.Params[2] = &Argon2IDParameterSet{cfgArgon2IDParams: argon2idParams}
+	testStoreUserHash.Default = 2
+
+	if err := u.Update(password2); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if isAuthOk, _, _, _, _ := u.Authenticate(password1); isAuthOk {
+		t.Fatal("authentication shouldn't succeed with old password")
+	}
+	if isAuthOk, _, _, _, _ := u.Authenticate(password2); !isAuthOk {
+		t.Fatal("authentication should succeed with new password")
 	}
 }

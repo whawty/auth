@@ -52,80 +52,83 @@ func TestNewDirFromConfig(t *testing.T) {
 		s     string
 		valid bool
 	}{
-		{"", false},
+		{"", false},            // empty file with no settings
+		{`basedir: ""`, false}, // empty/no base dir
 		{`basedir: "/tmp"`, true},
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 0`, true},
+default: 0`, true},
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17`, false}, // default ctx is set to 17 but it does not exist
+default: 17`, false}, // default parameter-set is set to 17 but it does not exist
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 0
+default: 1
+params:
+  - id: 1`, false}, // parameter-set has no valid algorithm
+		{`basedir: "/tmp"
+params:
+  - id: 0
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, false}, // default ctx is set to 17 but does not exist, also context id 0 is invalid
+      cost: 12`, false}, // parameter-set 0 is invalid
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 13
+default: 17
+params:
+  - id: 13
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, false}, // default ctx is set to 17 but does not exist
+      cost: 12`, false}, // default parameter-set is set to 17 but does not exist
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+default: 17
+params:
+  - id: 17
+    scryptauth:
       hmackey: ""
-      pwcost: 12`, false}, // HMAC Key is empty
+      cost: 12`, false}, // HMAC Key is empty
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+default: 17
+params:
+  - id: 17
+    scryptauth:
       hmackey: "e70t9ZiCR75KE4VoUHQM6wH05KORAfLV74bREA=="
-      pwcost: 12`, false}, // HMAC Key is too short
+      cost: 12`, false}, // HMAC Key is too short
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+default: 17
+params:
+  - id: 17
+    scryptauth:
       hmackey: "$$invalid§§"
-      pwcost: 12`, false}, // invalid HMAC Key
+      cost: 12`, false}, // invalid HMAC Key
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+default: 17
+params:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 33`, false}, // invalid PW-Cost parameter
+      cost: 33`, false}, // invalid PW-Cost parameter
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 0
-  contexts:
-    - id: 17
+default: 0
+params:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 14`, false}, // no default context but there is at least one context defined
+      cost: 14`, false}, // no default parameter-set but there is at least one parameter-set defined
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+default: 17
+params:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12`, true},
+      cost: 12`, true},
 		{`basedir: "/tmp"
-scryptauth:
-  defaultctx: 17
-  contexts:
-    - id: 17
+default: 17
+params:
+  - id: 17
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 12
-    - id: 18
+      cost: 12
+  - id: 18
+    scryptauth:
       hmackey: "iVFvz2PW5g1Tge9mLttgRxBuu0OBXgD7uAOHySqi4QI="
-      pwcost: 14
+      cost: 14
       p: 7
       r: 2`, true},
 	}
@@ -160,15 +163,15 @@ scryptauth:
 	}
 }
 
-func TestMakeDefaultContext(t *testing.T) {
+func TestMakeDefaultParameterSet(t *testing.T) {
 	store := NewDir(testBaseDir)
 
-	if err := store.makeDefaultContext(); err != nil {
-		t.Fatal("makeDefaultContext() failed:", err)
+	if err := store.makeDefaultParameterSet(); err != nil {
+		t.Fatal("makeDefaultParameterSet() failed:", err)
 	}
 
-	if err := store.makeDefaultContext(); err == nil {
-		t.Fatal("makeDefaultContext() should fail on initialized contexts")
+	if err := store.makeDefaultParameterSet(); err == nil {
+		t.Fatal("makeDefaultParameterSet() should fail on initialized parameter set")
 	}
 }
 
@@ -222,10 +225,10 @@ func TestInitDir(t *testing.T) {
 	}
 
 	if err := store.Init(adminuser, password); err == nil {
-		t.Fatalf("Initializing a directory without a context should give an error")
+		t.Fatalf("Initializing a directory without a parameter set should give an error")
 	}
 
-	if err := store.makeDefaultContext(); err != nil {
+	if err := store.makeDefaultParameterSet(); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -275,8 +278,8 @@ func TestCheckDir(t *testing.T) {
 		t.Fatalf("check should return an error for an empty directory")
 	}
 
-	// Initialize the store's context
-	if err := store.makeDefaultContext(); err != nil {
+	// Initialize the store's default parameter set
+	if err := store.makeDefaultParameterSet(); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -366,7 +369,7 @@ func TestAddUser(t *testing.T) {
 	}
 	defer os.RemoveAll(testBaseDir)
 
-	if err := store.makeDefaultContext(); err != nil {
+	if err := store.makeDefaultParameterSet(); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -419,7 +422,7 @@ func TestListFull(t *testing.T) {
 		t.Fatalf("listFull should return an empty user list for an empty directory")
 	}
 
-	if err := store.makeDefaultContext(); err != nil {
+	if err := store.makeDefaultParameterSet(); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -432,7 +435,7 @@ func TestListFull(t *testing.T) {
 	} else if len(list) != 1 {
 		t.Fatalf("list should return a list of length 1")
 	} else {
-		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != scryptauthFormatID {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != scryptAuthFormatID {
 			t.Fatalf("list returned wrong user list: %v", user)
 		}
 	}
@@ -474,7 +477,7 @@ func TestList(t *testing.T) {
 		t.Fatalf("list should return an empty user list for an empty directory")
 	}
 
-	if err := store.makeDefaultContext(); err != nil {
+	if err := store.makeDefaultParameterSet(); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -535,8 +538,8 @@ func TestMain(m *testing.M) {
 
 	testStoreUserHash = NewDir(testBaseDirUserHash)
 
-	if err := testStoreUserHash.makeDefaultContext(); err != nil {
-		fmt.Println("Error initializing default context:", err)
+	if err := testStoreUserHash.makeDefaultParameterSet(); err != nil {
+		fmt.Println("Error initializing default parameter set:", err)
 		os.Exit(-1)
 	}
 

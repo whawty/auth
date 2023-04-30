@@ -28,64 +28,86 @@ should be backed by the same file system as the whawty.auth base.
 
 The directory must not contain any other files. A valid whawty.auth base
 directory contains at least one admin file which uses a supported hashing
-format.
+algorithm.
 Furthermore a directory may contain only one hash file per user.
 If this conditions are not met the agent has to exit with an error.
 
-If a whawty.auth agent doesn't support the hashing format of a file it has
+If a whawty.auth agent doesn't support the hashing algorithm of a file it has
 to act according to the following rules:
 
 - **on authenticate:** ignore the file and act as if the user does not exist
 - **on add:** report an error (user exists)
-- **on update:** report an error (won't overwrite unsupported formats)
+- **on update:** report an error (won't overwrite unsupported hashes)
 - **on delete:** delete the file (a warning may be shown)
 
 The following regular expression must match for a user name to be valid:
 
     [A-Za-z0-9][-_.@A-Za-z0-9]*
 
-A whawty.auth agent may upgrade the hashing algorithm to another (newer/stronger)
-format during authentication.
-However if an agent supports this it must be possible to disable upgrades.
+A whawty.auth agent may upgrade the hashing algorithm or the algorithm specific
+parameter-set during authentication. However if an agent supports this it must
+be possible to disable upgrades.
 
 
 ## File Format
 
 The first line of the file contains the password hash which has the following format:
 
-    <format-identifier>:<last-change>:<format specific string>
+    <algorithm-identifier>:<last-change>:<paramID>:<format specific string>
 
-`format-identifier` is a unique identifier for the hashing format. This id must
+`algorithm-identifier` is a unique identifier for the hashing format. This id must
 not include a `:`. `last-change` is a UNIX time stamp and represents the last
-date/time when the password has been modified.
+date/time when the password has been modified. `paramID` must be an integer greater
+than zero that represents a set of algorithm specific parameters.
+A whawty.auth agent should support multiple parameter-sets to allow soft upgrades
+of password hashes. The parameter-sets must not be stored in the hash file but have
+to be part of the agents configuration.
 
 The rest of the file (first line excluded) is reserved for auxiliary data.
 
 
-## Hashing formats
+# Hashing algorithms
 
-For now the only supported algorithm is scrypt inside hmac-sha256 which has the
-following structure:
+For now the only supported algorithms are scrypt inside hmac-sha256 and argon2id.
 
-    hmac_sha256_scrypt:<last-change>:ctxID:base64(salt):base64(hash)
+## hmac_sha256_scrypt
 
-`hmac_sha256_scrypt` is the identifier for this algorithm, `ctxID` is an
-identifier for a set of parameters which must be stored outside of the base
-directory. A whawty.auth agent should support multiple parameter-sets to allow
-soft upgrades of passwords. This algorithm needs the following parameters:
+This hashing algorithm has the following structure:
 
-    server_key: the key for the hmac-sha256
-    pw_cost:    (1<<pw_cost) forms the scrypt parameter N
-    r:          the scrypt parameter r
-    p:          the scrypt parameter p
+    hmac_sha256_scrypt:<last-change>:<paramID>:base64(salt):base64(hash)
 
-`salt` is a random number with 256bits, `hash` is the output of the following
+The following parameters are needed:
+
+    hmackey: the key for the hmac-sha256
+    cost:    (1<<cost) forms the scrypt parameter N
+    r:       the scrypt parameter r
+    p:       the scrypt parameter p
+
+`salt` is a unique random number with 256bits, `hash` is the output of the following
 function:
 
-    hmac_sha256(scrypt(user_password, salt, N, r, p), server_key)
+    hmac_sha256(scrypt(user_password, salt, N=(1<<cost), r, p, len=32), hmackey)
+
+## argon2id
+
+This hashing algorithm has the following structure:
+
+    argon2id:<last-change>:<paramID>:base64(salt):base64(hash)
+
+The following parameters are needed:
+
+    time:    number of iterations
+    memory:  memory size
+    threads: degree of paralellism
+    length:  tag length (should be > 16bytes)
+
+`salt` is a unique random number with 128bits, `hash` is the output of the following
+function:
+
+    argon2id(user_password, salt, time, memory, threads, length)
 
 
-## Auxiliary Data
+# Auxiliary Data
 
 The auxiliary data associated to a user is stored in the user's file, after the
 first line.  It is organized as key value pairs.

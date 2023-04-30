@@ -260,13 +260,13 @@ func cmdListFull(s *Store) error {
 
 	table := uitable.New()
 	table.MaxColWidth = 80
-	table.AddRow("NAME", "TYPE", "LAST-CHANGED", "VALID", "SUPPORTED", "FORMAT", "PARAMS")
+	table.AddRow("NAME", "TYPE", "LAST-CHANGED", "VALID", "SUPPORTED", "FORMAT", "PARAMETER-SET")
 	for _, k := range keys {
 		t := "user"
 		if lst[k].IsAdmin {
 			t = "admin"
 		}
-		table.AddRow(k, t, lst[k].LastChanged.String(), lst[k].IsValid, lst[k].IsSupported, lst[k].FormatID, lst[k].FormatParams)
+		table.AddRow(k, t, lst[k].LastChanged.String(), lst[k].IsValid, lst[k].IsSupported, lst[k].FormatID, lst[k].ParamID)
 	}
 	fmt.Println(table)
 	return nil

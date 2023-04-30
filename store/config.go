@@ -33,29 +33,36 @@ package store
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/spreadspace/scryptauth.v2"
 	"gopkg.in/yaml.v3"
 )
 
-type cfgScryptauthCtx struct {
-	ID            uint   `yaml:"id"`
+type cfgScryptAuthParams struct {
 	HmacKeyBase64 string `yaml:"hmackey"`
-	PwCost        uint   `yaml:"pwcost"`
+	Cost          uint   `yaml:"cost"`
 	R             int    `yaml:"r"`
 	P             int    `yaml:"p"`
 }
 
-type cfgScryptauth struct {
-	DefaultCtx uint               `yaml:"defaultctx"`
-	Contexts   []cfgScryptauthCtx `yaml:"contexts"`
+type cfgArgon2IDParams struct {
+	Time    uint32 `yaml:"time"`
+	Memory  uint32 `yaml:"memory"`
+	Threads uint8  `yaml:"threads"`
+	Length  uint32 `yaml:"length"`
+}
+
+type cfgParams struct {
+	ID         uint                 `yaml:"id"`
+	Scryptauth *cfgScryptAuthParams `yaml:"scryptauth"`
+	Argon2ID   *cfgArgon2IDParams   `yaml:"argon2id"`
 }
 
 type config struct {
-	BaseDir    string        `yaml:"basedir"`
-	Scryptauth cfgScryptauth `yaml:"scryptauth"`
+	BaseDir string      `yaml:"basedir"`
+	Default uint        `yaml:"default"`
+	Params  []cfgParams `yaml:"params"`
 }
 
 func readConfig(configfile string) (*config, error) {
@@ -65,39 +72,34 @@ func readConfig(configfile string) (*config, error) {
 	}
 	defer file.Close()
 
-	yamldata, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("Error opening store config file: %v", err)
-	}
+	decoder := yaml.NewDecoder(file)
+	decoder.KnownFields(true)
 
 	c := &config{}
-	if yamlerr := yaml.Unmarshal(yamldata, c); yamlerr != nil {
-		return nil, fmt.Errorf("Error parsing config file: %s", yamlerr)
+	if err = decoder.Decode(c); err != nil {
+		return nil, fmt.Errorf("Error parsing config file: %s", err)
 	}
 	return c, nil
 }
 
-func scryptauthContextFromConfig(ctx cfgScryptauthCtx) (*scryptauth.Context, error) {
-	if ctx.ID == 0 {
-		return nil, fmt.Errorf("Error: context ID 0 is not allowed")
-	}
-	hk, err := base64.StdEncoding.DecodeString(ctx.HmacKeyBase64)
+func scryptAuthParameterSetFromConfig(id uint, conf *cfgScryptAuthParams) (*scryptauth.Context, error) {
+	hk, err := base64.StdEncoding.DecodeString(conf.HmacKeyBase64)
 	if err != nil {
-		return nil, fmt.Errorf("Error: can't decode HMAC Key for context ID %d: %s", ctx.ID, err)
+		return nil, fmt.Errorf("Error: can't decode HMAC Key for scrypt-auth parameter-set %d: %s", id, err)
 	}
 	if len(hk) != scryptauth.KeyLength {
-		return nil, fmt.Errorf("Error: HMAC Key for context ID %d has invalid length %d != %d", ctx.ID, scryptauth.KeyLength, len(hk))
+		return nil, fmt.Errorf("Error: HMAC Key for scrypt-auth parameter-set %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
 	}
 
-	sactx, err := scryptauth.New(ctx.PwCost, hk)
+	sactx, err := scryptauth.New(conf.Cost, hk)
 	if err != nil {
 		return nil, err
 	}
-	if ctx.R > 0 {
-		sactx.R = ctx.R
+	if conf.R > 0 {
+		sactx.R = conf.R
 	}
-	if ctx.P > 0 {
-		sactx.P = ctx.P
+	if conf.P > 0 {
+		sactx.P = conf.P
 	}
 	return sactx, nil
 }
@@ -111,23 +113,43 @@ func (d *Dir) fromConfig(configfile string) error {
 		return fmt.Errorf("Error: config file does not contain a base directory")
 	}
 	d.BaseDir = c.BaseDir
+	d.Default = c.Default
 
-	// Format: scryptauth
-	for _, ctx := range c.Scryptauth.Contexts {
-		sactx, err := scryptauthContextFromConfig(ctx)
-		if err != nil {
-			return err
+	for _, params := range c.Params {
+		if params.ID == 0 {
+			return fmt.Errorf("Error: parameter-set 0 is reserved")
 		}
-		d.Scryptauth.Contexts[ctx.ID] = sactx
-	}
-	if c.Scryptauth.DefaultCtx == 0 {
-		if len(d.Scryptauth.Contexts) != 0 {
-			return fmt.Errorf("Error: no default context")
+
+		n := 0
+		if params.Scryptauth != nil {
+			n += 1
+			sactx, err := scryptAuthParameterSetFromConfig(params.ID, params.Scryptauth)
+			if err != nil {
+				return err
+			}
+			d.Params[params.ID] = &ScryptAuthParameterSet{saCtx: sactx}
 		}
-	} else if _, exists := d.Scryptauth.Contexts[c.Scryptauth.DefaultCtx]; !exists {
-		return fmt.Errorf("Error: invalid default context %d", c.Scryptauth.DefaultCtx)
+
+		if params.Argon2ID != nil {
+			n += 1
+			d.Params[params.ID] = &Argon2IDParameterSet{cfgArgon2IDParams: *params.Argon2ID}
+		}
+
+		if n == 0 {
+			return fmt.Errorf("Error: parameter-set %d uses unknown algorithm", params.ID)
+		}
+		if n > 1 {
+			return fmt.Errorf("Error: parameter-set %d has more than one algorithm configured", params.ID)
+		}
 	}
-	d.Scryptauth.DefaultCtxID = c.Scryptauth.DefaultCtx
+	if c.Default == 0 {
+		if len(d.Params) != 0 {
+			return fmt.Errorf("Error: no default parameter-set")
+		}
+	} else if _, exists := d.Params[c.Default]; !exists {
+		return fmt.Errorf("Error: invalid default parameter-set %d", c.Default)
+	}
+	d.Default = c.Default
 
 	return nil
 }

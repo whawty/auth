@@ -10,12 +10,12 @@ running on one machine which might be configured to do local upgrades (see below
 more slaves use systemd.timer, rsync and ssh to synchronize the local file store with
 the one on the (remote) master host.
 
-### context upgrades
+### hash parameter-set upgrades
 
-The whawty.auth app can be configured to automatically upgrade passwords hashes when users
+The whawty.auth app can be configured to automatically upgrade password hashes when users
 authenticate against it. For this to work the storage backend compares the current default
-hashing format and default `context-id`, as set by the store configuration, with the one which
-was used to generate the current hash. If the format or `context-id`'s differ it marks the
+hashing format and default `param-id`, as set by the store configuration, with the one which
+was used to generate the current hash. If the format or `param-id`'s differ it marks the
 hash as upgrade-able. After a successful authentication the app now does one of the following:
 
 - **do nothing:** no upgrade will be done, the hash files will stay untouched
@@ -91,24 +91,24 @@ After that you can enable the synchronization by copying the files `whawty-auth-
     # systemctl enable whawty-auth-sync.timer
     # systemctl start whawty-auth-sync.timer
 
-If you also want to have automatic `context-id` upgrades on successful logins you need to configure the
+If you also want to have automatic `param-id` upgrades on successful logins you need to configure the
 slave to do remote upgrades using the the following as an argument to the `--do-upgrades` command line option:
 
     https://whawty-auth-master.example.com/api/update
 
 
-## Add a new `context-id` to the store
+## Add a new parameter-set to the store
 
-In order to create a new context for the store backend you have to generate it. This can be done using the
-script `gen-auth-context.sh`. You have to specify a `context-id` and a `pwcost` parameter for this context.
-The script will print the new context to STDOUT. Add this line to the auth-store.yaml config.
-At first add the new context to all the slaves' store configurations. Also don't forget to set the default
-context parameter in the config to the new `context-id`. You need to reload the whawty.auth app store config
+In order to create a new parameter-set for the store backend you have to generate it. This can be done using the
+script `gen-auth-parameter-set.sh`. You have to specify a `param-id` and a `cost` parameter for this parameter-set.
+The script will print the new set to STDOUT. Add this line to the auth-store.yaml config.
+At first add the new parameter-set to all the slaves' store configurations. Also don't forget to set the default
+parameter-set in the config to the new `params-id`. You need to reload the whawty.auth app store config
 using SIGHUP for the changes to take effect.
-When all slaves are updated and reloaded you can add the new context to the masters' store configuration as
-well. Don't forget to also set the default context to the new `context-id` and reload the app using SIGHUP.
+When all slaves are updated and reloaded you can add the new parameter-set to the masters' store configuration as
+well. Don't forget to also set the default to the new `param-id` and reload the app using SIGHUP.
 
 After reloading the master users logging in on any app (master or slave) should lead to new upgraded password
 hashes. Slaves will sync the changes using the above ssh/rsync setup.
-You can and should delete all contexts which are not used anymore. This makes it less likely that an attacker
+You can and should delete all parameter-sets which are not used anymore. This makes it less likely that an attacker
 who might have an old copy of the hashes is able to crack them in the future.

@@ -225,7 +225,7 @@ function main_userlistSuccess(data) {
         .append($('<td>').append(getLastChange(new Date(data.list[user].lastchanged))))
         .append($('<td>').addClass("text-center").append(main_getBoolIcon(data.list[user].valid)))
         .append($('<td>').addClass("text-center").append(main_getBoolIcon(data.list[user].supported)))
-        .append($('<td>').text(data.list[user].formatid + ' (' + data.list[user].formatparams + ')'))
+        .append($('<td>').text(data.list[user].formatid + ' (' + data.list[user].paramid + ')'))
         .append($('<td>').addClass("text-center").append(main_getSetAdminButton(user, data.list[user].admin))
                                                  .append(main_getUpdateButton(user))
                                                  .append(main_getRemoveButton(user)));

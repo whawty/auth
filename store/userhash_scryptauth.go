@@ -31,13 +31,33 @@
 package store
 
 import (
+	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
+func scryptAuthDecodeBase64(hashStr string) (salt, hash []byte, err error) {
+	parts := strings.Split(hashStr, ":")
+	if len(parts) != 2 {
+		return nil, nil, fmt.Errorf("whawty.auth.store: hash string has invalid format")
+	}
+
+	salt, err = base64.URLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, nil, fmt.Errorf("whawty.auth.store: decoding hmac-sha256(scrypt) salt failed (%v)", err)
+	}
+	hash, err = base64.URLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, nil, fmt.Errorf("whawty.auth.store: decoding hmac-sha256(scrypt) hash failed (%v)", err)
+	}
+
+	return hash, salt, nil
+}
+
 func scryptAuthValid(hashStr string) (bool, error) {
-	_, hash, salt, err := scryptauth.DecodeBase64(hashStr)
+	hash, salt, err := scryptAuthDecodeBase64(hashStr)
 	if err != nil {
 		return false, err
 	}

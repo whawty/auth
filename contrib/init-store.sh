@@ -23,10 +23,10 @@ WHAWTY_AUTH_CONF_DIR=`dirname "$WHAWTY_AUTH_CONF"`
 basedir: "$WHAWTY_AUTH_STORE"
 default: 1
 params:
-  scryptauth:
   - id: 1
-    hmackey: "$HMAC_KEY"
-    cost: 12
+    scryptauth:
+      hmackey: "$HMAC_KEY"
+      cost: 12
 EOF
 
 /bin/mkdir -p "$WHAWTY_AUTH_STORE"

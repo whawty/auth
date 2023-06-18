@@ -245,7 +245,7 @@ func TestCheckDir(t *testing.T) {
 	store := NewDir(testBaseDir)
 
 	if err := store.Check(); err == nil {
-		t.Fatalf("check should return an error for not existing directory")
+		t.Fatalf("check should return an error for non-existing directory")
 	}
 
 	if file, err := os.Create(testBaseDir); err != nil {

@@ -150,10 +150,14 @@ func (d *Dir) getTempFile() (tmp *os.File, err error) {
 }
 
 func isDirEmpty(dir *os.File) bool {
-	if _, err := dir.Readdir(1); err == nil {
-		return false
+	entries, _ := dir.ReadDir(2)
+	if len(entries) == 0 {
+		return true
 	}
-	return true
+	if len(entries) == 1 && entries[0].IsDir() && entries[0].Name() == ".tmp" {
+		return true
+	}
+	return false
 }
 
 func checkUserFile(filename string) (valid bool, user string, isAdmin bool, err error) {

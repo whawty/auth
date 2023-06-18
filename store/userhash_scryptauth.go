@@ -34,8 +34,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-
-	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 func scryptAuthDecodeBase64(hashStr string) (salt, hash []byte, err error) {
@@ -74,13 +72,14 @@ func scryptAuthGen(password string, params *ScryptAuthParameterSet) (string, err
 		return "", err
 	}
 
-	hashStr := scryptauth.EncodeBase64(0, hash, salt)
-	return hashStr, nil
+	b64_salt := base64.URLEncoding.EncodeToString(salt)
+	b64_hash := base64.URLEncoding.EncodeToString(hash)
+	return fmt.Sprintf("%s:%s", b64_salt, b64_hash), nil
 }
 
 func scryptAuthCheck(password, hashStr string, params *ScryptAuthParameterSet) (isAuthenticated bool, err error) {
 	var hash, salt []byte
-	if _, hash, salt, err = scryptauth.DecodeBase64(hashStr); err != nil {
+	if hash, salt, err = scryptAuthDecodeBase64(hashStr); err != nil {
 		return
 	}
 

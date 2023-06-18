@@ -230,7 +230,6 @@ func TestIsFormatSupported(t *testing.T) {
 		{"hmac_sha256_scrypt:1454709438::aGVsbG8=", false},
 		{"hmac_sha256_scrypt:1454709438:42:aGVsbG8=", false},
 		{"hmac_sha256_scrypt:1454709438:42:0:aGVsbG8=", false},
-		{"hmac_sha256_scrypt:1454709438:0:aGVsbG8=:d29ybGQ=", false},
 		{"hmac_sha256_scrypt:1454709438:214:aGVsbG8=:d29ybGQ=:d29ybGQ=", false},
 		{"hmac_sha256_scrypt:1454709438:17:aGVsbG8=:d29ybGQ=:", false},
 		{"hmac_sha256_scrypt:1454709438:23:0:aGVsbG8=:abcd$", false},
@@ -243,8 +242,8 @@ func TestIsFormatSupported(t *testing.T) {
 		{"argon2id:1454709438:3:!xx-no-base64!:????", false},
 		{"hmac_sha1_scrypt:1:1454709438:aGVsbG8=:d29ybGQ=", false},
 
-		{"hmac_sha256_scrypt:124142142:42:0:aGVsbG8=:d29ybGQ=", true},
-		{"hmac_sha256_scrypt:1454709438:23:0:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
+		{"hmac_sha256_scrypt:124142142:42:aGVsbG8=:d29ybGQ=", true},
+		{"hmac_sha256_scrypt:1454709438:23:jYwMvYOTQ05_-MaOTwYuhDPPtGxt5wYHORLf93xDyQs=:RA-IO4_6GC2Qww4kFqMkstM5LejoPIWKHUPpTd0TU9w=", true},
 		{"argon2id:1682865339:20:t75-Mtlfvw29uwtQoyczow==:Ihn8sS-fGjC3TRlB7GT1PUp76_GdrVQRNYAccQmmXDQ=", true},
 	}
 

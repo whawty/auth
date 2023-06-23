@@ -211,7 +211,7 @@ func checkSupportedAdminHashes(dir *os.File) error {
 			continue
 		}
 
-		if IsFormatSupported(filepath.Join(dir.Name(), name)) == nil {
+		if isFormatSupported(filepath.Join(dir.Name(), name)) == nil {
 			result = nil
 		}
 	}

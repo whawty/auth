@@ -254,7 +254,7 @@ func TestIsFormatSupported(t *testing.T) {
 	}
 	defer u.Remove()
 
-	if err := IsFormatSupported(filepath.Join(testBaseDirUserHash, username+".user")); err != nil {
+	if err := isFormatSupported(filepath.Join(testBaseDirUserHash, username+".user")); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 
@@ -277,11 +277,11 @@ func TestIsFormatSupported(t *testing.T) {
 		}
 
 		if hashStr.valid {
-			if err := IsFormatSupported(filename); err != nil {
+			if err := isFormatSupported(filename); err != nil {
 				t.Fatalf("IsFormatSupported reported false negative for '%s'", hashStr.s)
 			}
 		} else {
-			if err := IsFormatSupported(filename); err == nil {
+			if err := isFormatSupported(filename); err == nil {
 				t.Fatalf("IsFormatSupported reported false positive for '%s'", hashStr.s)
 			}
 		}

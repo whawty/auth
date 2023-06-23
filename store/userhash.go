@@ -101,7 +101,7 @@ func isFormatSupportedFull(filename string) (supported bool, formatID string, la
 		return
 	}
 
-	// TODO: check if store paras contains a set with id==paramID
+	// TODO: check if store params contains a set with id==paramID
 
 	switch formatID {
 	case scryptAuthFormatID:
@@ -116,8 +116,7 @@ func isFormatSupportedFull(filename string) (supported bool, formatID string, la
 	return
 }
 
-// IsFormatSupported checks if the format of the hash file is supported
-func IsFormatSupported(filename string) error {
+func isFormatSupported(filename string) error {
 	supported, format, _, _, err := isFormatSupportedFull(filename)
 
 	if err == nil && !supported {
@@ -253,7 +252,7 @@ func (u *UserHash) Update(password string) error {
 		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
-	if err := IsFormatSupported(u.getFilename(isAdmin)); err != nil {
+	if err := isFormatSupported(u.getFilename(isAdmin)); err != nil {
 		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format: %v", err)
 	}
 

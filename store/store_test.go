@@ -31,11 +31,14 @@
 package store
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 const (
@@ -46,6 +49,21 @@ const (
 var (
 	testStoreUserHash *Dir
 )
+
+// TODO: replace this with generator for parameter-sets that can be used in the tests
+func ensureDefaultParameterSet(store *Dir) error {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return err
+	}
+
+	if store.Default == 0 {
+		store.Default = 1
+	}
+	sactx, _ := scryptauth.New(14, b)
+	store.Params[store.Default] = &ScryptAuthHasher{saCtx: sactx}
+	return nil
+}
 
 func TestNewDirFromConfig(t *testing.T) {
 	yamlData := []struct {
@@ -163,18 +181,6 @@ params:
 	}
 }
 
-func TestMakeDefaultParameterSet(t *testing.T) {
-	store := NewDir(testBaseDir)
-
-	if err := store.makeDefaultParameterSet(); err != nil {
-		t.Fatal("makeDefaultParameterSet() failed:", err)
-	}
-
-	if err := store.makeDefaultParameterSet(); err == nil {
-		t.Fatal("makeDefaultParameterSet() should fail on initialized parameter set")
-	}
-}
-
 func TestInitDir(t *testing.T) {
 	adminuser := "root"
 	password := "verysecret"
@@ -228,7 +234,7 @@ func TestInitDir(t *testing.T) {
 		t.Fatalf("Initializing a directory without a parameter set should give an error")
 	}
 
-	if err := store.makeDefaultParameterSet(); err != nil {
+	if err := ensureDefaultParameterSet(store); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -279,7 +285,7 @@ func TestCheckDir(t *testing.T) {
 	}
 
 	// Initialize the store's default parameter set
-	if err := store.makeDefaultParameterSet(); err != nil {
+	if err := ensureDefaultParameterSet(store); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -369,7 +375,7 @@ func TestAddUser(t *testing.T) {
 	}
 	defer os.RemoveAll(testBaseDir)
 
-	if err := store.makeDefaultParameterSet(); err != nil {
+	if err := ensureDefaultParameterSet(store); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -422,7 +428,7 @@ func TestListFull(t *testing.T) {
 		t.Fatalf("listFull should return an empty user list for an empty directory")
 	}
 
-	if err := store.makeDefaultParameterSet(); err != nil {
+	if err := ensureDefaultParameterSet(store); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -435,7 +441,7 @@ func TestListFull(t *testing.T) {
 	} else if len(list) != 1 {
 		t.Fatalf("list should return a list of length 1")
 	} else {
-		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != scryptAuthFormatID {
+		if user, ok := list[adminuser]; !ok || !user.IsAdmin || !user.IsValid || !user.IsSupported || user.FormatID != store.Params[store.Default].GetFormatID() {
 			t.Fatalf("list returned wrong user list: %v", user)
 		}
 	}
@@ -477,7 +483,7 @@ func TestList(t *testing.T) {
 		t.Fatalf("list should return an empty user list for an empty directory")
 	}
 
-	if err := store.makeDefaultParameterSet(); err != nil {
+	if err := ensureDefaultParameterSet(store); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -538,7 +544,7 @@ func TestMain(m *testing.M) {
 
 	testStoreUserHash = NewDir(testBaseDirUserHash)
 
-	if err := testStoreUserHash.makeDefaultParameterSet(); err != nil {
+	if err := ensureDefaultParameterSet(testStoreUserHash); err != nil {
 		fmt.Println("Error initializing default parameter set:", err)
 		os.Exit(-1)
 	}

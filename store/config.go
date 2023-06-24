@@ -31,32 +31,16 @@
 package store
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 
-	"gopkg.in/spreadspace/scryptauth.v2"
 	"gopkg.in/yaml.v3"
 )
 
-type cfgScryptAuthParams struct {
-	HmacKeyBase64 string `yaml:"hmackey"`
-	Cost          uint   `yaml:"cost"`
-	R             int    `yaml:"r"`
-	P             int    `yaml:"p"`
-}
-
-type cfgArgon2IDParams struct {
-	Time    uint32 `yaml:"time"`
-	Memory  uint32 `yaml:"memory"`
-	Threads uint8  `yaml:"threads"`
-	Length  uint32 `yaml:"length"`
-}
-
 type cfgParams struct {
-	ID         uint                 `yaml:"id"`
-	Scryptauth *cfgScryptAuthParams `yaml:"scryptauth"`
-	Argon2ID   *cfgArgon2IDParams   `yaml:"argon2id"`
+	ID         uint              `yaml:"id"`
+	Scryptauth *ScryptAuthParams `yaml:"scryptauth"`
+	Argon2ID   *Argon2IDParams   `yaml:"argon2id"`
 }
 
 type config struct {
@@ -82,28 +66,6 @@ func readConfig(configfile string) (*config, error) {
 	return c, nil
 }
 
-func scryptAuthParameterSetFromConfig(id uint, conf *cfgScryptAuthParams) (*scryptauth.Context, error) {
-	hk, err := base64.StdEncoding.DecodeString(conf.HmacKeyBase64)
-	if err != nil {
-		return nil, fmt.Errorf("Error: can't decode HMAC Key for scrypt-auth parameter-set %d: %s", id, err)
-	}
-	if len(hk) != scryptauth.KeyLength {
-		return nil, fmt.Errorf("Error: HMAC Key for scrypt-auth parameter-set %d has invalid length %d != %d", id, scryptauth.KeyLength, len(hk))
-	}
-
-	sactx, err := scryptauth.New(conf.Cost, hk)
-	if err != nil {
-		return nil, err
-	}
-	if conf.R > 0 {
-		sactx.R = conf.R
-	}
-	if conf.P > 0 {
-		sactx.P = conf.P
-	}
-	return sactx, nil
-}
-
 func (d *Dir) fromConfig(configfile string) error {
 	c, err := readConfig(configfile)
 	if err != nil {
@@ -123,16 +85,16 @@ func (d *Dir) fromConfig(configfile string) error {
 		n := 0
 		if params.Scryptauth != nil {
 			n += 1
-			sactx, err := scryptAuthParameterSetFromConfig(params.ID, params.Scryptauth)
-			if err != nil {
+			if d.Params[params.ID], err = NewScryptAuthHasher(params.Scryptauth); err != nil {
 				return err
 			}
-			d.Params[params.ID] = &ScryptAuthParameterSet{saCtx: sactx}
 		}
 
 		if params.Argon2ID != nil {
 			n += 1
-			d.Params[params.ID] = &Argon2IDParameterSet{cfgArgon2IDParams: *params.Argon2ID}
+			if d.Params[params.ID], err = NewArgon2IDHasher(params.Argon2ID); err != nil {
+				return err
+			}
 		}
 
 		if n == 0 {

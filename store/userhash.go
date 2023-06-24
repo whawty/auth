@@ -41,10 +41,12 @@ import (
 	"time"
 )
 
-const (
-	scryptAuthFormatID string = "hmac_sha256_scrypt"
-	argon2IDFormatID   string = "argon2id"
-)
+type Hasher interface {
+	GetFormatID() string
+	IsValid(hashStr string) (bool, error)
+	Generate(password string) (string, error)
+	Check(password, hashStr string) (bool, error)
+}
 
 // fileExists returns whether the given file or directory exists or not
 // this is from: stackoverflow.com/questions/10510691
@@ -95,29 +97,28 @@ func readHashStr(filename string) (string, time.Time, uint, string, error) {
 	return parts[0], lastchange, paramID, parts[3], nil
 }
 
-func isFormatSupportedFull(filename string) (supported bool, formatID string, lastChange time.Time, paramID uint, err error) {
+func isFormatSupportedFull(filename string, store *Dir) (supported bool, formatID string, lastChange time.Time, paramID uint, err error) {
 	var hashStr string
 	if formatID, lastChange, paramID, hashStr, err = readHashStr(filename); err != nil {
 		return
 	}
 
-	// TODO: check if store params contains a set with id==paramID
-
-	switch formatID {
-	case scryptAuthFormatID:
-		supported, err = scryptAuthValid(hashStr)
+	h := store.Params[paramID]
+	if h == nil {
+		err = fmt.Errorf("whawty.auth.store: parameter-set %d is unknown", paramID)
 		return
-	case argon2IDFormatID:
-		supported, err = argon2IDValid(hashStr)
-		return
-	default:
-		err = fmt.Errorf("whawty.auth.store: hash file format ID '%s' is not supported", formatID)
 	}
+	if h.GetFormatID() != formatID {
+		err = fmt.Errorf("whawty.auth.store: hash file format ID '%s' does not fit parameter-set %d", formatID, paramID)
+		return
+	}
+
+	supported, err = h.IsValid(hashStr)
 	return
 }
 
-func isFormatSupported(filename string) error {
-	supported, format, _, _, err := isFormatSupportedFull(filename)
+func isFormatSupported(filename string, store *Dir) error {
+	supported, format, _, _, err := isFormatSupportedFull(filename, store)
 
 	if err == nil && !supported {
 		return fmt.Errorf("'%s' is not a supported format", format)
@@ -151,28 +152,12 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 
 func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) error {
 	paramID := u.store.Default
-	var hashStr, formatID string
-	defaultParams := u.store.Params[u.store.Default]
-	switch defaultParams.(type) {
-	case *ScryptAuthParameterSet:
-		var err error
-		params, _ := defaultParams.(*ScryptAuthParameterSet)
-		hashStr, err = scryptAuthGen(password, params)
-		if err != nil {
-			return err
-		}
-		formatID = scryptAuthFormatID
-	case *Argon2IDParameterSet:
-		var err error
-		params, _ := defaultParams.(*Argon2IDParameterSet)
-		hashStr, err = argon2IDGen(password, params)
-		if err != nil {
-			return err
-		}
-		formatID = argon2IDFormatID
-	default:
-		return fmt.Errorf("whawty.auth.store: default parameter set is invalid")
+	hasher := u.store.Params[u.store.Default]
+	if hasher == nil {
+		return fmt.Errorf("whawty.auth.store: no default parameter-set")
 	}
+	hashStr, err := hasher.Generate(password)
+	formatID := hasher.GetFormatID()
 
 	// Set the flags based on whether we expect to create the file
 	// The file is opened read-only, since we write to a tmp file and atomically move it in place.
@@ -252,7 +237,7 @@ func (u *UserHash) Update(password string) error {
 		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
-	if err := isFormatSupported(u.getFilename(isAdmin)); err != nil {
+	if err := isFormatSupported(u.getFilename(isAdmin), u.store); err != nil {
 		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format: %v", err)
 	}
 
@@ -324,25 +309,14 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 	}
 	upgradeable = (u.store.Default != paramID)
 
-	switch formatID {
-	case scryptAuthFormatID:
-		params, ok := u.store.Params[paramID].(*ScryptAuthParameterSet)
-		if !ok {
-			return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: parameter-set %d does not exist or uses different algorithm", paramID)
-		}
-		isAuthenticated, err = scryptAuthCheck(password, hashStr, params)
-		return
-	case argon2IDFormatID:
-		params, ok := u.store.Params[paramID].(*Argon2IDParameterSet)
-		if !ok {
-			return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: parameter-set %d does not exist or uses different algorithm", paramID)
-		}
-		isAuthenticated, err = argon2IDCheck(password, hashStr, params)
-		return
-	default:
-		err = fmt.Errorf("whawty.auth.store: hash file fromat ID '%s' is not supported", formatID)
+	hasher := u.store.Params[paramID]
+	if hasher == nil {
+		return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: parameter-set %d is unknown", paramID)
+	}
+	if hasher.GetFormatID() != formatID {
+		return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: hash file format ID '%s' does not fit parameter-set %d ", formatID, paramID)
 	}
 
-	isAuthenticated = false
+	isAuthenticated, err = hasher.Check(password, hashStr)
 	return
 }

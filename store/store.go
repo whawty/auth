@@ -36,7 +36,6 @@
 package store
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -47,8 +46,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"gopkg.in/spreadspace/scryptauth.v2"
 )
 
 var (
@@ -69,19 +66,11 @@ func init() {
 	}
 }
 
-type ScryptAuthParameterSet struct {
-	saCtx *scryptauth.Context
-}
-
-type Argon2IDParameterSet struct {
-	cfgArgon2IDParams
-}
-
 // Dir represents a directory containing a whawty.auth password hash store. Use NewDir to create it.
 type Dir struct {
 	BaseDir string
 	Default uint
-	Params  map[uint]interface{}
+	Params  map[uint]Hasher
 }
 
 // NewDir creates a new whawty.auth store using BaseDir as base directory.
@@ -89,7 +78,7 @@ func NewDir(BaseDir string) (d *Dir) {
 	d = &Dir{}
 	d.BaseDir = filepath.Clean(BaseDir)
 	d.Default = 0
-	d.Params = make(map[uint]interface{})
+	d.Params = make(map[uint]Hasher)
 	return
 }
 
@@ -97,26 +86,9 @@ func NewDir(BaseDir string) (d *Dir) {
 
 func NewDirFromConfig(configfile string) (d *Dir, err error) {
 	d = &Dir{}
-	d.Params = make(map[uint]interface{})
+	d.Params = make(map[uint]Hasher)
 	err = d.fromConfig(configfile)
 	return
-}
-
-// makeDefaultParameterSet() initialized a store with a default scryptauth
-// parameter-set with a cryptographically-random, 256 bits HMAC key.
-func (dir *Dir) makeDefaultParameterSet() error {
-	if _, paramsExists := dir.Params[dir.Default]; paramsExists {
-		return fmt.Errorf("whawty.auth.store: the store already has a default parameter-set")
-	}
-
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return err
-	}
-
-	sactx, _ := scryptauth.New(14, b)
-	dir.Params[dir.Default] = &ScryptAuthParameterSet{sactx}
-	return nil
 }
 
 func openDir(path string) (*os.File, error) {
@@ -178,7 +150,27 @@ func checkUserFile(filename string) (valid bool, user string, isAdmin bool, err 
 	return
 }
 
-func checkSupportedAdminHashes(dir *os.File) error {
+// Init initializes the store by creating a password file for an admin user.
+func (d *Dir) Init(admin, password string) error {
+	dir, err := openDir(d.BaseDir)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	if empty := isDirEmpty(dir); !empty {
+		return fmt.Errorf("Error: '%s' is not empty", d.BaseDir)
+	}
+	return d.AddUser(admin, password, true)
+}
+
+// Check tests if the directory is a valid whawty.auth base directory.
+func (d *Dir) Check() error {
+	dir, err := openDir(d.BaseDir)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
 	names, err := dir.Readdirnames(0)
 	if err != nil && err != io.EOF {
 		return err
@@ -211,116 +203,12 @@ func checkSupportedAdminHashes(dir *os.File) error {
 			continue
 		}
 
-		if isFormatSupported(filepath.Join(dir.Name(), name)) == nil {
+		if isFormatSupported(filepath.Join(dir.Name(), name), d) == nil {
 			result = nil
 		}
 	}
 
 	return result
-}
-
-func listSupportedUsers(dir *os.File, list UserList) error {
-	for {
-		last := false
-		names, err := dir.Readdirnames(3)
-		if err != nil {
-			if err == io.EOF {
-				last = true
-			} else {
-				return err
-			}
-		}
-
-		for _, name := range names {
-			// Skip the '.tmp' directory
-			if name == tmpDir {
-				continue
-			}
-
-			valid, user, isAdmin, err := checkUserFile(name)
-			if err != nil {
-				return err
-			}
-
-			if !valid {
-				wl.Printf("ignoring file for invalid username: '%s'", user)
-				continue
-			}
-
-			ok, _, lastchanged, _, _ := isFormatSupportedFull(filepath.Join(dir.Name(), name))
-			if !ok {
-				wl.Printf("ignoring file with unsupported hash format for username: '%s'", user)
-				continue
-			}
-
-			list[user] = User{isAdmin, lastchanged}
-		}
-
-		if last {
-			break
-		}
-	}
-	return nil
-}
-
-func listAllUsers(dir *os.File, list UserListFull) error {
-	for {
-		last := false
-		names, err := dir.Readdirnames(3)
-		if err != nil {
-			if err == io.EOF {
-				last = true
-			} else {
-				return err
-			}
-		}
-
-		for _, name := range names {
-			// Skip the '.tmp' directory
-			if name == tmpDir {
-				continue
-			}
-
-			var user UserFull
-			var err error
-			var username string
-			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
-				return err
-			}
-			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name))
-			list[username] = user
-		}
-
-		if last {
-			break
-		}
-	}
-	return nil
-}
-
-// Init initializes the store by creating a password file for an admin user.
-func (d *Dir) Init(admin, password string) error {
-	dir, err := openDir(d.BaseDir)
-	if err != nil {
-		return err
-	}
-	defer dir.Close()
-
-	if empty := isDirEmpty(dir); !empty {
-		return fmt.Errorf("Error: '%s' is not empty", d.BaseDir)
-	}
-	return d.AddUser(admin, password, true)
-}
-
-// Check tests if the directory is a valid whawty.auth base directory.
-func (d *Dir) Check() error {
-	dir, err := openDir(d.BaseDir)
-	if err != nil {
-		return err
-	}
-	defer dir.Close()
-
-	return checkSupportedAdminHashes(dir)
 }
 
 // AddUser adds user to the store. It is an error if the user already exists.
@@ -367,7 +255,46 @@ func (d *Dir) List() (UserList, error) {
 	defer dir.Close()
 
 	list := make(UserList)
-	err = listSupportedUsers(dir, list)
+	for {
+		last := false
+		names, err := dir.Readdirnames(3)
+		if err != nil {
+			if err == io.EOF {
+				last = true
+			} else {
+				return list, err
+			}
+		}
+
+		for _, name := range names {
+			// Skip the '.tmp' directory
+			if name == tmpDir {
+				continue
+			}
+
+			valid, user, isAdmin, err := checkUserFile(name)
+			if err != nil {
+				return list, err
+			}
+
+			if !valid {
+				wl.Printf("ignoring file for invalid username: '%s'", user)
+				continue
+			}
+
+			ok, _, lastchanged, _, _ := isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
+			if !ok {
+				wl.Printf("ignoring file with unsupported hash format for username: '%s'", user)
+				continue
+			}
+
+			list[user] = User{isAdmin, lastchanged}
+		}
+
+		if last {
+			break
+		}
+	}
 	return list, err
 }
 
@@ -395,7 +322,37 @@ func (d *Dir) ListFull() (UserListFull, error) {
 	defer dir.Close()
 
 	list := make(UserListFull)
-	err = listAllUsers(dir, list)
+	for {
+		last := false
+		names, err := dir.Readdirnames(3)
+		if err != nil {
+			if err == io.EOF {
+				last = true
+			} else {
+				return list, err
+			}
+		}
+
+		for _, name := range names {
+			// Skip the '.tmp' directory
+			if name == tmpDir {
+				continue
+			}
+
+			var user UserFull
+			var err error
+			var username string
+			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
+				return list, err
+			}
+			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
+			list[username] = user
+		}
+
+		if last {
+			break
+		}
+	}
 	return list, err
 }
 

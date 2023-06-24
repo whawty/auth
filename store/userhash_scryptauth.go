@@ -34,7 +34,42 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+
+	"gopkg.in/spreadspace/scryptauth.v2"
 )
+
+type ScryptAuthParams struct {
+	HmacKeyBase64 string `yaml:"hmackey"`
+	Cost          uint   `yaml:"cost"`
+	R             int    `yaml:"r"`
+	P             int    `yaml:"p"`
+}
+
+type ScryptAuthHasher struct {
+	saCtx *scryptauth.Context
+}
+
+func NewScryptAuthHasher(params *ScryptAuthParams) (*ScryptAuthHasher, error) {
+	hk, err := base64.StdEncoding.DecodeString(params.HmacKeyBase64)
+	if err != nil {
+		return nil, fmt.Errorf("Error: can't decode HMAC Key for scrypt-auth parameter-set: %s", err)
+	}
+	if len(hk) != scryptauth.KeyLength {
+		return nil, fmt.Errorf("Error: HMAC Key for scrypt-auth parameter-set has invalid length %d != %d", scryptauth.KeyLength, len(hk))
+	}
+
+	sactx, err := scryptauth.New(params.Cost, hk)
+	if err != nil {
+		return nil, err
+	}
+	if params.R > 0 {
+		sactx.R = params.R
+	}
+	if params.P > 0 {
+		sactx.P = params.P
+	}
+	return &ScryptAuthHasher{saCtx: sactx}, nil
+}
 
 func scryptAuthDecodeBase64(hashStr string) (salt, hash []byte, err error) {
 	parts := strings.Split(hashStr, ":")
@@ -54,7 +89,11 @@ func scryptAuthDecodeBase64(hashStr string) (salt, hash []byte, err error) {
 	return hash, salt, nil
 }
 
-func scryptAuthValid(hashStr string) (bool, error) {
+func (h *ScryptAuthHasher) GetFormatID() string {
+	return "hmac_sha256_scrypt"
+}
+
+func (h *ScryptAuthHasher) IsValid(hashStr string) (bool, error) {
 	hash, salt, err := scryptAuthDecodeBase64(hashStr)
 	if err != nil {
 		return false, err
@@ -66,8 +105,8 @@ func scryptAuthValid(hashStr string) (bool, error) {
 	return true, nil
 }
 
-func scryptAuthGen(password string, params *ScryptAuthParameterSet) (string, error) {
-	hash, salt, err := params.saCtx.Gen([]byte(password))
+func (h *ScryptAuthHasher) Generate(password string) (string, error) {
+	hash, salt, err := h.saCtx.Gen([]byte(password))
 	if err != nil {
 		return "", err
 	}
@@ -77,12 +116,12 @@ func scryptAuthGen(password string, params *ScryptAuthParameterSet) (string, err
 	return fmt.Sprintf("%s:%s", b64_salt, b64_hash), nil
 }
 
-func scryptAuthCheck(password, hashStr string, params *ScryptAuthParameterSet) (isAuthenticated bool, err error) {
+func (h *ScryptAuthHasher) Check(password, hashStr string) (isAuthenticated bool, err error) {
 	var hash, salt []byte
 	if hash, salt, err = scryptAuthDecodeBase64(hashStr); err != nil {
 		return
 	}
 
-	isAuthenticated, err = params.saCtx.Check(hash, []byte(password), salt)
+	isAuthenticated, err = h.saCtx.Check(hash, []byte(password), salt)
 	return
 }

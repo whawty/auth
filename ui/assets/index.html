@@ -3,55 +3,48 @@
   <head>
     <title>whawty auth - admin interface</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="whawty auth admin interface">
     <meta name="author" content="Christian Pointner <equinox@spreadspace.org>">
 
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="fontawesome/css/fontawesome.min.css" rel="stylesheet">
+    <link href="fontawesome/css/solid.min.css" rel="stylesheet">
     <link href="css/admin.css" rel="stylesheet">
   </head>
   <body>
-    <iframe id="remember" name="remember" class="hidden"></iframe>
+    <iframe id="remember" name="remember" hidden="hidden"></iframe>
 
     <div class="container-fluid">
 
       <div id="login-box">
 
         <form id="login-form" class="form-auth" role="form" target="remember" action="blank">
-          <img class="visible-xs-block" src="img/logo-small.png" alt="logo" />
-          <div class="loginspacer hidden-xs">&nbsp;</div>
-          <div class="loginspacer hidden-xs hidden-sm">&nbsp;</div>
-          <img class="hidden-xs" src="img/logo.png" alt="logo" />
+          <img class="d-block d-xs-none d-sm-none" src="img/logo-small.png" alt="logo" />
+          <div class="loginspacer d-xs-block d-sm-block">&nbsp;</div>
+          <img class="d-none d-xs-block d-sm-block" src="img/logo.png" alt="logo" />
           <h1 class="form-auth-heading">WHAWTY auth</h1>
           <input id="login-username" type="text" class="form-control" placeholder="Username" required autofocus>
           <input id="login-password" type="password" class="form-control" placeholder="Password" required>
           <div class="alertbox"></div>
-          <button id="login-btn" type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span>&nbsp;&nbsp;Log In</button>
-          <button id="login-submit" type="submit" class="hidden"></button>
+          <button id="login-btn" type="button" class="btn btn-primary btn-lg"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>&nbsp;&nbsp;Log In</button>
+          <button id="login-submit" type="submit" hidden="hidden"></button>
         </form>
-
       </div>
 
       <div id="mainwindow">
 
-        <nav class="navbar navbar-inverse navbar-fixed-top">
-          <div class="container-fluid">
-            <div class="navbar-header">
-              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-              </button>
-              <span class="navbar-brand">WHAWTY auth - Admin Interface</span>
-            </div>
+        <nav class="navbar navbar-expand-md fixed-top navbar-dark bg-dark">
+          <span class="navbar-brand">WHAWTY auth - Admin Interface</span>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTop" aria-controls="navbarTop" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-            <div class="collapse navbar-collapse navbar-right" id="navbar-collapse-1">
-              <p class="navbar-text">logged in as <strong id="username-field">UNKNOWN</strong>, role <strong id="role-field">UNKNOWN</strong></p>
-              <button type="button" class="btn btn-danger navbar-btn" onclick="auth_logout()">
-                <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span> Log Out
-              </button>
-            </div>
+          <div class="collapse navbar-collapse" id="navbarTop">
+            <span class="navbar-text ml-auto">logged in as <strong id="username-field">UNKNOWN</strong>, role <strong id="role-field">UNKNOWN</strong></span>
+            <button type="button" class="btn btn-danger btn-sm ml-3" onclick="auth_logout()">
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Log Out
+            </button>
           </div>
         </nav>
 
@@ -64,12 +57,12 @@
             <div class="modal-content">
               <form id="changepw-form" role="form" target="remember" action="blank">
                 <div class="modal-header">
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                   <h4 class="modal-title">New Password for <strong id="changepw-userfield"></strong>...</h4>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>
                 <div class="modal-body">
                   <div class="form-group">
-                    <input id="changepw-username" type="text" class="hidden">
+                    <input id="changepw-username" type="text" hidden="hidden">
                     <input id="changepw-password" type="password" tabindex="1" class="form-control" placeholder="Password" required>
                     <div id="pwstrength">
                       <div id="pwestimatedcracktime" class="pull-left"></div>
@@ -82,9 +75,9 @@
                   <div id="pwstrengthtips"></div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" tabindex="4" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                  <button type="button" tabindex="4" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                   <button id="changepw-btn" type="button" tabindex="3" class="btn btn-primary">Change</button>
-                  <button id="changepw-submit" type="submit" class="hidden"></button>
+                  <button id="changepw-submit" type="submit" hidden="hidden"></button>
                 </div>
               </form>
             </div>
@@ -93,15 +86,15 @@
 
         <div id="admin-view">
 
-          <div class="row" id="adduser-row">
-            <form id="adduser-form" role="form">
+          <form id="adduser-form" role="form">
+            <div class="form-row" id="adduser-row">
               <div class="col-md-2"></div>
               <div class="col-md-2">
-                <div class="btn-group btn-group-justified" data-toggle="buttons">
-                  <label class="btn btn-default active">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-secondary active">
                     <input type="radio" name="addrole" autocomplete="off" value="user" checked="checked">User</input>
                   </label>
-                  <label class="btn btn-default">
+                  <label class="btn btn-secondary">
                     <input type="radio" name="addrole" autocomplete="off" value="admin">Admin</input>
                   </label>
                 </div>
@@ -110,14 +103,14 @@
                 <input id="adduser-name" type="text" class="form-control" placeholder="Username" required>
               </div>
               <div class="col-md-2">
-                <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;&nbsp;Add</button>
+                <button type="submit" class="btn btn-success"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>&nbsp;&nbsp;Add</button>
               </div>
               <div class="col-md-2"></div>
-            </form>
-          </div>
+            </div>
+          </form>
 
           <div class="row">
-            <div class="col-md-1" ></div>
+            <div class="col-md-1"></div>
             <div class="col-md-10">
               <table class="table table-striped" id="user-list">
                 <thead>
@@ -135,7 +128,7 @@
                 </tbody>
               </table>
             </div>
-            <div class="col-md-1" ></div>
+            <div class="col-md-1"></div>
           </div>
 
         </div>
@@ -145,7 +138,7 @@
           <div class="row">
             <div class="col-md-4"></div>
             <div class="col-md-4">
-              <h1>User: <strong class="username" >unknown</strong></h1>
+              <h1>User: <strong class="username">unknown</strong></h1>
             </div>
             <div class="col-md-4"></div>
           </div>
@@ -161,7 +154,7 @@
           <div class="row">
             <div class="col-md-4"></div>
             <div class="col-md-4">
-              <button type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Change Password</button>
+              <button type="button" class="btn btn-primary btn-lg"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>&nbsp;&nbsp;Change Password</button>
             </div>
             <div class="col-md-4"></div>
           </div>

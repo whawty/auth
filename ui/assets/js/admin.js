@@ -144,7 +144,7 @@ function main_updateSuccess(data) {
 
 function main_getUpdateButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm");
-  btn.html('<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>&nbsp;&nbsp;Password');
+  btn.html('<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>&nbsp;&nbsp;Password');
   return btn.click(function() {
     main_cleanupPasswordModal();
 
@@ -170,7 +170,7 @@ function main_removeSuccess(data) {
 
 function main_getRemoveButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm");
-  btn.html('<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>&nbsp;&nbsp;Remove')
+  btn.html('<i class="fa-solid fa-trash" aria-hidden="true"></i>&nbsp;&nbsp;Remove')
   return btn.click(function() {
     var data = JSON.stringify({ session: auth_session, username: user });
     $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError);
@@ -183,7 +183,7 @@ function main_setadminSuccess(data) {
 
 function main_getSetAdminButton(user, oldstate) {
   var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm");
-  btn.html('<span class="glyphicon glyphicon-random" aria-hidden="true"></span>&nbsp;&nbsp;Role')
+  btn.html('<i class="fa-solid fa-shuffle" aria-hidden="true"></i>&nbsp;&nbsp;Role')
   var newstate = !oldstate;
   return btn.click(function() {
     var data = JSON.stringify({ session: auth_session, username: user, admin: newstate });
@@ -201,9 +201,9 @@ function main_getRoleLabel(admin) {
 
 function main_getBoolIcon(flag) {
   if (flag == true) {
-    return $('<span>').addClass("glyphicon").addClass("glyphicon-ok-sign").css("color", "#5cb85c").css("font-size", "1.4em");
+    return $('<i>').addClass("fa-solid").addClass("fa-check").css("color", "#5cb85c").css("font-size", "1.4em");
   } else {
-    return $('<span>').addClass("glyphicon").addClass("glyphicon-remove-sign").css("color", "#d9534f").css("font-size", "1.4em");
+    return $('<i>').addClass("fa-solid").addClass("fa-xmark").css("color", "#d9534f").css("font-size", "1.4em");
   }
 }
 
@@ -412,9 +412,9 @@ function main_enablePWChecks() {
     var ind = $('#pwstrengthindicator').empty();
     for(var i=0; i<4; ++i) {
       if(i < res.score) {
-        ind.append('<span class="glyphicon glyphicon-star pwstrengthscore' + res.score + '" aria-hidden="true"></span>');
+        ind.append('<i class="fa-solid fa-star pwstrengthscore' + res.score + '" aria-hidden="true"></i>');
       } else {
-        ind.append('<span class="glyphicon glyphicon-star-empty pwstrengthscore0" aria-hidden="true"></span>');
+        ind.append('<i class="fa-solid fa-star pwstrengthscore0" aria-hidden="true"></i>');
       }
     }
 

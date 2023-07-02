@@ -1,9 +1,9 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="en">
   <head>
     <title>whawty auth - admin interface</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="whawty auth admin interface">
     <meta name="author" content="Christian Pointner <equinox@spreadspace.org>">
 
@@ -27,7 +27,7 @@
           <input id="login-username" type="text" class="form-control" placeholder="Username" required autofocus>
           <input id="login-password" type="password" class="form-control" placeholder="Password" required>
           <div class="alertbox"></div>
-          <button id="login-btn" type="button" class="btn btn-primary btn-lg"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>&nbsp;&nbsp;Log In</button>
+          <button id="login-btn" type="button" class="btn btn-primary btn-lg d-block ms-auto me-auto w-100"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>&nbsp;&nbsp;Log In</button>
           <button id="login-submit" type="submit" hidden="hidden"></button>
         </form>
       </div>
@@ -35,14 +35,14 @@
       <div id="mainwindow">
 
         <nav class="navbar navbar-expand-md fixed-top navbar-dark bg-dark">
-          <span class="navbar-brand">WHAWTY auth - Admin Interface</span>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTop" aria-controls="navbarTop" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-brand ms-3">WHAWTY auth - Admin Interface</span>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTop" aria-controls="navbarTop" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
 
           <div class="collapse navbar-collapse" id="navbarTop">
-            <span class="navbar-text ml-auto">logged in as <strong id="username-field">UNKNOWN</strong>, role <strong id="role-field">UNKNOWN</strong></span>
-            <button type="button" class="btn btn-danger btn-sm ml-3" onclick="auth_logout()">
+            <span class="navbar-text ms-auto">logged in as <strong id="username-field">UNKNOWN</strong>, role <strong id="role-field">UNKNOWN</strong></span>
+            <button type="button" class="btn btn-danger btn-sm ms-3 me-3" onclick="auth_logout()">
               <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Log Out
             </button>
           </div>
@@ -58,7 +58,7 @@
               <form id="changepw-form" role="form" target="remember" action="blank">
                 <div class="modal-header">
                   <h4 class="modal-title">New Password for <strong id="changepw-userfield"></strong>...</h4>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                   <div class="form-group">
@@ -75,7 +75,7 @@
                   <div id="pwstrengthtips"></div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" tabindex="4" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" tabindex="4" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                   <button id="changepw-btn" type="button" tabindex="3" class="btn btn-primary">Change</button>
                   <button id="changepw-submit" type="submit" hidden="hidden"></button>
                 </div>
@@ -87,16 +87,14 @@
         <div id="admin-view">
 
           <form id="adduser-form" role="form">
-            <div class="form-row" id="adduser-row">
+            <div class="row" id="adduser-row">
               <div class="col-md-2"></div>
               <div class="col-md-2">
-                <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                  <label class="btn btn-secondary active">
-                    <input type="radio" name="addrole" autocomplete="off" value="user" checked="checked">User</input>
-                  </label>
-                  <label class="btn btn-secondary">
-                    <input type="radio" name="addrole" autocomplete="off" value="admin">Admin</input>
-                  </label>
+                <div class="btn-group" role="group" aria-label="User or Admin">
+                  <input type="radio" class="btn-check" id="addroleUser" autocomplete="off" name="addrole" value="user" checked>
+                  <label class="btn btn-outline-secondary" for="addroleUser">User</label>
+                  <input type="radio" class="btn-check" id="addroleAdmin" autocomplete="off" name="addrole" value="admin">
+                  <label class="btn btn-outline-secondary" for="addroleAdmin">Admin</label>
                 </div>
               </div>
               <div class="col-md-4">
@@ -165,8 +163,8 @@
 
     </div>
 
+    <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="jquery/jquery.min.js"></script>
-    <script src="bootstrap/js/bootstrap.min.js"></script>
     <script src="js/admin.js"></script>
     <script type="text/javascript">
       admin_init();

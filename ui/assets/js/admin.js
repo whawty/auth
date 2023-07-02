@@ -7,16 +7,16 @@ function admin_init() {
 
 var alertbox = function() {};
 alertbox.warning = function (dest, heading, message) {
-  $('#' + dest + ' .alertbox').html('<div class="alert alert-warning"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
+  $('#' + dest + ' .alertbox').html('<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>' + heading + ':</strong> ' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 };
 alertbox.error = function (dest, heading, message) {
-  $('#' + dest + ' .alertbox').html('<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
+  $('#' + dest + ' .alertbox').html('<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>' + heading + ':</strong> ' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 };
 alertbox.info = function (dest, heading, message) {
-  $('#' + dest + ' .alertbox').html('<div class="alert alert-info"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
+  $('#' + dest + ' .alertbox').html('<div class="alert alert-info alert-dismissible fade show" role="alert"><strong>' + heading + ':</strong> ' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 };
 alertbox.success = function (dest, heading, message) {
-  $('#' + dest + ' .alertbox').html('<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#">&times;</a><h4 class="alert-heading">' + heading + '</h4>' + message + '</div>');
+  $('#' + dest + ' .alertbox').html('<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>' + heading + ':</strong> ' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 };
 
 
@@ -244,7 +244,7 @@ function main_setupAddButton() {
     event.preventDefault();
     var user = $("#adduser-name").val();
     var admin = false;
-    if ( $('input[name="addrole"]:checked').val()  == "admin") {
+    if ( $('input[name="addrole"]:checked').val() == "admin") {
       admin = true;
     }
     main_cleanupPasswordModal();

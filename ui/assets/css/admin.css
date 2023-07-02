@@ -61,12 +61,6 @@ body {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
-.form-auth button[type="button"] {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-}
 
 
 /*

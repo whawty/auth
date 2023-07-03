@@ -32,7 +32,7 @@ var auth_session = null;
 
 function auth_loginSuccess(data) {
   if (data.session) {
-    $("#login-submit").click(); // tell browser to store the password
+    $("#login-submit").trigger("click"); // tell browser to store the password
 
     auth_username = data.username;
     auth_admin = data.admin;
@@ -79,7 +79,7 @@ function auth_logout() {
   $('#username-field').text('');
   $('#role-field').text('');
   $('#login-box').slideDown(function() {
-    $("#login-username").focus();
+    $("#login-username").trigger("focus");
   });
 
   window.location.replace("/"); // make chrome use newly changed passwords..
@@ -105,12 +105,12 @@ function auth_init() {
     $("#login-box").fadeIn();
     $("#mainwindow").hide();
   }
-  $("#login-btn").click(function(event) {
+  $("#login-btn").on("click", function(event) {
     var data = JSON.stringify({ username: $("#login-username").val(), password: $("#login-password").val() })
     $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
   });
-  $("#login-username").keypress(function(event) { overrideEnter(event, $("#login-btn")); });
-  $("#login-password").keypress(function(event) { overrideEnter(event, $("#login-btn")); });
+  $("#login-username").on("keypress", function(event) { overrideEnter(event, $("#login-btn")); });
+  $("#login-password").on("keypress", function(event) { overrideEnter(event, $("#login-btn")); });
 }
 
 function auth_cleanup() {
@@ -136,7 +136,7 @@ function auth_cleanup() {
  */
 function main_updateSuccess(data) {
   if(data.username == auth_username) {
-    $("#changepw-submit").click(); // tell browser to update it's password store, but only if it is ours...
+    $("#changepw-submit").trigger("click"); // tell browser to update it's password store, but only if it is ours...
   }
   alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
   main_updateUserlist();
@@ -145,20 +145,20 @@ function main_updateSuccess(data) {
 function main_getUpdateButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-primary").addClass("btn-sm");
   btn.html('<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>&nbsp;&nbsp;Password');
-  return btn.click(function() {
+  return btn.on("click", function() {
     main_cleanupPasswordModal();
 
     $('#changepw-userfield').text(user);
     $('#changepw-username').val(user); // tell the browser to update it's password store
-    $("#changepw-btn").click(function(event) {
+    $("#changepw-btn").on("click", function(event) {
       var newpassword = $("#changepw-password").val();
       var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword });
       $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");
-    $("#changepw-password").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
-    $("#changepw-password-retype").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-password").on("keypress", function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-password-retype").on("keypress", function(event) { overrideEnter(event, $("#changepw-btn")); });
     $("#changepw-modal").modal('show');
   });
 }
@@ -171,7 +171,7 @@ function main_removeSuccess(data) {
 function main_getRemoveButton(user) {
   var btn = $('<button>').addClass("btn").addClass("btn-danger").addClass("btn-sm");
   btn.html('<i class="fa-solid fa-trash" aria-hidden="true"></i>&nbsp;&nbsp;Remove')
-  return btn.click(function() {
+  return btn.on("click", function() {
     var data = JSON.stringify({ session: auth_session, username: user });
     $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError);
   });
@@ -185,7 +185,7 @@ function main_getSetAdminButton(user, oldstate) {
   var btn = $('<button>').addClass("btn").addClass("btn-warning").addClass("btn-sm");
   btn.html('<i class="fa-solid fa-shuffle" aria-hidden="true"></i>&nbsp;&nbsp;Role')
   var newstate = !oldstate;
-  return btn.click(function() {
+  return btn.on("click", function() {
     var data = JSON.stringify({ session: auth_session, username: user, admin: newstate });
     $.post("/api/set-admin", data, main_setadminSuccess, 'json').fail(main_reqError);
   });
@@ -240,7 +240,7 @@ function main_addSuccess(data) {
 }
 
 function main_setupAddButton() {
-  $("#adduser-form").submit(function(event) {
+  $("#adduser-form").on("submit", function(event) {
     event.preventDefault();
     var user = $("#adduser-name").val();
     var admin = false;
@@ -251,7 +251,7 @@ function main_setupAddButton() {
 
     $('#changepw-userfield').text(user);
     $('#changepw-username').val(''); // we don't want the browser to add this user to it's password store...
-    $("#changepw-btn").click(function(event) {
+    $("#changepw-btn").on("click", function(event) {
       var newpassword = $("#changepw-password").val();
       $("#adduser-name").val('');
       $('#changepw-userfield').text('');
@@ -262,8 +262,8 @@ function main_setupAddButton() {
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Add");
-    $("#changepw-password").keypress(function(event) { overrideEnter(event); });
-    $("#changepw-password-retype").keypress(function(event) { overrideEnter(event); });
+    $("#changepw-password").on("keypress", function(event) { overrideEnter(event); });
+    $("#changepw-password-retype").on("keypress", function(event) { overrideEnter(event); });
     $("#changepw-modal").modal('show');
   });
 }
@@ -285,27 +285,27 @@ function main_adminViewInit() {
  *
  */
 function main_userUpdateSuccess(data) {
-  $("#changepw-submit").click(); // tell browser to update it's password store
+  $("#changepw-submit").trigger("click"); // tell browser to update it's password store
   alertbox.success('mainwindow', "Password Update", "successfully updated password for " + data.username);
 }
 
 function main_userViewInit() {
   $("#user-view .username").text(auth_username);
   $("#user-view .lastchange").text(getDateTimeString(auth_lastchanged));
-  $('#user-view .btn').click(function() {
+  $('#user-view .btn').on("click", function() {
     main_cleanupPasswordModal();
 
     $('#changepw-userfield').text(auth_username);
     $('#changepw-username').val(auth_username); // tell the browser to update it's password store
-    $("#changepw-btn").click(function(event) {
+    $("#changepw-btn").on("click", function(event) {
       var newpassword = $("#changepw-password").val();
       var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword });
       $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");
-    $("#changepw-password").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
-    $("#changepw-password-retype").keypress(function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-password").on("keypress", function(event) { overrideEnter(event, $("#changepw-btn")); });
+    $("#changepw-password-retype").on("keypress", function(event) { overrideEnter(event, $("#changepw-btn")); });
     $("#changepw-modal").modal('show');
   });
 }
@@ -340,7 +340,7 @@ function overrideEnter(event, btn) {
   if(event.which == 13 || event.keyCode == 13) {
     event.preventDefault();
     if(typeof btn !== 'undefined' && btn.prop('disabled') == false) {
-      btn.click();
+      btn.trigger("click");
     }
   }
 }
@@ -358,7 +358,7 @@ function main_reqError(req, status, error) {
     var user = auth_username;
     auth_logout();
     $("#login-username").val(user);
-    $("#login-password").focus();
+    $("#login-password").trigger("focus");
     alertbox.error('login-box', "Authentication failure", message);
   } else {
     alertbox.error('mainwindow', "API Error", message);
@@ -369,7 +369,7 @@ function main_cleanupPasswordModal() {
   $('#changepw-password').parent().attr('class', 'form-group');
   $("#changepw-password").val('');
   $("#changepw-password").trigger('input');
-  $("#changepw-password").focus();
+  $("#changepw-password").trigger("focus");
   $("#changepw-password-retype").parent().attr('class', 'form-group');
   $("#changepw-password-retype").val('');
   $("#changepw-modal .alertbox").text('');

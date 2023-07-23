@@ -445,7 +445,7 @@ func cmdRunSa(c *cli.Context) error {
 func main() {
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
-	app.Version = "0.1-rc2"
+	app.Version = "0.2"
 	app.Usage = "manage whawty auth stores"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

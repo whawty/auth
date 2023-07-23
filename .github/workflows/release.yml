@@ -23,3 +23,9 @@ jobs:
         extra_files: AUTHORS LICENSE LICENSE.zxcvbn README.md doc/man/whawty-auth.8
         md5sum: false
         sha256sum: true
+    - uses: VaultVulp/gp-docker-action@1.6.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        image-name: whawty/auth
+        extract-git-tag: true
+        custom-args: --platform=linux/arm64,linux/amd64,linux/i386

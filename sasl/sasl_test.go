@@ -78,7 +78,7 @@ func callback(login, password, service, realm string) (ok bool, msg string, err 
 
 func TestCreateServer(t *testing.T) {
 	if _, err := NewServer(filepath.Join(testBaseDir, "new.sock"), callback); err == nil {
-		t.Fatalf("initializing a server socket inside non-existend directory should give an error")
+		t.Fatalf("initializing a server socket inside non-existing directory should give an error")
 	}
 
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
@@ -103,7 +103,7 @@ func TestCreateServer(t *testing.T) {
 func TestClientAuthUnreachableSocket(t *testing.T) {
 	c := NewClient(filepath.Join(testBaseDir, "nonexstend.sock"))
 	if _, _, err := c.Auth(testUsername, testPassword, testService, testRealm); err == nil {
-		t.Fatalf("trying to authenticate against non-existend socket should give an error")
+		t.Fatalf("trying to authenticate against non-existing socket should give an error")
 	}
 }
 

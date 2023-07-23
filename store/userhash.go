@@ -157,6 +157,9 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 		return fmt.Errorf("whawty.auth.store: no default parameter-set")
 	}
 	hashStr, err := hasher.Generate(password)
+	if err != nil {
+		return err
+	}
 	formatID := hasher.GetFormatID()
 
 	// Set the flags based on whether we expect to create the file

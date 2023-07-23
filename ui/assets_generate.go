@@ -1,4 +1,6 @@
+//go:build ignore
 // +build ignore
+
 //
 // Copyright (c) 2016-2019 whawty contributors (see AUTHORS file)
 // All rights reserved.

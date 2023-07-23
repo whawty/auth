@@ -1,4 +1,6 @@
+//go:build dev
 // +build dev
+
 //
 // Copyright (c) 2016-2019 whawty contributors (see AUTHORS file)
 // All rights reserved.

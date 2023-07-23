@@ -1,4 +1,6 @@
+//go:build gofuzz
 // +build gofuzz
+
 //
 // Copyright (c) 2016 whawty contributors (see AUTHORS file)
 // All rights reserved.

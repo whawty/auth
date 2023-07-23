@@ -19,6 +19,7 @@ jobs:
         goarch: ${{ matrix.goarch }}
         project_path: "./cmd/whawty-auth"
         binary_name: "whawty-auth"
+        pre_command: export CGO_ENABLED=0
         extra_files: AUTHORS LICENSE LICENSE.zxcvbn README.md
         md5sum: false
         sha256sum: true

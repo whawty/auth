@@ -20,6 +20,6 @@ jobs:
         project_path: "./cmd/whawty-auth"
         binary_name: "whawty-auth"
         pre_command: export CGO_ENABLED=0
-        extra_files: AUTHORS LICENSE LICENSE.zxcvbn README.md
+        extra_files: AUTHORS LICENSE LICENSE.zxcvbn README.md doc/man/whawty-auth.8
         md5sum: false
         sha256sum: true

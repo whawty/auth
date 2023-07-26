@@ -24,8 +24,8 @@ hash as upgrade-able. After a successful authentication the app now does one of 
 
 The first 2 steps are quite self-explanatory. For the third to work the slave host must
 be able to reach the masters web API. The uri for the update endpoint can be configured
-using the `--do-upgrades` parameter. Mind that the app's web API currently has no support for
-https and it is strongly recommended to have a SSL-enabling reverse proxy in front of it.
+using the `--do-upgrades` parameter. You are also strongly recommended to enable TLS for
+the master's web API or add a TLS-enabling reverse proxy in front of it.
 
 The remote upgrades are opportunistic which means that a failed update call will be
 silently ignored. This is so that a temporary communications problem between master and slave
@@ -39,9 +39,9 @@ remote upgrade calls a slave will send to the master.
 This assumes you have whawty.auth app running as user `whawty-auth`. The store directory is at
 `/var/lib/whawty/auth/store`. `/var/lib/whawty/auth` is the home of the user `whawty-auth`.
 In order to enable automatic upgrades the web API should be enabled and the app should be
-configured to do local upgrades. Also a SSL-enabling reverse proxy is configured to forward
-requests coming in on https://whawty-auth-master.example.com/api/ to the app.
-Besides that ssh must be running on the host and rsync needs to be installed.
+configured to do local upgrades. Also make sure TLS is enabled for the web API or a TLS-enabling
+reverse proxy is configured to forward requests coming in on https://whawty-auth-master.example.com/api/
+to the app. Besides that ssh must be running on the host and rsync needs to be installed.
 
 Copy the file `auth-rsyncd.conf` to `/etc/whawty/`. Then run the following commands to create
 an `authorized_keys` file for the user `whawty-auth`.

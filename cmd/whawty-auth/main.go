@@ -365,6 +365,13 @@ func cmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
+	var webc *webConfig
+	if c.String("web-config") != "" {
+		webc, err = readWebConfig(c.String("web-config"))
+		if err != nil {
+			return cli.NewExitError(err.Error(), 1)
+		}
+	}
 	webAddrs := c.StringSlice("web-addr")
 	saslPaths := c.StringSlice("sock")
 
@@ -374,7 +381,7 @@ func cmdRun(c *cli.Context) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := runWebAddr(a, s.GetInterface()); err != nil {
+			if err := runWebAddr(a, webc, s.GetInterface()); err != nil {
 				fmt.Printf("warning running web interface(%s) failed: %s\n", a, err)
 			}
 		}()
@@ -398,6 +405,14 @@ func cmdRunSa(c *cli.Context) error {
 	s, err := openAndCheck(c)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 3)
+	}
+
+	var webc *webConfig
+	if c.String("web-config") != "" {
+		webc, err = readWebConfig(c.String("web-config"))
+		if err != nil {
+			return cli.NewExitError(err.Error(), 1)
+		}
 	}
 
 	listeners, err := activation.Listeners()
@@ -429,7 +444,7 @@ func cmdRunSa(c *cli.Context) error {
 			ln := listener.(*net.TCPListener)
 			go func() {
 				defer wg.Done()
-				if err := runWebListener(ln, s.GetInterface()); err != nil {
+				if err := runWebListener(ln, webc, s.GetInterface()); err != nil {
 					fmt.Printf("error running web-api: %s", err)
 				}
 			}()
@@ -542,6 +557,12 @@ func main() {
 			Name:  "run",
 			Usage: "run the auth agent",
 			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "web-config",
+					Value:  "",
+					Usage:  "path to the web configuration file",
+					EnvVar: "WHAWTY_AUTH_WEB_CONFIG",
+				},
 				cli.StringSliceFlag{
 					Name:   "sock",
 					Usage:  "path to saslauthd compatible unix socket interface",

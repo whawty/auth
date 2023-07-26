@@ -477,7 +477,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func runWebApi(listener *net.TCPListener, store *Store) (err error) {
+func runWebApi(listener *net.TCPListener, config *webConfig, store *Store) (err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
 		return err
@@ -502,12 +502,21 @@ func runWebApi(listener *net.TCPListener, store *Store) (err error) {
 		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
 	})
 
-	wl.Printf("web-api: listening on '%s'", listener.Addr())
 	server := &http.Server{Handler: mux, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	if config != nil && config.TLS != nil {
+		server.TLSConfig, err = config.TLS.ToGoTLSConfig()
+		if err != nil {
+			return
+		}
+		wl.Printf("web-api: listening on '%s' using TLS", listener.Addr())
+		return server.ServeTLS(tcpKeepAliveListener{listener}, "", "")
+
+	}
+	wl.Printf("web-api: listening on '%s'", listener.Addr())
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 
-func runWebAddr(addr string, store *Store) (err error) {
+func runWebAddr(addr string, config *webConfig, store *Store) (err error) {
 	if addr == "" {
 		addr = ":http"
 	}
@@ -515,9 +524,9 @@ func runWebAddr(addr string, store *Store) (err error) {
 	if err != nil {
 		return err
 	}
-	return runWebApi(ln.(*net.TCPListener), store)
+	return runWebApi(ln.(*net.TCPListener), config, store)
 }
 
-func runWebListener(listener *net.TCPListener, store *Store) (err error) {
-	return runWebApi(listener, store)
+func runWebListener(listener *net.TCPListener, config *webConfig, store *Store) (err error) {
+	return runWebApi(listener, config, store)
 }

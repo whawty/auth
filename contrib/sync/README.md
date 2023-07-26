@@ -25,7 +25,7 @@ hash as upgrade-able. After a successful authentication the app now does one of 
 The first 2 steps are quite self-explanatory. For the third to work the slave host must
 be able to reach the masters web API. The uri for the update endpoint can be configured
 using the `--do-upgrades` parameter. You are also strongly recommended to enable TLS for
-the master's web API or add a TLS-enabling reverse proxy in front of it.
+the master's web API or to add a TLS-enabling reverse proxy in front of it.
 
 The remote upgrades are opportunistic which means that a failed update call will be
 silently ignored. This is so that a temporary communications problem between master and slave

@@ -1,4 +1,4 @@
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 ADD . /src
 RUN cd /src && CGO_ENABLED=0 go build ./cmd/whawty-auth
 

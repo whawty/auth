@@ -1,0 +1,29 @@
+Port 1234
+ListenAddress 0.0.0.0
+ListenAddress ::
+
+HostKey /config/ssh_host_ed25519_key
+PidFile none
+
+PermitRootLogin no
+PubkeyAuthentication yes
+
+HostbasedAuthentication no
+PasswordAuthentication no
+PermitEmptyPasswords no
+KbdInteractiveAuthentication no
+
+AllowAgentForwarding no
+AllowTcpForwarding no
+GatewayPorts no
+X11Forwarding no
+PermitTTY no
+UseDNS no
+PermitTunnel no
+AllowStreamLocalForwarding no
+AllowTcpForwarding no
+
+ForceCommand /usr/bin/rsync --server --daemon --config /config/rsyncd.conf .
+
+AllowUsers sync
+AuthorizedKeysFile /config/authorized_keys

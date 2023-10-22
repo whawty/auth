@@ -1,0 +1,10 @@
+Host whawty-auth-master
+    Hostname 192.0.2.1
+    Port 1234
+    User sync
+    IdentityFile /config/id_ed25519
+    IdentitiesOnly yes
+    UserKnownHostsFile /config/known_hosts
+    ControlMaster auto
+    ControlPath /run/ssh-master/whawty-auth-master
+    ControlPersist 300

@@ -7,8 +7,9 @@ require (
 	github.com/gosuri/uitable v0.0.4
 	github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
+	github.com/spreadspace/tlsconfig v0.0.0-20230726215100-56bbcafa5d60
 	github.com/urfave/cli v1.22.12
-	golang.org/x/crypto v0.8.0
+	golang.org/x/crypto v0.17.0
 	gopkg.in/spreadspace/scryptauth.v2 v2.0.0-20160119001838-d2c0fcba7783
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -23,9 +24,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/shurcooL/httpfs v0.0.0-20230704072500-f1e31cf0ba5c // indirect
-	github.com/shurcooL/vfsgen v0.0.0-20230704071429-0000e147ea92 // indirect
-	github.com/spreadspace/tlsconfig v0.0.0-20230726215100-56bbcafa5d60 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.7.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 )

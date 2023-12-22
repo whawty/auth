@@ -1,5 +1,4 @@
-//go:build ignore
-// +build ignore
+//go:build dev
 
 //
 // Copyright (c) 2016-2019 whawty contributors (see AUTHORS file)
@@ -31,23 +30,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-package main
+package ui
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/shurcooL/vfsgen"
+	"io/fs"
+	"os"
 )
 
-func main() {
-	assets := http.Dir("assets")
-	err := vfsgen.Generate(assets, vfsgen.Options{
-		PackageName:  "ui",
-		BuildTags:    "!dev",
-		VariableName: "Assets",
-	})
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
+var Assets fs.FS = os.DirFS("ui/assets")

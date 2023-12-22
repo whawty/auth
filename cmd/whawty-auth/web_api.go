@@ -492,7 +492,7 @@ func runWebApi(listener *net.TCPListener, config *webConfig, store *Store) (err 
 	mux.Handle("/api/list", webHandler{store, sessions, handleWebList})
 	mux.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
-	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(ui.Assets)))
+	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(ui.Assets))))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

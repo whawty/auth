@@ -36,7 +36,7 @@ endif
 EXECUTEABLE := whawty-auth
 
 all: build
-.PHONY: vet format ui build clean distclean
+.PHONY: format vet cover serve-cover clean distclean
 
 format:
 	$(GOCMD) fmt ./...
@@ -47,24 +47,27 @@ vet:
 test: vet
 	$(GOCMD) test `$(GOCMD) list ./... | grep -v 'sasl/examples'`
 
+test-verbose: vet
+	$(GOCMD) test -v `$(GOCMD) list ./... | grep -v 'sasl/examples'`
+
 cover:
-	$(GOCMD) test `$(GOCMD) list ./... | grep -v 'sasl/examples'` -covermode=count -coverprofile=.coverprofile
-	$(GOCMD) tool cover -html=.coverprofile
+	mkdir -p ./.coverage
+	$(GOCMD) test -v `$(GOCMD) list ./... | grep -v 'sasl/examples'` -covermode=count -coverprofile=./.coverage/profile
+	$(GOCMD) tool cover -html=./.coverage/profile -o ./.coverage/index.html
 
-ui:
-	$(GOCMD) generate ./ui
+serve-cover:
+	cd ./.coverage; python3 -m http.server
 
-build: test ui
+build: test
 	$(GOCMD) build -o $(EXECUTEABLE) ./cmd/whawty-auth
 
-dev:
+dev: test
 	$(GOCMD) build -o $(EXECUTEABLE) -tags=dev ./cmd/whawty-auth
 
 clean:
 	rm -f $(EXECUTEABLE)
 
 distclean: clean
-	rm -f ui/assets_vfsdata.go
 	rm -f doc/man/$(EXECUTEABLE).8
 
 manpage: doc/man/$(EXECUTEABLE).8

@@ -1,5 +1,4 @@
-//go:build dev
-// +build dev
+//go:build !dev
 
 //
 // Copyright (c) 2016-2019 whawty contributors (see AUTHORS file)
@@ -34,7 +33,19 @@
 package ui
 
 import (
-	"net/http"
+	"embed"
+	"io/fs"
 )
 
-var Assets http.FileSystem = http.Dir("ui/assets")
+//go:embed assets
+var embeddedAssets embed.FS
+
+var Assets fs.FS
+
+func init() {
+	var err error
+	Assets, err = fs.Sub(embeddedAssets, "assets")
+	if err != nil {
+		panic(err)
+	}
+}

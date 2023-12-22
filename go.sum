@@ -37,6 +37,8 @@ github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/spreadspace/tlsconfig v0.0.0-20230726215100-56bbcafa5d60 h1:YtR/I+Q4cFIg0Hy7F+EbIw5uhf3NtZnW5O9y87U+71U=
 github.com/spreadspace/tlsconfig v0.0.0-20230726215100-56bbcafa5d60/go.mod h1:taZ6lrQmZk4/XnC6stKWRIFSnj6SeBvtZ4nyAjN4nig=
+github.com/spreadspace/tlsconfig v0.0.0-20231204130624-c2b29e15e371 h1:fvsj77T5rb+uUJleTcnRZcEPIBLzovfDPfUHD8xe9HU=
+github.com/spreadspace/tlsconfig v0.0.0-20231204130624-c2b29e15e371/go.mod h1:taZ6lrQmZk4/XnC6stKWRIFSnj6SeBvtZ4nyAjN4nig=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=

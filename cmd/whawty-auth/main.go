@@ -365,36 +365,50 @@ func cmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
-	var webc *webConfig
-	if c.String("web-config") != "" {
-		webc, err = readWebConfig(c.String("web-config"))
+	var lc *listenerConfig
+	if c.String("listener") != "" {
+		lc, err = readListenerConfig(c.String("listener"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
 		}
 	}
-	webAddrs := c.StringSlice("web-addr")
-	saslPaths := c.StringSlice("sock")
 
 	var wg sync.WaitGroup
-	for _, webAddr := range webAddrs {
-		a := webAddr
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := runWebAddr(a, webc, s.GetInterface()); err != nil {
-				fmt.Printf("warning running web interface(%s) failed: %s\n", a, err)
-			}
-		}()
+	if lc.SASLAuthd != nil {
+		for _, path := range lc.SASLAuthd.Listen {
+			p := path
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := runSaslAuthSocket(p, s.GetInterface()); err != nil {
+					fmt.Printf("warning running auth-socket failed: %s\n", err)
+				}
+			}()
+		}
 	}
-	for _, path := range saslPaths {
-		p := path
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := runSaslAuthSocket(p, s.GetInterface()); err != nil {
-				fmt.Printf("warning running auth agent(%s) failed: %s\n", p, err)
-			}
-		}()
+	if lc.HTTP != nil {
+		for _, addr := range lc.HTTP.Listen {
+			a := addr
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := runHTTPAddr(a, lc.HTTP, s.GetInterface()); err != nil {
+					fmt.Printf("warning running web-api failed: %s\n", err)
+				}
+			}()
+		}
+	}
+	if lc.HTTPs != nil {
+		for _, addr := range lc.HTTPs.Listen {
+			a := addr
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := runHTTPsAddr(a, lc.HTTPs, s.GetInterface()); err != nil {
+					fmt.Printf("warning running web-api failed: %s\n", err)
+				}
+			}()
+		}
 	}
 	wg.Wait()
 
@@ -407,50 +421,83 @@ func cmdRunSa(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
-	var webc *webConfig
-	if c.String("web-config") != "" {
-		webc, err = readWebConfig(c.String("web-config"))
+	var lc *listenerConfig
+	if c.String("listener") != "" {
+		lc, err = readListenerConfig(c.String("listener"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
 		}
 	}
 
-	listeners, err := activation.Listeners()
+	listenerGroups, err := activation.ListenersWithNames()
 	if err != nil {
 		return cli.NewExitError(fmt.Sprintf("fetching socket listeners from systemd failed: %s", err), 2)
 	}
 
-	fmt.Printf("got %d sockets from systemd\n", len(listeners))
-	if len(listeners) == 0 {
+	fmt.Printf("got %d listener-groups from systemd\n", len(listenerGroups))
+	if len(listenerGroups) == 0 {
 		return cli.NewExitError("shutting down since there are no sockets to lissten on.", 2)
 	}
 
 	var wg sync.WaitGroup
-	for idx, listener := range listeners {
-		switch listener.(type) {
-		case *net.UnixListener:
-			fmt.Printf("listener[%d]: is a UNIX socket (-> saslauthd)\n", idx)
-			wg.Add(1)
-			ln := listener.(*net.UnixListener)
-			go func() {
-				defer wg.Done()
-				if err := runSaslAuthSocketListener(ln, s.GetInterface()); err != nil {
-					fmt.Printf("warning running auth agent failed: %s\n", err)
+	for name, listeners := range listenerGroups {
+		switch name {
+		case "saslauthd":
+			if lc.SASLAuthd == nil {
+				fmt.Printf("ingoring unexpected socket for saslauthd-compatible listener (no config found in listener-config)\n")
+				continue
+			}
+			for _, listener := range listeners {
+				ln, ok := listener.(*net.UnixListener)
+				if !ok {
+					fmt.Printf("ingoring invalid socket type %T for saslauthd-compatible listener\n", listener)
 				}
-			}()
-		case *net.TCPListener:
-			fmt.Printf("listener[%d]: is a TCP socket (-> HTTP)\n", idx)
-			wg.Add(1)
-			ln := listener.(*net.TCPListener)
-			go func() {
-				defer wg.Done()
-				if err := runWebListener(ln, webc, s.GetInterface()); err != nil {
-					fmt.Printf("error running web-api: %s", err)
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := runSaslAuthSocketListener(ln, s.GetInterface()); err != nil {
+						fmt.Printf("warning running auth-socket failed: %s\n", err)
+					}
+				}()
+			}
+		case "http":
+			if lc.HTTP == nil {
+				fmt.Printf("ingoring unexpected socket for HTTP listener (no config found in listener-config)\n")
+				continue
+			}
+			for _, listener := range listeners {
+				ln, ok := listener.(*net.TCPListener)
+				if !ok {
+					fmt.Printf("ingoring invalid socket type %T for HTTP listener\n", listener)
 				}
-			}()
-		default:
-			fmt.Printf("listener[%d]: has type %T (ingnoring)\n", idx, listener)
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := runHTTPListener(ln, lc.HTTP, s.GetInterface()); err != nil {
+						fmt.Printf("warning running web-api failed: %s\n", err)
+					}
+				}()
+			}
+		case "https":
+			if lc.HTTPs == nil {
+				fmt.Printf("ingoring unexpected socket for HTTPs listener (no config found in listener-config)\n")
+				continue
+			}
+			for _, listener := range listeners {
+				ln, ok := listener.(*net.TCPListener)
+				if !ok {
+					fmt.Printf("ingoring invalid socket type %T for HTTPs listener\n", listener)
+				}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := runHTTPsListener(ln, lc.HTTPs, s.GetInterface()); err != nil {
+						fmt.Printf("warning running web-api failed: %s\n", err)
+					}
+				}()
+			}
 		}
+
 	}
 	wg.Wait()
 
@@ -558,27 +605,25 @@ func main() {
 			Usage: "run the auth agent",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:   "web-config",
+					Name:   "listener",
 					Value:  "",
-					Usage:  "path to the web configuration file",
-					EnvVar: "WHAWTY_AUTH_WEB_CONFIG",
-				},
-				cli.StringSliceFlag{
-					Name:   "sock",
-					Usage:  "path to saslauthd compatible unix socket interface",
-					EnvVar: "WHAWTY_AUTH_SASL_SOCK",
-				},
-				cli.StringSliceFlag{
-					Name:   "web-addr",
-					Usage:  "address to listen on for web API",
-					EnvVar: "WHAWTY_AUTH_WEB_ADDR",
+					Usage:  "path to the listener configuration file",
+					EnvVar: "WHAWTY_AUTH_LISTENER_CONFIG",
 				},
 			},
 			Action: cmdRun,
 		},
 		{
-			Name:   "runsa",
-			Usage:  "run the auth agent (using systemd socket-activation)",
+			Name:  "runsa",
+			Usage: "run the auth agent (using systemd socket-activation)",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "listener",
+					Value:  "",
+					Usage:  "path to the listener configuration file",
+					EnvVar: "WHAWTY_AUTH_LISTENER_CONFIG",
+				},
+			},
 			Action: cmdRunSa,
 		},
 	}

@@ -477,13 +477,13 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func runWebApi(listener *net.TCPListener, config *webConfig, store *Store) (err error) {
+func newWebHandler(store *Store) (mux *http.ServeMux, err error) {
 	var sessions *webSessionFactory
 	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
-		return err
+		return
 	}
 
-	mux := http.NewServeMux()
+	mux = http.NewServeMux()
 	mux.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
 	mux.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
 	mux.Handle("/api/remove", webHandler{store, sessions, handleWebRemove})
@@ -493,7 +493,6 @@ func runWebApi(listener *net.TCPListener, config *webConfig, store *Store) (err 
 	mux.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
 
 	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(ui.Assets))))
-
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
@@ -501,32 +500,49 @@ func runWebApi(listener *net.TCPListener, config *webConfig, store *Store) (err 
 		}
 		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
 	})
+	return
+}
 
-	server := &http.Server{Handler: mux, ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	if config != nil && config.TLS != nil {
-		server.TLSConfig, err = config.TLS.ToGoTLSConfig()
-		if err != nil {
-			return
-		}
-		wl.Printf("web-api: listening on '%s' using TLS", listener.Addr())
-		return server.ServeTLS(tcpKeepAliveListener{listener}, "", "")
+func runHTTPsListener(listener *net.TCPListener, config *httpsConfig, store *Store) (err error) {
+	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	if server.Handler, err = newWebHandler(store); err != nil {
+		return
+	}
+	if server.TLSConfig, err = config.TLS.ToGoTLSConfig(); err != nil {
+		return
+	}
+	wl.Printf("web-api: listening on '%s' using TLS", listener.Addr())
+	return server.ServeTLS(tcpKeepAliveListener{listener}, "", "")
+}
 
+func runHTTPsAddr(addr string, config *httpsConfig, store *Store) error {
+	if addr == "" {
+		addr = ":https"
+	}
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	return runHTTPsListener(listener.(*net.TCPListener), config, store)
+}
+
+func runHTTPListener(listener *net.TCPListener, config *httpConfig, store *Store) (err error) {
+	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
+	if server.Handler, err = newWebHandler(store); err != nil {
+		return
 	}
 	wl.Printf("web-api: listening on '%s'", listener.Addr())
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 
-func runWebAddr(addr string, config *webConfig, store *Store) (err error) {
+func runHTTPAddr(addr string, config *httpConfig, store *Store) error {
 	if addr == "" {
 		addr = ":http"
 	}
-	ln, err := net.Listen("tcp", addr)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
-	return runWebApi(ln.(*net.TCPListener), config, store)
-}
 
-func runWebListener(listener *net.TCPListener, config *webConfig, store *Store) (err error) {
-	return runWebApi(listener, config, store)
+	return runHTTPListener(listener.(*net.TCPListener), config, store)
 }

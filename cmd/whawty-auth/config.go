@@ -38,11 +38,39 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type webConfig struct {
-	TLS *tlsconfig.TLSConfig `yaml:"tls"`
+type saslauthdConfig struct {
+	Listen []string `yaml:"listen"`
 }
 
-func readWebConfig(configfile string) (*webConfig, error) {
+type httpConfig struct {
+	Listen []string `yaml:"listen"`
+}
+
+type httpsConfig struct {
+	Listen []string             `yaml:"listen"`
+	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
+}
+
+// type ldapConfig struct {
+// 	Listen   []string             `yaml:"listen"`
+// 	StartTLS bool                 `yaml:"start-tls"`
+// 	TLS      *tlsconfig.TLSConfig `yaml:"tls"`
+// }
+
+// type ldapsConfig struct {
+// 	Listen []string             `yaml:"listen"`
+// 	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
+// }
+
+type listenerConfig struct {
+	SASLAuthd *saslauthdConfig `yaml:"saslauthd"`
+	HTTP      *httpConfig      `yaml:"http"`
+	HTTPs     *httpsConfig     `yaml:"https"`
+	// LDAP      *ldapConfig      `yaml:"ldap"`
+	// LDAPs     *ldapsConfig     `yaml:"ldaps"`
+}
+
+func readListenerConfig(configfile string) (*listenerConfig, error) {
 	file, err := os.Open(configfile)
 	if err != nil {
 		return nil, err
@@ -52,7 +80,7 @@ func readWebConfig(configfile string) (*webConfig, error) {
 	decoder := yaml.NewDecoder(file)
 	decoder.KnownFields(true)
 
-	c := &webConfig{}
+	c := &listenerConfig{}
 	if err = decoder.Decode(c); err != nil {
 		return nil, fmt.Errorf("Error parsing config file: %s", err)
 	}

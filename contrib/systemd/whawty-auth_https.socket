@@ -1,0 +1,11 @@
+[Unit]
+Description=whawty.auth authentication agent https sockets
+
+[Socket]
+Service=whawty-auth.service
+FileDescriptorName=https
+ListenStream=192.0.2.0:8443
+ListenStream=127.0.0.1:8443
+
+[Install]
+WantedBy=sockets.target

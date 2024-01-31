@@ -1,0 +1,15 @@
+[Unit]
+Description=whawty.auth authentication agent saslauthd-compatible sockets
+
+[Socket]
+Service=whawty-auth.service
+FileDescriptorName=saslauthd
+ListenStream=/run/whawty/auth.sock
+ListenStream=/var/spool/postfix/run/whawty/auth.sock
+RemoveOnStop=true
+SocketUser=whawty-auth
+SocketGroup=whawty-auth
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

@@ -33,6 +33,7 @@ package main
 import (
 	"crypto/tls"
 	"net"
+	"strings"
 
 	"github.com/glauth/ldap"
 )
@@ -42,7 +43,8 @@ type ldapHandler struct {
 }
 
 func (h ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDAPResultCode, error) {
-	if ok, _, _, _ := h.store.Authenticate(bindDN, bindSimplePw); !ok {
+	username, _, _ := strings.Cut(bindDN, "@")
+	if ok, _, _, _ := h.store.Authenticate(username, bindSimplePw); !ok {
 		return ldap.LDAPResultInvalidCredentials, nil
 	}
 	return ldap.LDAPResultSuccess, nil

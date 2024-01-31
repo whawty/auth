@@ -1,0 +1,10 @@
+[Unit]
+Description=whawty.auth authentication agent ldaps sockets
+
+[Socket]
+Service=whawty-auth.service
+FileDescriptorName=ldaps
+ListenStream=127.0.0.1:8636
+
+[Install]
+WantedBy=sockets.target

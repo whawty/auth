@@ -543,6 +543,5 @@ func runHTTPAddr(addr string, config *httpConfig, store *Store) error {
 	if err != nil {
 		return err
 	}
-
 	return runHTTPListener(listener.(*net.TCPListener), config, store)
 }

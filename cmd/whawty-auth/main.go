@@ -410,6 +410,30 @@ func cmdRun(c *cli.Context) error {
 			}()
 		}
 	}
+	if lc.LDAP != nil {
+		for _, addr := range lc.LDAP.Listen {
+			a := addr
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := runLDAPAddr(a, lc.LDAP, s.GetInterface()); err != nil {
+					fmt.Printf("warning running web-api failed: %s\n", err)
+				}
+			}()
+		}
+	}
+	if lc.LDAPs != nil {
+		for _, addr := range lc.LDAPs.Listen {
+			a := addr
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := runLDAPsAddr(a, lc.LDAPs, s.GetInterface()); err != nil {
+					fmt.Printf("warning running web-api failed: %s\n", err)
+				}
+			}()
+		}
+	}
 	wg.Wait()
 
 	return cli.NewExitError(fmt.Sprintf("shutting down since all auth sockets have closed."), 0)
@@ -492,6 +516,42 @@ func cmdRunSa(c *cli.Context) error {
 				go func() {
 					defer wg.Done()
 					if err := runHTTPsListener(ln, lc.HTTPs, s.GetInterface()); err != nil {
+						fmt.Printf("warning running web-api failed: %s\n", err)
+					}
+				}()
+			}
+		case "ldap":
+			if lc.LDAP == nil {
+				fmt.Printf("ingoring unexpected socket for LDAP listener (no config found in listener-config)\n")
+				continue
+			}
+			for _, listener := range listeners {
+				ln, ok := listener.(*net.TCPListener)
+				if !ok {
+					fmt.Printf("ingoring invalid socket type %T for LDAP listener\n", listener)
+				}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := runLDAPListener(ln, lc.LDAP, s.GetInterface()); err != nil {
+						fmt.Printf("warning running web-api failed: %s\n", err)
+					}
+				}()
+			}
+		case "ldaps":
+			if lc.LDAPs == nil {
+				fmt.Printf("ingoring unexpected socket for LDAPs listener (no config found in listener-config)\n")
+				continue
+			}
+			for _, listener := range listeners {
+				ln, ok := listener.(*net.TCPListener)
+				if !ok {
+					fmt.Printf("ingoring invalid socket type %T for LDAPs listener\n", listener)
+				}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := runLDAPsListener(ln, lc.LDAPs, s.GetInterface()); err != nil {
 						fmt.Printf("warning running web-api failed: %s\n", err)
 					}
 				}()

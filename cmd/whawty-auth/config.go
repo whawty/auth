@@ -51,23 +51,22 @@ type httpsConfig struct {
 	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
 }
 
-// type ldapConfig struct {
-// 	Listen   []string             `yaml:"listen"`
-// 	StartTLS bool                 `yaml:"start-tls"`
-// 	TLS      *tlsconfig.TLSConfig `yaml:"tls"`
-// }
+type ldapConfig struct {
+	Listen []string             `yaml:"listen"`
+	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
+}
 
-// type ldapsConfig struct {
-// 	Listen []string             `yaml:"listen"`
-// 	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
-// }
+type ldapsConfig struct {
+	Listen []string             `yaml:"listen"`
+	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
+}
 
 type listenerConfig struct {
 	SASLAuthd *saslauthdConfig `yaml:"saslauthd"`
 	HTTP      *httpConfig      `yaml:"http"`
 	HTTPs     *httpsConfig     `yaml:"https"`
-	// LDAP      *ldapConfig      `yaml:"ldap"`
-	// LDAPs     *ldapsConfig     `yaml:"ldaps"`
+	LDAP      *ldapConfig      `yaml:"ldap"`
+	LDAPs     *ldapsConfig     `yaml:"ldaps"`
 }
 
 func readListenerConfig(configfile string) (*listenerConfig, error) {

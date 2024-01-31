@@ -44,14 +44,17 @@ https:
     # - x25519
     # session-tickets: true
     # session-ticket-key: "b947e39f50e20351bdd81046e20fff7948d359a3aec391719d60645c5972cc77"
-# ldap:
-#   listen:
-#   - 127.0.0.1:389
-#   start-tls: true
-# ldaps:
-#   listen:
-#   - 127.0.0.1:636
-#   tls:
-#     certificate: "/path/to/server-crt.pem"
-#     certificate-key:  "/path/to/server-key.pem"
-#     min-protocol-version: "TLSv1.2"
+ldap:
+  listen:
+  - 127.0.0.1:389
+  tls: ## if set start-tls is enabled
+    certificate: "/path/to/server-crt.pem"
+    certificate-key:  "/path/to/server-key.pem"
+    min-protocol-version: "TLSv1.2"
+ldaps:
+  listen:
+  - 127.0.0.1:636
+  tls:
+    certificate: "/path/to/server-crt.pem"
+    certificate-key:  "/path/to/server-key.pem"
+    min-protocol-version: "TLSv1.2"

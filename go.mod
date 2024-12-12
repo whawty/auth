@@ -10,7 +10,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spreadspace/tlsconfig v0.0.0-20231204130624-c2b29e15e371
 	github.com/urfave/cli v1.22.15
-	golang.org/x/crypto v0.24.0
+	golang.org/x/crypto v0.31.0
 	gopkg.in/spreadspace/scryptauth.v2 v2.0.0-20160119001838-d2c0fcba7783
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -26,6 +26,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
 )

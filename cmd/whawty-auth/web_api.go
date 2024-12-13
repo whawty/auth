@@ -42,6 +42,28 @@ import (
 	"github.com/whawty/auth/ui"
 )
 
+func handleWebBasicAuth(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
+	username, password, ok := r.BasicAuth()
+	if !ok {
+		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	ok, _, _, err := store.Authenticate(username, password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	} else if !ok {
+		http.Error(w, "Authentication Failed", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "success")
+}
+
 type webAuthenticateRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -484,6 +506,7 @@ func newWebHandler(store *Store) (mux *http.ServeMux, err error) {
 	}
 
 	mux = http.NewServeMux()
+	mux.Handle("/basic-auth", webHandler{store, sessions, handleWebBasicAuth})
 	mux.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
 	mux.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
 	mux.Handle("/api/remove", webHandler{store, sessions, handleWebRemove})

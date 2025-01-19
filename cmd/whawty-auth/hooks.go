@@ -76,7 +76,7 @@ func runHook(executeable, store string) {
 			select {
 			case <-t.C:
 				wl.Printf("Hooks: killing long running hook '%s'", executeable)
-				cmd.Process.Kill()
+				cmd.Process.Kill() //nolint:errcheck
 			case err := <-exited:
 				if err != nil {
 					wl.Printf("Hooks: '%s': %v", executeable, err)

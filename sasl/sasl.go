@@ -89,7 +89,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 		}
 	}
 
-	resp.Encode(conn) // silently drop error...
+	resp.Encode(conn) //nolint:errcheck
 }
 
 // Run actually runs the server. In calls Accept() on the server socket and

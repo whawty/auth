@@ -494,8 +494,8 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	if err != nil {
 		return
 	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(3 * time.Minute)
+	tc.SetKeepAlive(true)                  //nolint:errcheck
+	tc.SetKeepAlivePeriod(3 * time.Minute) //nolint:errcheck
 	return tc, nil
 }
 

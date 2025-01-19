@@ -243,9 +243,8 @@ func (s *store) listFull() (result listFullResult) {
 }
 
 func (s *store) authenticate(username, password string) (result authenticateResult) {
-	var upgradeable bool
-	result.ok, result.isAdmin, upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
-	if result.ok && upgradeable && s.upgradeChan != nil {
+	result.ok, result.isAdmin, result.upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
+	if result.ok && result.upgradeable && s.upgradeChan != nil {
 		s.upgradeChan <- updateRequest{username: username, password: password}
 	}
 	return

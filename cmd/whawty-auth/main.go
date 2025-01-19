@@ -82,7 +82,7 @@ func askPass() (string, error) {
 func cmdInit(c *cli.Context) error {
 	username := c.Args().First()
 	if username == "" {
-		cli.ShowCommandHelp(c, "init")
+		cli.ShowCommandHelp(c, "init") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 
@@ -147,7 +147,7 @@ func cmdAdd(c *cli.Context) error {
 
 	username := c.Args().First()
 	if username == "" {
-		cli.ShowCommandHelp(c, "add")
+		cli.ShowCommandHelp(c, "add") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 
@@ -177,7 +177,7 @@ func cmdRemove(c *cli.Context) error {
 
 	username := c.Args().First()
 	if username == "" {
-		cli.ShowCommandHelp(c, "remove")
+		cli.ShowCommandHelp(c, "remove") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 
@@ -195,7 +195,7 @@ func cmdUpdate(c *cli.Context) error {
 
 	username := c.Args().First()
 	if username == "" {
-		cli.ShowCommandHelp(c, "update")
+		cli.ShowCommandHelp(c, "update") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 
@@ -689,5 +689,5 @@ func main() {
 	}
 
 	wdl.Printf("calling app.Run()")
-	app.Run(os.Args)
+	app.Run(os.Args) //nolint:errcheck
 }

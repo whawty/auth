@@ -32,7 +32,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -49,7 +49,7 @@ import (
 
 var (
 	wl  = log.New(os.Stdout, "[whawty.auth]\t", log.LstdFlags)
-	wdl = log.New(ioutil.Discard, "[whawty.auth dbg]\t", log.LstdFlags)
+	wdl = log.New(io.Discard, "[whawty.auth dbg]\t", log.LstdFlags)
 )
 
 func init() {
@@ -561,7 +561,7 @@ func cmdRunSa(c *cli.Context) error {
 	}
 	wg.Wait()
 
-	return cli.NewExitError(fmt.Sprintf("shutting down since all auth sockets have closed."), 0)
+	return cli.NewExitError("shutting down since all auth sockets have closed.", 0)
 }
 
 func main() {

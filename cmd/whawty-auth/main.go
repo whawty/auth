@@ -106,7 +106,7 @@ func cmdInit(c *cli.Context) error {
 	if err := s.GetInterface().Init(username, password); err != nil {
 		return cli.NewExitError(fmt.Sprintf("Error initializing whawty store: %s", err), 3)
 	}
-	return cli.NewExitError(fmt.Sprintf("whawty store successfully initialized!"), 0)
+	return cli.NewExitError("whawty store successfully initialized!", 0)
 }
 
 func cmdCheck(c *cli.Context) error {
@@ -119,7 +119,7 @@ func cmdCheck(c *cli.Context) error {
 	if err := s.GetInterface().Check(); err != nil {
 		return cli.NewExitError(fmt.Sprintf("Error checking whawty store: %s", err), 3)
 	}
-	return cli.NewExitError(fmt.Sprintf("whawty store is ok!"), 0)
+	return cli.NewExitError("whawty store is ok!", 0)
 }
 
 func openAndCheck(c *cli.Context) (*store, error) {
@@ -436,7 +436,7 @@ func cmdRun(c *cli.Context) error {
 	}
 	wg.Wait()
 
-	return cli.NewExitError(fmt.Sprintf("shutting down since all auth sockets have closed."), 0)
+	return cli.NewExitError("shutting down since all auth sockets have closed.", 0)
 }
 
 func cmdRunSa(c *cli.Context) error {

@@ -109,7 +109,7 @@ func handleWebAuthenticate(store *Store, sessions *webSessionFactory, w http.Res
 	respdata.Username = reqdata.Username
 	respdata.IsAdmin = isAdmin
 	respdata.LastChanged = lastChanged
-	status := http.StatusOK
+	var status int
 	status, respdata.Error, respdata.Session = sessions.Generate(reqdata.Username, isAdmin)
 	sendWebResponse(w, status, respdata)
 }

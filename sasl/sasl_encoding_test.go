@@ -84,7 +84,7 @@ func TestRequestEncode(t *testing.T) {
 			if err != nil {
 				t.Fatal("unexpected error:", err)
 			}
-			if bytes.Compare(vector.result, result) != 0 {
+			if !bytes.Equal(vector.result, result) {
 				t.Fatalf("resulting message is invalid is: '%v', should be '%v'", result, vector.result)
 			}
 		} else {
@@ -188,7 +188,7 @@ func TestResponseEncode(t *testing.T) {
 			if err != nil {
 				t.Fatal("unexpected error:", err)
 			}
-			if bytes.Compare(vector.result, result) != 0 {
+			if !bytes.Equal(vector.result, result) {
 				t.Fatalf("resulting message is invalid is: '%v', should be '%v'", result, vector.result)
 			}
 		} else {

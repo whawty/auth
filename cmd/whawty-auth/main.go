@@ -225,13 +225,13 @@ func cmdSetAdmin(c *cli.Context) error {
 
 	username := c.Args().First()
 	if username == "" {
-		cli.ShowCommandHelp(c, "set-admin")
+		cli.ShowCommandHelp(c, "set-admin") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 
 	isAdmin, err := strconv.ParseBool(c.Args().Get(1))
 	if err != nil {
-		cli.ShowCommandHelp(c, "set-admin")
+		cli.ShowCommandHelp(c, "set-admin") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 
@@ -323,7 +323,7 @@ func cmdAuthenticate(c *cli.Context) error {
 
 	username := c.Args().First()
 	if username == "" {
-		cli.ShowCommandHelp(c, "authenticate")
+		cli.ShowCommandHelp(c, "authenticate") //nolint:errcheck
 		return cli.NewExitError("", 0)
 	}
 

@@ -213,10 +213,10 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 
 	// Flush the move to disk
 	dir, err := os.Open(filepath.Dir(file.Name()))
-	defer dir.Close()
 	if err != nil {
 		return err
 	}
+	defer dir.Close()
 	return dir.Sync()
 }
 
@@ -277,7 +277,6 @@ func (u *UserHash) Remove() {
 	filename := filepath.Join(u.store.BaseDir, u.user)
 	os.Remove(filename + adminExt)
 	os.Remove(filename + userExt)
-	return
 }
 
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if

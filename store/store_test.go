@@ -33,7 +33,6 @@ package store
 import (
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -151,7 +150,7 @@ params:
       r: 2`, true},
 	}
 
-	file, err := ioutil.TempFile("", "whawty-auth-config")
+	file, err := os.CreateTemp("", "whawty-auth-config")
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}

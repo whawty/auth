@@ -39,7 +39,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -49,7 +48,7 @@ import (
 )
 
 var (
-	wl                 = log.New(ioutil.Discard, "[whawty.auth]\t", log.LstdFlags)
+	wl                 = log.New(io.Discard, "[whawty.auth]\t", log.LstdFlags)
 	userNameRe         = regexp.MustCompile("^[A-Za-z0-9][-_.@A-Za-z0-9]*$")
 	errNoSupportedHash = errors.New("No admin with supported password hash found")
 )
@@ -118,7 +117,7 @@ func (d *Dir) getTempFile() (tmp *os.File, err error) {
 		return nil, err
 	}
 
-	return ioutil.TempFile(tmpDir, "")
+	return os.CreateTemp(tmpDir, "")
 }
 
 func isDirEmpty(dir *os.File) bool {

@@ -365,12 +365,9 @@ func cmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
-	var lc *listenerConfig
-	if c.String("listener") != "" {
-		lc, err = readListenerConfig(c.String("listener"))
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
+	lc, err := readListenerConfig(c.String("listener"))
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
 	}
 
 	var wg sync.WaitGroup
@@ -445,12 +442,9 @@ func cmdRunSa(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
-	var lc *listenerConfig
-	if c.String("listener") != "" {
-		lc, err = readListenerConfig(c.String("listener"))
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
+	lc, err := readListenerConfig(c.String("listener"))
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
 	}
 
 	listenerGroups, err := activation.ListenersWithNames()
@@ -666,7 +660,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "listener",
-					Value:  "",
+					Value:  "/etc/whawty/auth-listener.yaml",
 					Usage:  "path to the listener configuration file",
 					EnvVar: "WHAWTY_AUTH_LISTENER_CONFIG",
 				},
@@ -679,7 +673,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "listener",
-					Value:  "",
+					Value:  "/etc/whawty/auth-listener.yaml",
 					Usage:  "path to the listener configuration file",
 					EnvVar: "WHAWTY_AUTH_LISTENER_CONFIG",
 				},

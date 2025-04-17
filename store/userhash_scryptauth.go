@@ -52,10 +52,10 @@ type ScryptAuthHasher struct {
 func NewScryptAuthHasher(params *ScryptAuthParams) (*ScryptAuthHasher, error) {
 	hk, err := base64.StdEncoding.DecodeString(params.HmacKeyBase64)
 	if err != nil {
-		return nil, fmt.Errorf("Error: can't decode HMAC Key for scrypt-auth parameter-set: %s", err)
+		return nil, fmt.Errorf("can't decode HMAC Key for scrypt-auth parameter-set: %s", err)
 	}
 	if len(hk) != scryptauth.KeyLength {
-		return nil, fmt.Errorf("Error: HMAC Key for scrypt-auth parameter-set has invalid length %d != %d", scryptauth.KeyLength, len(hk))
+		return nil, fmt.Errorf("HMAC key for scrypt-auth parameter-set has invalid length %d != %d", scryptauth.KeyLength, len(hk))
 	}
 
 	sactx, err := scryptauth.New(params.Cost, hk)

@@ -74,7 +74,7 @@ func NewServerFromListener(ln *net.UnixListener, cb AuthCB) (s *Server, err erro
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer conn.Close() //nolint:errcheck
 
 	resp := &Response{}
 	req := &Request{}
@@ -130,7 +130,7 @@ func (c *Client) Auth(login, password, service, realm string) (ok bool, msg stri
 	if conn, err = net.Dial("unix", c.sockPath); err != nil {
 		return
 	}
-	defer conn.Close()
+	defer conn.Close() //nolint:errcheck
 
 	req := &Request{login, password, service, realm}
 	if err = req.Encode(conn); err != nil {

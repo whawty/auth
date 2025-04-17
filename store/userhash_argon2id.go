@@ -95,7 +95,7 @@ func (h *Argon2IDHasher) Generate(password string) (string, error) {
 		return "", err
 	}
 	if salt_length != 16 {
-		return "", fmt.Errorf("Insufficient random bytes for salt")
+		return "", fmt.Errorf("insufficient random bytes for salt")
 	}
 
 	hash := argon2.IDKey([]byte(password), salt, h.Time, h.Memory, h.Threads, h.Length)
@@ -113,7 +113,7 @@ func (h *Argon2IDHasher) Check(password, hashStr string) (bool, error) {
 
 	cmp := argon2.IDKey([]byte(password), salt, h.Time, h.Memory, h.Threads, h.Length)
 	if subtle.ConstantTimeCompare(cmp, hash) != 1 {
-		return false, fmt.Errorf("Error: Hash verification failed")
+		return false, fmt.Errorf("hash verification failed")
 	}
 	return true, nil
 }

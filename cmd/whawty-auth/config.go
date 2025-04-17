@@ -74,14 +74,14 @@ func readListenerConfig(configfile string) (*listenerConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	decoder := yaml.NewDecoder(file)
 	decoder.KnownFields(true)
 
 	c := &listenerConfig{}
 	if err = decoder.Decode(c); err != nil {
-		return nil, fmt.Errorf("Error parsing config file: %s", err)
+		return nil, fmt.Errorf("failed to parse config file: %s", err)
 	}
 	return c, nil
 }

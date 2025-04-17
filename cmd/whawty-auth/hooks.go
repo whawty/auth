@@ -95,7 +95,7 @@ func (h *HooksCaller) runAllHooks() {
 		wl.Printf("Hooks: error opening hooks directory: %v", err)
 		return
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 
 	var dirInfo os.FileInfo
 	if dirInfo, err = dir.Stat(); err != nil {
@@ -172,7 +172,7 @@ func NewHooksCaller(hooksDir, storeDir string) (h *HooksCaller, err error) {
 			return
 		}
 		if !d.IsDir() {
-			return nil, fmt.Errorf("Hooks: '%s' is not a directory", hooksDir)
+			return nil, fmt.Errorf("'%s' is not a directory", hooksDir)
 		}
 	}
 

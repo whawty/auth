@@ -68,7 +68,7 @@ func readHashStr(filename string) (string, time.Time, uint, string, error) {
 	if err != nil {
 		return "", time.Unix(0, 0), 0, "", err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	reader := bufio.NewReader(file)
 
@@ -173,14 +173,14 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	tmp, err := u.store.getTempFile()
 	if err != nil {
 		return err
 	}
-	defer tmp.Close()
-	defer os.Remove(tmp.Name()) // Ensure that the file gets removed in case of failure
+	defer tmp.Close()           //nolint:errcheck
+	defer os.Remove(tmp.Name()) //nolint:errcheck
 
 	// Write the new password hash
 	if _, err := io.WriteString(tmp, fmt.Sprintf("%s:%d:%d:%s\n", formatID, time.Now().Unix(), paramID, hashStr)); err != nil {
@@ -216,7 +216,7 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 	if err != nil {
 		return err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 	return dir.Sync()
 }
 
@@ -275,8 +275,8 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 // Remove deletes hash file.
 func (u *UserHash) Remove() {
 	filename := filepath.Join(u.store.BaseDir, u.user)
-	os.Remove(filename + adminExt)
-	os.Remove(filename + userExt)
+	os.Remove(filename + adminExt) //nolint:errcheck
+	os.Remove(filename + userExt)  //nolint:errcheck
 }
 
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if

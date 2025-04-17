@@ -144,22 +144,22 @@ func (r *Request) Decode(reader io.Reader) (err error) {
 func (r *Request) Encode(writer io.Writer) error {
 	parts := make([]string, 4)
 	if len(r.Login) > MaxRequestLength {
-		return errors.New("Login is too long")
+		return errors.New("login field is too long")
 	}
 	parts[0] = r.Login
 
 	if len(r.Password) > MaxRequestLength {
-		return errors.New("Password is too long")
+		return errors.New("password field is too long")
 	}
 	parts[1] = r.Password
 
 	if len(r.Service) > MaxRequestLength {
-		return errors.New("Service is too long")
+		return errors.New("service field is too long")
 	}
 	parts[2] = r.Service
 
 	if len(r.Realm) > MaxRequestLength {
-		return errors.New("Realm is too long")
+		return errors.New("realm field is too long")
 	}
 	parts[3] = r.Realm
 

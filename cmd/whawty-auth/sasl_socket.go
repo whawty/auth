@@ -54,7 +54,7 @@ func callback(login, password, service, realm, path string, store *Store) (ok bo
 }
 
 func runSaslAuthSocket(path string, store *Store) error {
-	os.Remove(path)
+	os.Remove(path) //nolint:errcheck
 	s, err := sasl.NewServer(path, func(log string, pwd string, srv string, rlm string) (bool, string, error) {
 		return callback(log, pwd, srv, rlm, path, store)
 	})
@@ -63,7 +63,7 @@ func runSaslAuthSocket(path string, store *Store) error {
 	}
 	wl.Printf("listening on '%s'", path)
 
-	defer os.Remove(path)
+	defer os.Remove(path) //nolint:errcheck
 	if err := s.Run(); err != nil {
 		wl.Printf("error on sasl socket '%s': %s", path, err)
 	}

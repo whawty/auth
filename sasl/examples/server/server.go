@@ -56,7 +56,7 @@ func callback(login, password, service, realm string) (ok bool, msg string, err 
 }
 
 func main() {
-	os.Remove("/tmp/whawty-sasl.sock")
+	os.Remove("/tmp/whawty-sasl.sock") //nolint:errcheck
 	s, err := sasl.NewServer("/tmp/whawty-sasl.sock", callback)
 	if err != nil {
 		fmt.Printf("error initializing server: %s\n", err)

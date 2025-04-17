@@ -264,8 +264,8 @@ func TestIsFormatSupported(t *testing.T) {
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer file.Close()
-	defer os.Remove(filename)
+	defer file.Close()        //nolint:errcheck
+	defer os.Remove(filename) //nolint:errcheck
 	for _, hashStr := range hashStrings {
 		if _, err := file.Seek(0, 0); err != nil {
 			t.Fatal("unexpected error:", err)
@@ -335,8 +335,8 @@ func TestAuthenticateUnknownParameterSet(t *testing.T) {
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer file.Close()
-	defer os.Remove(filename)
+	defer file.Close()        //nolint:errcheck
+	defer os.Remove(filename) //nolint:errcheck
 	if _, err := file.WriteString(hashStr); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
@@ -358,8 +358,8 @@ func TestAuthenticateInvalidHash(t *testing.T) {
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer file.Close()
-	defer os.Remove(filename)
+	defer file.Close()        //nolint:errcheck
+	defer os.Remove(filename) //nolint:errcheck
 	if _, err := file.WriteString(hashStr); err != nil {
 		t.Fatal("unexpected error:", err)
 	}

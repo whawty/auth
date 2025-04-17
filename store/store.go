@@ -50,7 +50,7 @@ import (
 var (
 	wl                 = log.New(io.Discard, "[whawty.auth]\t", log.LstdFlags)
 	userNameRe         = regexp.MustCompile("^[A-Za-z0-9][-_.@A-Za-z0-9]*$")
-	errNoSupportedHash = errors.New("No admin with supported password hash found")
+	errNoSupportedHash = errors.New("no admin with supported password hash found")
 )
 
 const (
@@ -98,12 +98,12 @@ func openDir(path string) (*os.File, error) {
 
 	i, err := dir.Stat()
 	if err != nil {
-		dir.Close()
+		dir.Close() //nolint:errcheck
 		return nil, err
 	}
 	if !i.IsDir() {
-		dir.Close()
-		return nil, fmt.Errorf("Error: '%s' is not a directory", path)
+		dir.Close() //nolint:errcheck
+		return nil, fmt.Errorf("'%s' is not a directory", path)
 	}
 
 	return dir, nil
@@ -155,10 +155,10 @@ func (d *Dir) Init(admin, password string) error {
 	if err != nil {
 		return err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 
 	if empty := isDirEmpty(dir); !empty {
-		return fmt.Errorf("Error: '%s' is not empty", d.BaseDir)
+		return fmt.Errorf("'%s' is not empty", d.BaseDir)
 	}
 	return d.AddUser(admin, password, true)
 }
@@ -169,7 +169,7 @@ func (d *Dir) Check() error {
 	if err != nil {
 		return err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 	names, err := dir.Readdirnames(0)
 	if err != nil && err != io.EOF {
 		return err
@@ -251,7 +251,7 @@ func (d *Dir) List() (UserList, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 
 	list := make(UserList)
 	for {
@@ -318,7 +318,7 @@ func (d *Dir) ListFull() (UserListFull, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 
 	list := make(UserListFull)
 	for {

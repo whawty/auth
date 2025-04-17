@@ -154,8 +154,8 @@ params:
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer file.Close()
-	defer os.Remove(file.Name())
+	defer file.Close()           //nolint:errcheck
+	defer os.Remove(file.Name()) //nolint:errcheck
 
 	for _, yaml := range yamlData {
 		if _, err := file.Seek(0, 0); err != nil {
@@ -193,7 +193,7 @@ func TestInitDir(t *testing.T) {
 	if file, err := os.Create(testBaseDir); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 
 	if err := store.Init(adminuser, password); err == nil {
@@ -206,7 +206,7 @@ func TestInitDir(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0000); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	if err := store.Init(adminuser, password); err == nil {
 		t.Fatalf("Initializing of a directory with wrong permissions shouldn't work")
@@ -218,7 +218,7 @@ func TestInitDir(t *testing.T) {
 	if file, err := os.Create(filepath.Join(testBaseDir, "testfile")); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 
 	if err := store.Init(adminuser, password); err == nil {
@@ -256,7 +256,7 @@ func TestCheckDir(t *testing.T) {
 	if file, err := os.Create(testBaseDir); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 
 	if err := store.Check(); err == nil {
@@ -269,7 +269,7 @@ func TestCheckDir(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0000); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	if err := store.Check(); err == nil {
 		t.Fatalf("check should return an error if directory is not accessible")
@@ -315,7 +315,7 @@ func TestCheckDir(t *testing.T) {
 	if file, err := os.Create(filepath.Join(testBaseDir, "blub")); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 	if err := store.Check(); err == nil {
 		t.Fatal("check should fail if a file with no extension is found")
@@ -327,7 +327,7 @@ func TestCheckDir(t *testing.T) {
 	if file, err := os.Create(filepath.Join(testBaseDir, "blub.invalid")); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 	if err := store.Check(); err == nil {
 		t.Fatal("check should fail if a file with invalid extension is found")
@@ -339,7 +339,7 @@ func TestCheckDir(t *testing.T) {
 	if file, err := os.Create(filepath.Join(testBaseDir, "admin.user")); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 	if err := store.Check(); err == nil {
 		t.Fatal("check should fail if admin and user hash for the same user exist")
@@ -351,7 +351,7 @@ func TestCheckDir(t *testing.T) {
 	if file, err := os.Create(filepath.Join(testBaseDir, "foo.admin")); err != nil {
 		t.Fatal("unexpected error:", err)
 	} else {
-		file.Close()
+		file.Close() //nolint:errcheck
 	}
 	if err := store.Check(); err == nil {
 		t.Fatal("check should fail if admin and user hash for the same user exist")
@@ -372,7 +372,7 @@ func TestAddUser(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	if err := ensureDefaultParameterSet(store); err != nil {
 		t.Fatal("Unexpected error:", err)
@@ -419,7 +419,7 @@ func TestListFull(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	if list, err := store.ListFull(); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -474,7 +474,7 @@ func TestList(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	if list, err := store.List(); err != nil {
 		t.Fatal("unexpected error:", err)

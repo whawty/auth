@@ -62,7 +62,7 @@ func askPass() (string, error) {
 	fmt.Printf("new password: ")
 	if p1, err := gopass.GetPasswd(); err != nil || len(p1) == 0 {
 		if len(p1) == 0 {
-			return "", fmt.Errorf("empyty password is not allowed!")
+			return "", fmt.Errorf("empty password is not allowed")
 		}
 		return "", err
 	} else {
@@ -73,7 +73,7 @@ func askPass() (string, error) {
 			if string(p1) == string(p2) {
 				return string(p1), nil
 			} else {
-				return "", fmt.Errorf("passwords don't match!")
+				return "", fmt.Errorf("passwords don't match")
 			}
 		}
 	}
@@ -126,7 +126,7 @@ func openAndCheck(c *cli.Context) (*store, error) {
 	s, err := NewStore(c.GlobalString("store"), c.GlobalString("do-upgrades"),
 		c.GlobalString("policy-type"), c.GlobalString("policy-condition"), c.GlobalString("hooks-dir"))
 	if err != nil {
-		return nil, fmt.Errorf("Error opening whawty store: %s", err)
+		return nil, fmt.Errorf("opening whawty store failed: %s", err)
 	}
 
 	if !c.GlobalBool("do-check") {
@@ -134,7 +134,7 @@ func openAndCheck(c *cli.Context) (*store, error) {
 	}
 
 	if err := s.GetInterface().Check(); err != nil {
-		return nil, fmt.Errorf("Error checking whawty store: %s", err)
+		return nil, fmt.Errorf("checking whawty store failed: %s", err)
 	}
 	return s, nil
 }
@@ -249,7 +249,7 @@ func cmdSetAdmin(c *cli.Context) error {
 func cmdListFull(s *Store) error {
 	lst, err := s.ListFull()
 	if err != nil {
-		return fmt.Errorf("Error listing user: %s\n", err)
+		return fmt.Errorf("listing user failed: %s", err)
 	}
 
 	var keys []string
@@ -275,7 +275,7 @@ func cmdListFull(s *Store) error {
 func cmdListSupported(s *Store) error {
 	lst, err := s.List()
 	if err != nil {
-		return fmt.Errorf("Error listing user: %s\n", err)
+		return fmt.Errorf("listing user failed: %s", err)
 	}
 
 	var keys []string

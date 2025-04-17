@@ -54,14 +54,14 @@ func readConfig(configfile string) (*config, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	decoder := yaml.NewDecoder(file)
 	decoder.KnownFields(true)
 
 	c := &config{}
 	if err = decoder.Decode(c); err != nil {
-		return nil, fmt.Errorf("Error parsing config file: %s", err)
+		return nil, fmt.Errorf("failed to parse config file: %s", err)
 	}
 	return c, nil
 }
@@ -72,14 +72,14 @@ func (d *Dir) fromConfig(configfile string) error {
 		return err
 	}
 	if c.BaseDir == "" {
-		return fmt.Errorf("Error: config file does not contain a base directory")
+		return fmt.Errorf("config file does not contain a base directory")
 	}
 	d.BaseDir = c.BaseDir
 	d.Default = c.Default
 
 	for _, params := range c.Params {
 		if params.ID == 0 {
-			return fmt.Errorf("Error: parameter-set 0 is reserved")
+			return fmt.Errorf("parameter-set 0 is reserved")
 		}
 
 		n := 0
@@ -98,18 +98,18 @@ func (d *Dir) fromConfig(configfile string) error {
 		}
 
 		if n == 0 {
-			return fmt.Errorf("Error: parameter-set %d uses unknown algorithm", params.ID)
+			return fmt.Errorf("parameter-set %d uses unknown algorithm", params.ID)
 		}
 		if n > 1 {
-			return fmt.Errorf("Error: parameter-set %d has more than one algorithm configured", params.ID)
+			return fmt.Errorf("parameter-set %d has more than one algorithm configured", params.ID)
 		}
 	}
 	if c.Default == 0 {
 		if len(d.Params) != 0 {
-			return fmt.Errorf("Error: no default parameter-set")
+			return fmt.Errorf("no default parameter-set")
 		}
 	} else if _, exists := d.Params[c.Default]; !exists {
-		return fmt.Errorf("Error: invalid default parameter-set %d", c.Default)
+		return fmt.Errorf("invalid default parameter-set %d", c.Default)
 	}
 	d.Default = c.Default
 

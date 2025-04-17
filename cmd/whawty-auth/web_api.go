@@ -61,7 +61,7 @@ func handleWebBasicAuth(store *Store, sessions *webSessionFactory, w http.Respon
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, "success")
+	fmt.Fprintln(w, "success") //nolint:errcheck
 }
 
 type webAuthenticateRequest struct {

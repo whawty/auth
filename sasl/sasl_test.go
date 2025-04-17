@@ -84,7 +84,7 @@ func TestCreateServer(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	if _, err := NewServer(filepath.Join(testBaseDir, "new.sock"), callback); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -111,7 +111,7 @@ func TestAuthentication(t *testing.T) {
 	if err := os.Mkdir(testBaseDir, 0755); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer os.RemoveAll(testBaseDir)
+	defer os.RemoveAll(testBaseDir) //nolint:errcheck
 
 	s, err := NewServer(filepath.Join(testBaseDir, "sock"), callback)
 	if err != nil {

@@ -42,6 +42,7 @@ https:
     # - secp384r1
     # - secp521r1
     # - x25519
+    # - X25519MLKEM768
     # session-tickets: true
     # session-ticket-key: "b947e39f50e20351bdd81046e20fff7948d359a3aec391719d60645c5972cc77"
 ldap:

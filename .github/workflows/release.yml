@@ -11,7 +11,7 @@ jobs:
         goos: [linux]
         goarch: ["386", amd64, arm64]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: wangyoucao577/go-release-action@v1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -27,7 +27,7 @@ jobs:
     name: Build and Publish Docker Image
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: VaultVulp/gp-docker-action@1.6.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -41,4 +41,3 @@ jobs:
         image-platform: linux/arm64,linux/amd64,linux/i386
         extract-git-tag: true
         build-context: ./contrib/sync
-        custom-args: --build-arg=GOKR_RSYNC_VERSION=0.1.0

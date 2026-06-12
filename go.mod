@@ -10,7 +10,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/spreadspace/tlsconfig v0.0.0-20251011122609-f3ec9d371c57
 	github.com/urfave/cli v1.22.17
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.53.0
 	gopkg.in/spreadspace/scryptauth.v2 v2.0.0-20160119001838-d2c0fcba7783
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -22,10 +22,10 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.21 // indirect
+	github.com/mattn/go-colorable v0.1.15 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
+	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/term v0.41.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
 )

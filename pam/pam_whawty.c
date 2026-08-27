@@ -219,7 +219,8 @@ int _whawty_get_password(whawty_ctx_t* ctx)
 
 void _whawty_cleanup(whawty_ctx_t* ctx)
 {
-  _pam_overwrite(ctx->password_);
+  if(ctx->password_ != NULL)
+    explicit_bzero(ctx->password_, strlen(ctx->password_));
   _pam_drop(ctx->password_);
 
   _pam_drop(ctx->sockpath_);

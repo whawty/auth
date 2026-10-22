@@ -15,10 +15,11 @@ You can install & build the latest development version using `go get`:
 go get github.com/whawty/auth/cmd/whawty-auth
 ```
 
-You can run the app like this (assuming you also donwloaded `../../contrib/sample-config.yml`
+You can run the app like this (assuming you also downloaded `../../contrib/store-cfg.yml`
+and `../../contrib/listener-cfg.yml` and adapted them to your needs):
 
 ```
-./bin/app --store ./sample-config.yaml run --web-addr :4242
+whawty-auth --store ./store-cfg.yml run --listener ./listener-cfg.yml
 ```
 
 

@@ -50,7 +50,9 @@ The following global options can be passed to *whawty-auth*.
      This enables local or remote upgrades for password hashes. By default no upgrades will
      be done. 'local' means direct upgrades on the local store. 'remote' upgrades can be
      configured by specifying the url to a remote *whawty-auth* instance. The url must point to
-     the web-api endpoint on that host (i.e. 'https://whawty-master.example.com/api/update').
+     the web-api endpoint on that host (i.e. 'https://whawty-master.example.com/api/update'
+     or 'https://www.example.com/auth/api/update' if the remote instance is published below
+     a path prefix).
      For any password hash which is upgrade able an update call to the remote host will be
      initialized after the user is successfully authenticated. This is done in a opportunistic
      way. This means errors while calling the remote update will be ignored.
@@ -171,28 +173,47 @@ successful the result code will be 0. On error the result code will be 1.
 run '[options]'
 ~~~~~~~~~~~~~~~
 
-This instructs *whawty-auth* to run as an authentication service.
+This instructs *whawty-auth* to run as an authentication service. The sockets
+and addresses to listen on are defined in the listener configuration file (see
+*LISTENER CONFIGURATION* below).
 
-*--sock* '</path/to/whawty/sock>'::
-     Open a saslauthd compatible unix socket. This option might be supplied several times.
-     *whawty-auth* will listen on all sockets for authentication requests. In addition
-     to this, paths may be specified using the environment variable 'WHAWTY_AUTH_SASL_SOCK'
-     as a comma-separated list. All sockets defined on command line and via the environment
-     are merged and *whawty-auth* will listen on all sockets simultaneously.
+*--listener* '</path/to/listener.yaml>'::
+     This sets the path to the listener configuration file. By default *whawty-auth* uses
+     the file '/etc/whawty/auth-listener.yaml'. This may also be configured using the
+     environment variable 'WHAWTY_AUTH_LISTENER_CONFIG'. If both the environment variable
+     and the command line option are supplied the latter is used.
 
-*--web-addr* '[<addr>]:<port>'::
-     Also start a small web interface on the specified address. This option might be supplied
-     several times. *whawty-auth* will listen simultaneously on all addresses for incoming
-     requests. This can also be specified using the environment variable 'WHAWTY_AUTH_WEB_ADDR'
-     as a comma-separated list. All addresses defined on command line and via the environment
-     are merged and *whawty-auth* will listen on all addresses simultaneously.
-
-runsa
-~~~~~
+runsa '[options]'
+~~~~~~~~~~~~~~~~~
 
 This is basically the same as *run* but expects all sockets to be passed via systemd
-socket activation. *whawty-auth* will run the web-api on all TCP sockets and expects
-saslauthd compatible requests on any unix socket. All other socket types are ignored.
+socket activation. The socket names ('saslauthd', 'http', 'https', 'ldap' and 'ldaps')
+select which section of the listener configuration applies to a socket. Any 'listen'
+entries in the configuration file are ignored. *runsa* accepts the same *--listener*
+option as *run*.
+
+
+LISTENER CONFIGURATION
+----------------------
+
+The listener configuration is a YAML file with one optional section per listener type:
+'saslauthd', 'http', 'https', 'ldap' and 'ldaps'. Every section contains a list of
+addresses or socket paths named 'listen'. The 'https', 'ldap' and 'ldaps' sections
+also take a 'tls' configuration. See 'contrib/listener-cfg.yml' for a complete example.
+
+The 'http' and 'https' sections serve the web-api at '/api/' and the web interface at
+'/admin/'. Both sections accept the following additional option:
+
+*base-path*::
+     Publish the web-api and the web interface below this path, i.e. with 'base-path: /auth'
+     the web interface is served at '/auth/admin/' and the web-api at '/auth/api/'. Requests
+     outside of this path are answered with '404 Not Found'. Use this if a reverse proxy
+     publishes *whawty-auth* below a path prefix and forwards the full request path.
+     Leading and trailing slashes are optional, i.e. 'auth', '/auth' and '/auth/' are
+     equivalent. By default the web-api and the web interface are served at the root.
+     If a reverse proxy strips the path prefix before forwarding requests, leave
+     *base-path* unset: the web interface only uses relative URLs and works below any
+     prefix. See 'contrib/nginx-shared-vhost' for example configurations of both variants.
 
 
 SIGNALS

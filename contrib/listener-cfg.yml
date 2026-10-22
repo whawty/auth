@@ -5,6 +5,9 @@ saslauthd:
 https:
   listen:
   - 127.0.0.1:443
+  ## publish the web-api and web interface below this path, i.e. the web interface
+  ## will be at /auth/admin/ (see contrib/nginx-shared-vhost for reverse proxy examples)
+  # base-path: /auth
   tls:
     certificate: "/path/to/server-crt.pem"
     certificate-key:  "/path/to/server-key.pem"

@@ -172,6 +172,11 @@ func (w *webSessionFactory) Check(session string) (status int, errorStr string, 
 		errorStr = fmt.Sprintf("invalid session token: %v", err)
 		return
 	}
+	if len(nonce) != w.aesgcm.NonceSize() { // aesgcm.Open() panics on nonces of the wrong size
+		status = http.StatusBadRequest
+		errorStr = "invalid session token"
+		return
+	}
 
 	enctoken, err := base64.URLEncoding.DecodeString(tmp[1])
 	if err != nil {

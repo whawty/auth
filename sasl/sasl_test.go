@@ -36,6 +36,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 const (
@@ -97,6 +98,32 @@ func TestCreateServer(t *testing.T) {
 
 	if _, err := NewServerFromListener(ln.(*net.UnixListener), callback); err != nil {
 		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestRunReturnsNilAfterClose(t *testing.T) {
+	ln, err := net.Listen("unix", filepath.Join(t.TempDir(), "close.sock"))
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	s, err := NewServerFromListener(ln.(*net.UnixListener), callback)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- s.Run() }()
+
+	if err := ln.Close(); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal("Run() returned an error after the listener was closed:", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run() did not return after the listener was closed")
 	}
 }
 

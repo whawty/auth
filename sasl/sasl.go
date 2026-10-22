@@ -33,6 +33,7 @@
 package sasl
 
 import (
+	"errors"
 	"fmt"
 	"net"
 )
@@ -93,11 +94,16 @@ func (s *Server) handleConnection(conn net.Conn) {
 }
 
 // Run actually runs the server. In calls Accept() on the server socket and
-// runs go-routines for new connections.
+// runs go-routines for new connections. Run returns nil once the listener
+// has been closed, i.e. by closing the listener passed to NewServerFromListener,
+// and the error returned by Accept() on any other failure.
 func (s *Server) Run() error {
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				return nil
+			}
 			operr, ok := err.(*net.OpError)
 			if !ok {
 				return err

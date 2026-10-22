@@ -35,14 +35,17 @@ import (
 	"net/http"
 )
 
-// addUIRoutes serves the web interface at /admin/ and redirects / to it.
+// addUIRoutes serves the web interface at /admin/ and redirects / and
+// /admin to it.
 func addUIRoutes(mux *http.ServeMux, assets fs.FS) {
+	toUI := relativeRedirect("admin/")
 	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(assets))))
+	mux.Handle("/admin", toUI)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
+		toUI.ServeHTTP(w, r)
 	})
 }

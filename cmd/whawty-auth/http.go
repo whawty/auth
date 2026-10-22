@@ -31,9 +31,13 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"net/url"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/whawty/auth/ui"
@@ -54,27 +58,77 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
-func newWebHandler(store *Store) (mux *http.ServeMux, err error) {
-	var sessions *webSessionFactory
-	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
-		return
+// All redirects issued by the web handler use relative Location headers.
+// This way they also work if a reverse proxy publishes whawty-auth below
+// a path prefix and strips that prefix before forwarding the request.
+// (net/http.Redirect would turn them into absolute paths.)
+func relativeRedirect(target string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Location", target)
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	})
+}
+
+// normalizeBasePath cleans up the base-path of a web listener. The result is
+// either "" (serve at the root) or a path which starts with a '/' and has no
+// trailing '/'.
+func normalizeBasePath(p string) string {
+	p = path.Clean("/" + strings.TrimSpace(p))
+	if p == "/" {
+		return ""
+	}
+	return p
+}
+
+// withBasePath makes h available below basePath (as returned by
+// normalizeBasePath). Requests for basePath itself are redirected to the
+// web interface, requests outside of basePath are answered with 404.
+func withBasePath(h http.Handler, basePath string) http.Handler {
+	if basePath == "" {
+		return h
+	}
+	stripped := http.StripPrefix(basePath, h)
+	toUI := relativeRedirect(url.PathEscape(path.Base(basePath)) + "/admin/")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == basePath:
+			toUI.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, basePath+"/"):
+			stripped.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+func newWebHandler(store *Store, basePath string) (http.Handler, error) {
+	sessions, err := NewWebSessionFactory(600 * time.Second) // TODO: hardcoded value
+	if err != nil {
+		return nil, err
 	}
 
-	mux = http.NewServeMux()
+	mux := http.NewServeMux()
 	addAPIRoutes(mux, store, sessions)
 	addUIRoutes(mux, ui.Assets)
-	return
+	return withBasePath(mux, basePath), nil
+}
+
+func basePathLogInfo(basePath string) string {
+	if basePath == "" {
+		return ""
+	}
+	return fmt.Sprintf(" with base-path '%s'", basePath)
 }
 
 func runHTTPsListener(listener *net.TCPListener, config *httpsConfig, store *Store) (err error) {
 	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	if server.Handler, err = newWebHandler(store); err != nil {
+	if server.Handler, err = newWebHandler(store, config.BasePath); err != nil {
 		return
 	}
 	if server.TLSConfig, err = config.TLS.ToGoTLSConfig(); err != nil {
 		return
 	}
-	wl.Printf("web-api: listening on '%s' using TLS", listener.Addr())
+	wl.Printf("web-api: listening on '%s' using TLS%s", listener.Addr(), basePathLogInfo(config.BasePath))
 	return server.ServeTLS(tcpKeepAliveListener{listener}, "", "")
 }
 
@@ -91,10 +145,10 @@ func runHTTPsAddr(addr string, config *httpsConfig, store *Store) error {
 
 func runHTTPListener(listener *net.TCPListener, config *httpConfig, store *Store) (err error) {
 	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	if server.Handler, err = newWebHandler(store); err != nil {
+	if server.Handler, err = newWebHandler(store, config.BasePath); err != nil {
 		return
 	}
-	wl.Printf("web-api: listening on '%s'", listener.Addr())
+	wl.Printf("web-api: listening on '%s'%s", listener.Addr(), basePathLogInfo(config.BasePath))
 	return server.Serve(tcpKeepAliveListener{listener})
 }
 

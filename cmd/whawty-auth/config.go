@@ -43,12 +43,14 @@ type saslauthdConfig struct {
 }
 
 type httpConfig struct {
-	Listen []string `yaml:"listen"`
+	Listen   []string `yaml:"listen"`
+	BasePath string   `yaml:"base-path"`
 }
 
 type httpsConfig struct {
-	Listen []string             `yaml:"listen"`
-	TLS    *tlsconfig.TLSConfig `yaml:"tls"`
+	Listen   []string             `yaml:"listen"`
+	BasePath string               `yaml:"base-path"`
+	TLS      *tlsconfig.TLSConfig `yaml:"tls"`
 }
 
 type ldapConfig struct {
@@ -82,6 +84,12 @@ func readListenerConfig(configfile string) (*listenerConfig, error) {
 	c := &listenerConfig{}
 	if err = decoder.Decode(c); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %s", err)
+	}
+	if c.HTTP != nil {
+		c.HTTP.BasePath = normalizeBasePath(c.HTTP.BasePath)
+	}
+	if c.HTTPs != nil {
+		c.HTTPs.BasePath = normalizeBasePath(c.HTTPs.BasePath)
 	}
 	return c, nil
 }

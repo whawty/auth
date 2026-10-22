@@ -64,10 +64,7 @@ func runSaslAuthSocket(path string, store *Store) error {
 	wl.Printf("listening on '%s'", path)
 
 	defer os.Remove(path) //nolint:errcheck
-	if err := s.Run(); err != nil {
-		wl.Printf("error on sasl socket '%s': %s", path, err)
-	}
-	return nil
+	return s.Run()
 }
 
 func runSaslAuthSocketListener(listener *net.UnixListener, store *Store) error {
@@ -79,9 +76,5 @@ func runSaslAuthSocketListener(listener *net.UnixListener, store *Store) error {
 		return err
 	}
 	wl.Printf("listening on '%s'", path)
-
-	if err := s.Run(); err != nil {
-		wl.Printf("error on sasl socket '%s': %s", path, err)
-	}
-	return nil
+	return s.Run()
 }

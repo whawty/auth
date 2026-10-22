@@ -36,6 +36,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"syscall"
+	"time"
 )
 
 // AuthCB is the function signature of callbacks as used by the server to
@@ -93,26 +95,46 @@ func (s *Server) handleConnection(conn net.Conn) {
 	resp.Encode(conn) //nolint:errcheck
 }
 
+// isTemporaryAcceptError reports whether Accept() failed for a reason that
+// may go away by itself, i.e. the process ran out of file descriptors or
+// memory, or a client gave up before its connection was accepted.
+func isTemporaryAcceptError(err error) bool {
+	for _, errno := range []syscall.Errno{syscall.EMFILE, syscall.ENFILE, syscall.ENOBUFS,
+		syscall.ENOMEM, syscall.ECONNABORTED, syscall.EINTR} {
+		if errors.Is(err, errno) {
+			return true
+		}
+	}
+	return false
+}
+
+const (
+	minAcceptRetryDelay = 5 * time.Millisecond
+	maxAcceptRetryDelay = time.Second
+)
+
 // Run actually runs the server. In calls Accept() on the server socket and
 // runs go-routines for new connections. Run returns nil once the listener
 // has been closed, i.e. by closing the listener passed to NewServerFromListener,
-// and the error returned by Accept() on any other failure.
+// and the error returned by Accept() on any other failure. After temporary
+// errors, like running out of file descriptors, Accept() is retried with a
+// delay that doubles on every consecutive failure, from 5ms up to 1s.
 func (s *Server) Run() error {
+	var delay time.Duration
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
 				return nil
 			}
-			operr, ok := err.(*net.OpError)
-			if !ok {
+			if !isTemporaryAcceptError(err) {
 				return err
 			}
-			if operr.Temporary() {
-				continue
-			}
-			return err
+			delay = min(max(2*delay, minAcceptRetryDelay), maxAcceptRetryDelay)
+			time.Sleep(delay)
+			continue
 		}
+		delay = 0
 		go s.handleConnection(conn)
 	}
 }

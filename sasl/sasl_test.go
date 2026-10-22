@@ -35,6 +35,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -124,6 +125,60 @@ func TestRunReturnsNilAfterClose(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("Run() did not return after the listener was closed")
+	}
+}
+
+// fakeListener returns the errors in errs from consecutive calls to Accept()
+// and net.ErrClosed once errs is exhausted.
+type fakeListener struct {
+	errs  []error
+	calls int
+}
+
+func (l *fakeListener) Accept() (net.Conn, error) {
+	l.calls++
+	if len(l.errs) == 0 {
+		return nil, net.ErrClosed
+	}
+	err := l.errs[0]
+	l.errs = l.errs[1:]
+	return nil, err
+}
+
+func (l *fakeListener) Close() error   { return nil }
+func (l *fakeListener) Addr() net.Addr { return &net.UnixAddr{Name: "fake.sock", Net: "unix"} }
+
+func acceptError(errno syscall.Errno) error {
+	return &net.OpError{Op: "accept", Net: "unix", Err: os.NewSyscallError("accept4", errno)}
+}
+
+func TestRunRetriesTemporaryErrors(t *testing.T) {
+	ln := &fakeListener{errs: []error{acceptError(syscall.EMFILE), acceptError(syscall.ENFILE), acceptError(syscall.ECONNABORTED)}}
+	s := &Server{sockPath: "fake.sock", cb: callback, ln: ln}
+
+	start := time.Now()
+	if err := s.Run(); err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+	if ln.calls != 4 {
+		t.Fatalf("Accept() was called %d times, expected 4", ln.calls)
+	}
+	// retries after 5ms, 10ms and 20ms
+	if elapsed := time.Since(start); elapsed < 35*time.Millisecond {
+		t.Fatalf("Run() retried too fast: all retries took %s, expected at least 35ms", elapsed)
+	}
+}
+
+func TestRunReturnsPermanentErrors(t *testing.T) {
+	ln := &fakeListener{errs: []error{acceptError(syscall.EINVAL)}}
+	s := &Server{sockPath: "fake.sock", cb: callback, ln: ln}
+
+	err := s.Run()
+	if !errors.Is(err, syscall.EINVAL) {
+		t.Fatalf("Run() returned %v, expected EINVAL", err)
+	}
+	if ln.calls != 1 {
+		t.Fatalf("Accept() was called %d times, expected 1", ln.calls)
 	}
 }
 

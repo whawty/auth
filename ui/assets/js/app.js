@@ -3,6 +3,7 @@
 import * as api from './api.js';
 import * as session from './session.js';
 import { $, h } from './dom.js';
+import { renderUsersView } from './users.js';
 
 const descriptions = {
   login: 'Log in to change your password or manage accounts.',
@@ -26,11 +27,11 @@ function showView(name) {
  * Views
  */
 
-// TODO: the user list and the account view follow in the next steps
 function renderAdminView() {
-  $('#view-admin').replaceChildren(h('p', { class: 'surface empty' }, 'The user list will be shown here.'));
+  renderUsersView($('#view-admin'), current);
 }
 
+// TODO: the account view follows in the next step
 function renderUserView() {
   $('#view-user').replaceChildren(h('p', { class: 'surface empty' }, 'Your account will be shown here.'));
 }

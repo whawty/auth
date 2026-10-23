@@ -39,6 +39,26 @@
 
     </main>
 
+    <dialog id="confirm-dialog" class="sheet" aria-labelledby="confirm-title">
+      <form method="dialog">
+        <div class="sheet-head">
+          <h2 id="confirm-title"></h2>
+          <button class="icon-btn" type="submit" value="cancel" aria-label="Close">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#x"/></svg>
+          </button>
+        </div>
+        <div class="sheet-body">
+          <p id="confirm-text"></p>
+        </div>
+        <div class="sheet-foot">
+          <button id="confirm-cancel" class="btn" type="submit" value="cancel">Cancel</button>
+          <button id="confirm-ok" class="btn btn-danger" type="submit" value="ok">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#trash-2"/></svg><span id="confirm-ok-label"></span>
+          </button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- Browsers offer to save the password when the form disappears after a
          successful request to the server, so app.js removes the form after a
          successful login and adds a fresh copy of it when the login is needed

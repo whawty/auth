@@ -61,21 +61,16 @@ function showLogin({ username = '', error = '' } = {}) {
   current = null;
   $('#view-admin').replaceChildren();
   $('#view-user').replaceChildren();
+  // a fresh form each time, see handleLogin()
+  $('#view-login').replaceChildren($('#login-template').content.cloneNode(true));
+  $('#login-form').addEventListener('submit', handleLogin);
   showView('login');
   $('#login-username').value = username;
-  $('#login-password').value = '';
   setLoginError(error);
   (username ? $('#login-password') : $('#login-username')).focus();
 }
 
-// Set while the form is submitted a second time, into the hidden iframe.
-let rememberPassword = false;
-
 async function handleLogin(event) {
-  if (rememberPassword) {
-    rememberPassword = false;
-    return; // let this submission through, see app.html
-  }
   event.preventDefault();
 
   const username = $('#login-username').value.trim();
@@ -89,16 +84,15 @@ async function handleLogin(event) {
   button.disabled = true;
   try {
     const state = await api.authenticate(username, password);
-    setLoginError('');
     session.save(state);
-    rememberPassword = true;
-    $('#login-form').requestSubmit();
+    // Browsers offer to save the password when the form disappears after a
+    // successful request, so remove it instead of just hiding the view.
+    $('#login-form').remove();
     enter(state);
   } catch (err) {
     setLoginError(err.status === 401 ? 'The username or password is wrong.' : err.message);
     $('#login-password').value = '';
     $('#login-password').focus();
-  } finally {
     button.disabled = false;
   }
 }
@@ -123,7 +117,6 @@ function handleExpiredSession() {
  * Start
  */
 
-$('#login-form').addEventListener('submit', handleLogin);
 $('#logout').addEventListener('click', handleLogout);
 api.onUnauthorized(handleExpiredSession);
 

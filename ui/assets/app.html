@@ -31,35 +31,39 @@
         <p class="alert alert-error">This page needs JavaScript. Please enable it in your browser.</p>
       </noscript>
 
-      <section id="view-login" aria-label="Log in">
-        <!-- After a successful login the form is submitted into this iframe, which
-             makes browsers offer to save the password. The inputs have no name,
-             so nothing is sent to the server by this submission. -->
-        <iframe id="remember" name="remember" title="Password manager helper" tabindex="-1" hidden></iframe>
-        <form id="login-form" class="surface login-card stack" target="remember" action="blank" novalidate>
-          <div>
-            <label class="label" for="login-username">Username</label>
-            <input id="login-username" class="field" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus>
-          </div>
-          <div>
-            <label class="label" for="login-password">Password</label>
-            <input id="login-password" class="field" type="password" autocomplete="current-password">
-          </div>
-          <div id="login-error" class="alert alert-error" role="alert" hidden>
-            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#circle-alert"/></svg>
-            <span id="login-error-text"></span>
-          </div>
-          <button id="login-submit" class="btn btn-primary btn-block" type="submit">
-            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#log-in"/></svg>Log in
-          </button>
-        </form>
-      </section>
+      <section id="view-login" aria-label="Log in"></section>
 
       <section id="view-admin" aria-label="Users" hidden></section>
 
       <section id="view-user" aria-label="Your account" hidden></section>
 
     </main>
+
+    <!-- Browsers offer to save the password when the form disappears after a
+         successful request to the server, so app.js removes the form after a
+         successful login and adds a fresh copy of it when the login is needed
+         again. The form is never submitted natively (method="post" keeps the
+         password out of the URL should that ever happen). -->
+    <template id="login-template">
+      <form id="login-form" class="surface login-card stack" method="post" action="blank" novalidate>
+        <div>
+          <label class="label" for="login-username">Username</label>
+          <input id="login-username" name="username" class="field" type="text" autocomplete="username" autocapitalize="none" spellcheck="false">
+        </div>
+        <div>
+          <label class="label" for="login-password">Password</label>
+          <input id="login-password" name="password" class="field" type="password" autocomplete="current-password">
+        </div>
+        <div id="login-error" class="alert alert-error" role="alert" hidden>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#circle-alert"/></svg>
+          <span id="login-error-text"></span>
+        </div>
+        <button id="login-submit" class="btn btn-primary btn-block" type="submit">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#log-in"/></svg>Log in
+        </button>
+      </form>
+    </template>
+
     <script type="module" src="js/app.js"></script>
   </body>
 </html>

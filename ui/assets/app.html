@@ -84,6 +84,47 @@
       </form>
     </template>
 
+    <!-- Filled from the template below by js/password.js, which also explains
+         when the form is removed after use. -->
+    <dialog id="password-dialog" class="sheet" aria-labelledby="password-title"></dialog>
+
+    <template id="password-template">
+      <form id="password-form" method="post" action="blank" novalidate>
+        <div class="sheet-head">
+          <h2 id="password-title"></h2>
+          <button class="icon-btn" type="button" data-close aria-label="Close">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#x"/></svg>
+          </button>
+        </div>
+        <div class="sheet-body stack">
+          <input id="password-username" name="username" type="text" autocomplete="username" hidden>
+          <div>
+            <label class="label" for="password-new">New password</label>
+            <input id="password-new" name="new-password" class="field" type="password" autocomplete="new-password">
+            <div id="password-meter" class="meter" data-score="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            <div class="meter-text" aria-live="polite">
+              <strong id="password-score"></strong>
+              <span id="password-crack"></span>
+            </div>
+            <ul id="password-hints" class="hints"></ul>
+          </div>
+          <div>
+            <label class="label" for="password-retype">Retype password</label>
+            <input id="password-retype" class="field" type="password" autocomplete="new-password">
+            <div id="password-match" class="match" aria-live="polite"></div>
+          </div>
+          <div id="password-error" class="alert alert-error" role="alert" hidden>
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#circle-alert"/></svg>
+            <span id="password-error-text"></span>
+          </div>
+        </div>
+        <div class="sheet-foot">
+          <button class="btn" type="button" data-close>Cancel</button>
+          <button id="password-submit" class="btn btn-primary" type="submit" disabled></button>
+        </div>
+      </form>
+    </template>
+
     <script type="module" src="js/app.js"></script>
   </body>
 </html>

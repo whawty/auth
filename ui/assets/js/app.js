@@ -111,6 +111,9 @@ function handleExpiredSession() {
   }
   const username = current.username;
   session.clear();
+  for (const dialog of document.querySelectorAll('dialog[open]')) {
+    dialog.close();
+  }
   showLogin({ username, error: 'Your session is no longer valid. Please log in again.' });
 }
 

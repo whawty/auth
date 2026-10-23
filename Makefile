@@ -36,7 +36,7 @@ endif
 EXECUTEABLE := whawty-auth
 
 all: build
-.PHONY: format vet cover serve-cover clean distclean
+.PHONY: format vet cover serve-cover clean distclean ui-icons
 
 format:
 	$(GOCMD) fmt ./...
@@ -69,6 +69,27 @@ clean:
 
 distclean: clean
 	rm -f doc/man/$(EXECUTEABLE).8
+
+# Icons of the web interface. `make ui-icons` downloads the lucide-static npm
+# package and regenerates the sprite and its license from it. Without internet
+# access, pass the directory of an unpacked package: make ui-icons LUCIDE=<dir>
+UI_ICONS := check circle-alert key-round lock-keyhole log-in log-out search shield shield-off trash-2 user-plus x
+LUCIDE_VERSION := 1.59.0
+LUCIDE_SHA256 := 39e2f835692c193233ac7bcdf34eb0cc2da0f839fd9f3674c34d2751bccf37f0
+LUCIDE_URL := https://registry.npmjs.org/lucide-static/-/lucide-static-$(LUCIDE_VERSION).tgz
+UI_ICONS_DIR := ui/assets/vendor/lucide
+
+ui-icons:
+ifdef LUCIDE
+	$(GOCMD) run ui/tools/iconsprite.go -src $(LUCIDE) -out $(UI_ICONS_DIR)/icons.svg $(UI_ICONS)
+	cp $(LUCIDE)/LICENSE $(UI_ICONS_DIR)/LICENSE
+else
+	tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT && \
+	curl -fsSL -o "$$tmp/lucide.tgz" $(LUCIDE_URL) && \
+	echo "$(LUCIDE_SHA256)  $$tmp/lucide.tgz" | sha256sum -c --quiet && \
+	tar -xzf "$$tmp/lucide.tgz" -C "$$tmp" package/package.json package/LICENSE package/icons && \
+	$(MAKE) --no-print-directory ui-icons LUCIDE="$$tmp/package"
+endif
 
 manpage: doc/man/$(EXECUTEABLE).8
 

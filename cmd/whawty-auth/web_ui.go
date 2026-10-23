@@ -35,11 +35,32 @@ import (
 	"net/http"
 )
 
+// uiSecurityHeaders are sent with every file of the web interface. The
+// web interface only loads scripts, styles and images from its own origin,
+// talks only to its own web-api, contains no inline scripts or styles and
+// must not be shown in frames.
+var uiSecurityHeaders = map[string]string{
+	"Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; " +
+		"connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+	"X-Content-Type-Options": "nosniff",
+	"X-Frame-Options":        "DENY",
+	"Referrer-Policy":        "no-referrer",
+}
+
+func withUISecurityHeaders(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for name, value := range uiSecurityHeaders {
+			w.Header().Set(name, value)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 // addUIRoutes serves the web interface at /admin/ and redirects / and
 // /admin to it.
 func addUIRoutes(mux *http.ServeMux, assets fs.FS) {
 	toUI := relativeRedirect("admin/")
-	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(assets))))
+	mux.Handle("/admin/", withUISecurityHeaders(http.StripPrefix("/admin/", http.FileServer(http.FS(assets)))))
 	mux.Handle("/admin", toUI)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

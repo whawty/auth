@@ -1,0 +1,63 @@
+/*
+ * whawty.auth web interface
+ *
+ * Styles specific to whawty.auth, everything shared with other whawty apps
+ * lives in base.css.
+ */
+
+/* --- User list -------------------------------------------------------- */
+
+.filter { position: relative; width: min(15rem, 100%); }
+.filter .icon {
+  position: absolute; left: 0.65rem; top: 50%; translate: 0 -50%;
+  color: var(--muted); pointer-events: none;
+}
+.filter .field { padding-left: 2.1rem; min-height: 2.1rem; font-size: 0.925rem; }
+
+.monogram.is-admin { color: var(--accent); }
+.row-note .flag { margin-left: 0.5rem; }
+
+/* the first row of the user list adds a new user */
+.add-row {
+  grid-template-areas: "logo form form";
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+}
+.add-row .monogram { border: 1px dashed var(--rule); background: transparent; color: var(--accent); }
+.add-form { grid-area: form; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.add-form .field { flex: 1 1 10rem; width: auto; }
+
+@media (max-width: 34rem) {
+  .add-row { grid-template-areas: "logo form"; }
+}
+
+/* --- Password dialog -------------------------------------------------- */
+
+.meter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 0.6rem; }
+.meter span { height: 5px; border-radius: 3px; background: var(--tile); }
+.meter[data-score="1"] span.on { background: var(--danger); }
+.meter[data-score="2"] span.on { background: var(--warn); }
+.meter[data-score="3"] span.on,
+.meter[data-score="4"] span.on { background: var(--ok); }
+.meter-text {
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  margin-top: 0.35rem;
+  color: var(--muted); font-size: 0.82rem;
+}
+.meter-text strong { font-weight: 600; }
+.score-0, .score-1 { color: var(--danger); }
+.score-2 { color: var(--warn); }
+.score-3, .score-4 { color: var(--ok); }
+
+.hints {
+  display: grid; gap: 0.3rem;
+  min-height: 2.6rem;
+  margin: 0.75rem 0 0; padding: 0;
+  list-style: none;
+  color: var(--muted); font-size: 0.85rem;
+}
+.hints .warning { color: var(--warn); font-weight: 600; }
+
+.match { display: flex; align-items: center; gap: 0.35rem; min-height: 1.3rem; margin-top: 0.4rem; font-size: 0.82rem; }
+.match.ok { color: var(--ok); }
+.match.bad { color: var(--danger); }

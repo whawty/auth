@@ -73,9 +73,12 @@ func generateTestSession(t *testing.T, f *webSessionFactory, username string, is
 
 func expectSessionStatus(t *testing.T, f *webSessionFactory, session string, want int) {
 	t.Helper()
-	status, errStr, _, _ := f.Check(session)
+	status, errStr, username, isAdmin := f.Check(session)
 	if status != want {
 		t.Errorf("Check(%q) = %d (%s), want %d", session, status, errStr, want)
+	}
+	if status != http.StatusOK && (username != "" || isAdmin) {
+		t.Errorf("Check(%q) failed but still returned username %q and admin %t", session, username, isAdmin)
 	}
 }
 

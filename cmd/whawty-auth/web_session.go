@@ -101,6 +101,7 @@ func (w *webSessionFactory) openToken(nonce, enctoken []byte) (status int, error
 	return
 }
 
+// splitCheckToken only returns username and isAdmin if the token is valid.
 func (w *webSessionFactory) splitCheckToken(token string) (status int, errorStr string, username string, isAdmin bool) {
 	tmp := strings.SplitN(token, ":", 3)
 	if len(tmp) != 3 {
@@ -109,13 +110,12 @@ func (w *webSessionFactory) splitCheckToken(token string) (status int, errorStr 
 		return
 	}
 
-	username = tmp[0]
-
+	var admin bool
 	switch tmp[1] {
 	case "true":
-		isAdmin = true
+		admin = true
 	case "false":
-		isAdmin = false
+		admin = false
 	default:
 		status = http.StatusBadRequest
 		errorStr = "invalid session token"
@@ -141,8 +141,7 @@ func (w *webSessionFactory) splitCheckToken(token string) (status int, errorStr 
 		return
 	}
 
-	status = http.StatusOK
-	return
+	return http.StatusOK, "", tmp[0], admin
 }
 
 func (w *webSessionFactory) Generate(username string, isAdmin bool) (status int, errorStr, session string) {

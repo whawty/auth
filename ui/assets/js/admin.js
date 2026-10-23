@@ -1,5 +1,26 @@
 'use strict';
 
+/*
+ * The UI is always served at <base-path>/admin/ and the API at <base-path>/api/.
+ * Using URLs relative to this page keeps the UI working no matter under which
+ * path whawty-auth is published.
+ */
+var api_base = new URL('../api/', document.baseURI);
+
+function api_url(endpoint) {
+  return new URL(endpoint, api_base).href;
+}
+
+/*
+ * sessionStorage is shared by all apps published on the same origin,
+ * so prefix our keys with the app name and its base path.
+ */
+var storage_prefix = 'whawty-auth:' + new URL('../', document.baseURI).pathname + ':';
+
+function storage_key(name) {
+  return storage_prefix + name;
+}
+
 function admin_init() {
   auth_init();
   main_enablePWChecks();
@@ -39,10 +60,10 @@ function auth_loginSuccess(data) {
     auth_lastchanged = new Date(data.lastchanged);
     auth_session = data.session;
 
-    sessionStorage.setItem("auth_username", auth_username);
-    sessionStorage.setItem("auth_admin", (auth_admin) ? "true" : "false");
-    sessionStorage.setItem("auth_lastchanged", auth_lastchanged.toISOString());
-    sessionStorage.setItem("auth_session", auth_session);
+    sessionStorage.setItem(storage_key("username"), auth_username);
+    sessionStorage.setItem(storage_key("admin"), (auth_admin) ? "true" : "false");
+    sessionStorage.setItem(storage_key("lastchanged"), auth_lastchanged.toISOString());
+    sessionStorage.setItem(storage_key("session"), auth_session);
 
     $('#login-box').slideUp();
 
@@ -82,14 +103,14 @@ function auth_logout() {
     $("#login-username").trigger("focus");
   });
 
-  window.location.replace("/"); // make chrome use newly changed passwords..
+  window.location.replace("./"); // make chrome use newly changed passwords..
 }
 
 function auth_init() {
-  auth_username = sessionStorage.getItem("auth_username");
-  auth_admin = (sessionStorage.getItem("auth_admin") == "true") ? true : false;
-  auth_lastchanged = new Date(sessionStorage.getItem("auth_lastchanged"));
-  auth_session = sessionStorage.getItem("auth_session");
+  auth_username = sessionStorage.getItem(storage_key("username"));
+  auth_admin = (sessionStorage.getItem(storage_key("admin")) == "true") ? true : false;
+  auth_lastchanged = new Date(sessionStorage.getItem(storage_key("lastchanged")));
+  auth_session = sessionStorage.getItem(storage_key("session"));
 
   if(auth_session && auth_username) {
     $("#login-box").hide();
@@ -107,17 +128,17 @@ function auth_init() {
   }
   $("#login-btn").on("click", function(event) {
     var data = JSON.stringify({ username: $("#login-username").val(), password: $("#login-password").val() })
-    $.post("/api/authenticate", data, auth_loginSuccess, 'json').fail(auth_loginError);
+    $.post(api_url("authenticate"), data, auth_loginSuccess, 'json').fail(auth_loginError);
   });
   $("#login-username").on("keypress", function(event) { overrideEnter(event, $("#login-btn")); });
   $("#login-password").on("keypress", function(event) { overrideEnter(event, $("#login-btn")); });
 }
 
 function auth_cleanup() {
-  sessionStorage.removeItem("auth_username");
-  sessionStorage.removeItem("auth_admin");
-  sessionStorage.removeItem("auth_lastchanged");
-  sessionStorage.removeItem("auth_session");
+  sessionStorage.removeItem(storage_key("username"));
+  sessionStorage.removeItem(storage_key("admin"));
+  sessionStorage.removeItem(storage_key("lastchanged"));
+  sessionStorage.removeItem(storage_key("session"));
 
   auth_username = null;
   auth_admin = false;
@@ -153,7 +174,7 @@ function main_getUpdateButton(user) {
     $("#changepw-btn").on("click", function(event) {
       var newpassword = $("#changepw-password").val();
       var data = JSON.stringify({ session: auth_session, username: user, newpassword: newpassword });
-      $.post("/api/update", data, main_updateSuccess, 'json').fail(main_reqError);
+      $.post(api_url("update"), data, main_updateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");
@@ -173,7 +194,7 @@ function main_getRemoveButton(user) {
   btn.html('<i class="fa-solid fa-trash" aria-hidden="true"></i>&nbsp;&nbsp;Remove')
   return btn.on("click", function() {
     var data = JSON.stringify({ session: auth_session, username: user });
-    $.post("/api/remove", data, main_removeSuccess, 'json').fail(main_reqError);
+    $.post(api_url("remove"), data, main_removeSuccess, 'json').fail(main_reqError);
   });
 }
 
@@ -187,7 +208,7 @@ function main_getSetAdminButton(user, oldstate) {
   var newstate = !oldstate;
   return btn.on("click", function() {
     var data = JSON.stringify({ session: auth_session, username: user, admin: newstate });
-    $.post("/api/set-admin", data, main_setadminSuccess, 'json').fail(main_reqError);
+    $.post(api_url("set-admin"), data, main_setadminSuccess, 'json').fail(main_reqError);
   });
 }
 
@@ -258,7 +279,7 @@ function main_setupAddButton() {
       $("#changepw-password").val(''); // we don't want the browser to add this user to it's password store...
       $("#changepw-password-retype").val('');
       var data = JSON.stringify({ session: auth_session, username: user, password: newpassword, admin: admin });
-      $.post("/api/add", data, main_addSuccess, 'json').fail(main_reqError);
+      $.post(api_url("add"), data, main_addSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Add");
@@ -270,7 +291,7 @@ function main_setupAddButton() {
 
 function main_updateUserlist() {
   var data = JSON.stringify({ session: auth_session });
-  $.post("/api/list-full", data, main_userlistSuccess, 'json').fail(main_reqError);
+  $.post(api_url("list-full"), data, main_userlistSuccess, 'json').fail(main_reqError);
 }
 
 function main_adminViewInit() {
@@ -300,7 +321,7 @@ function main_userViewInit() {
     $("#changepw-btn").on("click", function(event) {
       var newpassword = $("#changepw-password").val();
       var data = JSON.stringify({ session: auth_session, username: auth_username, newpassword: newpassword });
-      $.post("/api/update", data, main_userUpdateSuccess, 'json').fail(main_reqError);
+      $.post(api_url("update"), data, main_userUpdateSuccess, 'json').fail(main_reqError);
       $("#changepw-modal").modal('hide');
     });
     $("#changepw-btn").text("Change");

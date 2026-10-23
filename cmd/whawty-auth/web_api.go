@@ -33,13 +33,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
-	_ "net/http/pprof"
 	"time"
 
 	storeLib "github.com/whawty/auth/store"
-	"github.com/whawty/auth/ui"
 )
 
 func handleWebBasicAuth(store *Store, sessions *webSessionFactory, w http.ResponseWriter, r *http.Request) {
@@ -484,28 +481,7 @@ func (h webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.H(h.store, h.sessions, w, r)
 }
 
-// This is from golang http package - why is this not exported?
-type tcpKeepAliveListener struct {
-	*net.TCPListener
-}
-
-func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
-	tc, err := ln.AcceptTCP()
-	if err != nil {
-		return
-	}
-	tc.SetKeepAlive(true)                  //nolint:errcheck
-	tc.SetKeepAlivePeriod(3 * time.Minute) //nolint:errcheck
-	return tc, nil
-}
-
-func newWebHandler(store *Store) (mux *http.ServeMux, err error) {
-	var sessions *webSessionFactory
-	if sessions, err = NewWebSessionFactory(600 * time.Second); err != nil { // TODO: hardcoded value
-		return
-	}
-
-	mux = http.NewServeMux()
+func addAPIRoutes(mux *http.ServeMux, store *Store, sessions *webSessionFactory) {
 	mux.Handle("/basic-auth", webHandler{store, sessions, handleWebBasicAuth})
 	mux.Handle("/api/authenticate", webHandler{store, sessions, handleWebAuthenticate})
 	mux.Handle("/api/add", webHandler{store, sessions, handleWebAdd})
@@ -514,57 +490,4 @@ func newWebHandler(store *Store) (mux *http.ServeMux, err error) {
 	mux.Handle("/api/set-admin", webHandler{store, sessions, handleWebSetAdmin})
 	mux.Handle("/api/list", webHandler{store, sessions, handleWebList})
 	mux.Handle("/api/list-full", webHandler{store, sessions, handleWebListFull})
-
-	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(ui.Assets))))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
-	})
-	return
-}
-
-func runHTTPsListener(listener *net.TCPListener, config *httpsConfig, store *Store) (err error) {
-	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	if server.Handler, err = newWebHandler(store); err != nil {
-		return
-	}
-	if server.TLSConfig, err = config.TLS.ToGoTLSConfig(); err != nil {
-		return
-	}
-	wl.Printf("web-api: listening on '%s' using TLS", listener.Addr())
-	return server.ServeTLS(tcpKeepAliveListener{listener}, "", "")
-}
-
-func runHTTPsAddr(addr string, config *httpsConfig, store *Store) error {
-	if addr == "" {
-		addr = ":https"
-	}
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-	return runHTTPsListener(listener.(*net.TCPListener), config, store)
-}
-
-func runHTTPListener(listener *net.TCPListener, config *httpConfig, store *Store) (err error) {
-	server := &http.Server{ReadTimeout: 60 * time.Second, WriteTimeout: 60 * time.Second}
-	if server.Handler, err = newWebHandler(store); err != nil {
-		return
-	}
-	wl.Printf("web-api: listening on '%s'", listener.Addr())
-	return server.Serve(tcpKeepAliveListener{listener})
-}
-
-func runHTTPAddr(addr string, config *httpConfig, store *Store) error {
-	if addr == "" {
-		addr = ":http"
-	}
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-	return runHTTPListener(listener.(*net.TCPListener), config, store)
 }

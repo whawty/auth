@@ -1,0 +1,52 @@
+## Publishing whawty-auth below a path prefix of a vhost that is shared with
+## other apps. Both variants publish the web interface at
+## https://www.example.com/auth/admin/ and the web-api at
+## https://www.example.com/auth/api/.
+
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  server_name www.example.com;
+
+  ssl_certificate     /etc/ssl/certs/www.example.com-cert.pem;
+  ssl_certificate_key /etc/ssl/certs/www.example.com-key.pem;
+
+  ## Variant 1: whawty-auth knows about the prefix.
+  ##
+  ## listener config:
+  ##   http:
+  ##     listen:
+  ##     - 127.0.0.1:8080
+  ##     base-path: /auth
+  ##
+  ## The request path is passed on unchanged (no URI part after the address
+  ## in proxy_pass).
+  location /auth/ {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  ## Variant 2: nginx strips the prefix, whawty-auth runs without base-path.
+  ##
+  ## listener config:
+  ##   http:
+  ##     listen:
+  ##     - 127.0.0.1:8080
+  ##
+  ## The trailing '/' in proxy_pass replaces '/auth/' with '/'.
+  # location /auth/ {
+  #   proxy_pass http://127.0.0.1:8080/;
+  #   proxy_set_header Host $host;
+  #   proxy_set_header X-Real-IP $remote_addr;
+  #   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  #   proxy_set_header X-Forwarded-Proto $scheme;
+  # }
+
+  ## In both variants nginx redirects /auth to /auth/ and whawty-auth
+  ## redirects /auth/ to /auth/admin/.
+
+  ## ... locations of the other apps sharing this vhost ...
+}

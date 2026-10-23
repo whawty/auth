@@ -2,59 +2,49 @@
 //
 // The state is kept in sessionStorage, so it survives reloading the page but
 // not closing the tab. sessionStorage is shared by all apps published on the
-// same origin, so the keys are prefixed with the app name and its base path.
-// The keys are the same as those of the previous web interface.
+// same origin, so the key contains the app name and its base path.
 
-const prefix = 'whawty-auth:' + new URL('../', document.baseURI).pathname + ':';
-const fields = ['username', 'admin', 'lastchanged', 'session'];
+const key = 'whawty-auth:' + new URL('../', document.baseURI).pathname + ':login';
 
 // sessionStorage throws in some situations (i.e. blocked site data); the web
 // interface then still works, the login is just not kept across reloads.
-function read(name) {
+function storage(action) {
   try {
-    return sessionStorage.getItem(prefix + name);
+    return action(sessionStorage);
   } catch {
     return null;
-  }
-}
-
-function write(name, value) {
-  try {
-    sessionStorage.setItem(prefix + name, value);
-  } catch {
-    // ignore, see above
   }
 }
 
 // load returns { username, admin, lastchanged, session } or null if nobody
 // is logged in.
 export function load() {
-  const username = read('username');
-  const session = read('session');
-  if (!username || !session) {
+  const raw = storage((s) => s.getItem(key));
+  if (!raw) {
     return null;
   }
-  return {
-    username,
-    admin: read('admin') === 'true',
-    lastchanged: new Date(read('lastchanged')),
-    session,
-  };
+  try {
+    const state = JSON.parse(raw);
+    if (typeof state.username !== 'string' || !state.username || typeof state.session !== 'string' || !state.session) {
+      throw new Error('incomplete login state');
+    }
+    return {
+      username: state.username,
+      admin: state.admin === true,
+      lastchanged: new Date(state.lastchanged),
+      session: state.session,
+    };
+  } catch {
+    clear();
+    return null;
+  }
 }
 
 export function save({ username, admin, lastchanged, session }) {
-  write('username', username);
-  write('admin', admin ? 'true' : 'false');
-  write('lastchanged', lastchanged.toISOString());
-  write('session', session);
+  const state = { username, admin, lastchanged: lastchanged.toISOString(), session };
+  storage((s) => s.setItem(key, JSON.stringify(state)));
 }
 
 export function clear() {
-  for (const name of fields) {
-    try {
-      sessionStorage.removeItem(prefix + name);
-    } catch {
-      // ignore, see above
-    }
-  }
+  storage((s) => s.removeItem(key));
 }

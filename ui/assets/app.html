@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>whawty.auth</title>
+    <link href="css/base.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet">
+    <link href="css/theme.css" rel="stylesheet">
+  </head>
+  <body>
+    <main id="page" class="page narrow">
+
+      <header class="host">
+        <div class="brand-row">
+          <span class="mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#lock-keyhole"/></svg></span>
+          <div id="session" class="session" hidden>
+            <span>Logged in as <strong id="session-username"></strong></span>
+            <span id="session-admin" class="chip chip-accent" hidden>admin</span>
+            <button id="logout" class="btn btn-sm" type="button">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#log-out"/></svg>Log out
+            </button>
+          </div>
+        </div>
+        <h1 class="title">whawty<span class="sub">.auth</span></h1>
+        <p id="description" class="description">Log in to change your password or manage accounts.</p>
+      </header>
+
+      <noscript>
+        <p class="alert alert-error">This page needs JavaScript. Please enable it in your browser.</p>
+      </noscript>
+
+      <section id="view-login" aria-label="Log in">
+        <!-- After a successful login the form is submitted into this iframe, which
+             makes browsers offer to save the password. The inputs have no name,
+             so nothing is sent to the server by this submission. -->
+        <iframe id="remember" name="remember" title="Password manager helper" tabindex="-1" hidden></iframe>
+        <form id="login-form" class="surface login-card stack" target="remember" action="blank" novalidate>
+          <div>
+            <label class="label" for="login-username">Username</label>
+            <input id="login-username" class="field" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus>
+          </div>
+          <div>
+            <label class="label" for="login-password">Password</label>
+            <input id="login-password" class="field" type="password" autocomplete="current-password">
+          </div>
+          <div id="login-error" class="alert alert-error" role="alert" hidden>
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#circle-alert"/></svg>
+            <span id="login-error-text"></span>
+          </div>
+          <button id="login-submit" class="btn btn-primary btn-block" type="submit">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#log-in"/></svg>Log in
+          </button>
+        </form>
+      </section>
+
+      <section id="view-admin" aria-label="Users" hidden></section>
+
+      <section id="view-user" aria-label="Your account" hidden></section>
+
+    </main>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

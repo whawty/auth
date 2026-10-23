@@ -468,7 +468,7 @@ function main_init() {
     $("#user-view").show();
     main_userViewInit();
   }
-  async_load('js/zxcvbn.js');
+  async_load('vendor/zxcvbn/zxcvbn.js');
 }
 
 // this script is loaded at the end of the page, so the DOM is ready

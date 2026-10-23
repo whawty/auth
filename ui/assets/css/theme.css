@@ -1,0 +1,15 @@
+/*
+ * Theme overrides
+ *
+ * This file is intentionally empty. It is loaded after base.css and app.css,
+ * so a reverse proxy can serve a replacement for it (e.g. nginx: a
+ * `location = /auth/admin/css/theme.css` with an `alias` to a local file) to
+ * change the colours without rebuilding whawty-auth, for example:
+ *
+ *   :root { --accent: #0b6e4f; --hover: #eef7f3; }
+ *   @media (prefers-color-scheme: dark) {
+ *     :root { --accent: #6fd4ae; --hover: #1d2b27; }
+ *   }
+ *
+ * See the top of base.css for the full list of tokens.
+ */

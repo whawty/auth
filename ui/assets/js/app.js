@@ -2,7 +2,8 @@
 
 import * as api from './api.js';
 import * as session from './session.js';
-import { $, h } from './dom.js';
+import { renderAccountView } from './account.js';
+import { $ } from './dom.js';
 import { renderUsersView } from './users.js';
 
 const descriptions = {
@@ -31,9 +32,8 @@ function renderAdminView() {
   renderUsersView($('#view-admin'), current);
 }
 
-// TODO: the account view follows in the next step
 function renderUserView() {
-  $('#view-user').replaceChildren(h('p', { class: 'surface empty' }, 'Your account will be shown here.'));
+  renderAccountView($('#view-user'), current);
 }
 
 function enter(state) {

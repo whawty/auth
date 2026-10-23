@@ -13,6 +13,7 @@ To add an icon or update Lucide, change `UI_ICONS` or `LUCIDE_VERSION` and
 | File(s) in `assets/` | Project | Version | License | Source |
 |---|---|---|---|---|
 | `vendor/lucide/icons.svg` | [Lucide](https://lucide.dev/) | 1.59.0 | ISC, some icons MIT, see `vendor/lucide/LICENSE` | generated from the npm package `lucide-static@1.59.0` with `make ui-icons` |
+| `img/favicon.svg` | [Lucide](https://lucide.dev/) | 1.59.0 | ISC, see `vendor/lucide/LICENSE` | the `lock-keyhole` icon, black or white depending on the browser theme, made by hand |
 | `vendor/zxcvbn/zxcvbn.js` | [zxcvbn](https://github.com/dropbox/zxcvbn) | 4.4.2 | MIT, see `vendor/zxcvbn/LICENSE.txt` | npm package `zxcvbn@4.4.2`, `dist/zxcvbn.js` |
 
 SHA-256:

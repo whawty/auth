@@ -78,6 +78,61 @@ func TestUIRoutes(t *testing.T) {
 	if loc := rec.Header().Get("Location"); loc != "/index.html" {
 		t.Fatalf("GET /admin/../index.html: Location = %q, want %q", loc, "/index.html")
 	}
+
+	for _, p := range []string{"/admin/", "/admin/css/app.css", "/admin/js/app.js", "/admin/missing.js"} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, p, nil))
+		for name, value := range uiSecurityHeaders {
+			if got := rec.Header().Get(name); got != value {
+				t.Errorf("GET %s: header %s = %q, want %q", p, name, got, value)
+			}
+		}
+	}
+}
+
+func TestUIContentSecurityPolicy(t *testing.T) {
+	csp := uiSecurityHeaders["Content-Security-Policy"]
+	for _, directive := range []string{"default-src 'none'", "script-src 'self'", "style-src 'self'", "base-uri 'none'"} {
+		if !strings.Contains(csp, directive+";") && !strings.HasSuffix(csp, directive) {
+			t.Errorf("Content-Security-Policy lacks %q: %s", directive, csp)
+		}
+	}
+	for _, unsafe := range []string{"'unsafe-inline'", "'unsafe-eval'", "*", "http:", "https:"} {
+		if strings.Contains(csp, unsafe) {
+			t.Errorf("Content-Security-Policy allows %s: %s", unsafe, csp)
+		}
+	}
+}
+
+var (
+	htmlScriptTagRe = regexp.MustCompile(`(?is)<script\b([^>]*)>(.*?)</script>`)
+	htmlInlineRe    = regexp.MustCompile(`(?i)<style\b|\s(?:on[a-z]+|style)\s*=`)
+)
+
+// The Content-Security-Policy blocks inline scripts, event handler attributes
+// and inline styles, so the HTML files of the web interface must not use them.
+func TestUIHTMLHasNoInlineCode(t *testing.T) {
+	err := fs.WalkDir(ui.Assets, ".", func(name string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || path.Ext(name) != ".html" {
+			return err
+		}
+		data, err := fs.ReadFile(ui.Assets, name)
+		if err != nil {
+			return err
+		}
+		for _, m := range htmlScriptTagRe.FindAllStringSubmatch(string(data), -1) {
+			if !strings.Contains(strings.ToLower(m[1]), "src=") || strings.TrimSpace(m[2]) != "" {
+				t.Errorf("%s: inline script: %s", name, m[0])
+			}
+		}
+		for _, m := range htmlInlineRe.FindAllString(string(data), -1) {
+			t.Errorf("%s: inline style or event handler: %q", name, strings.TrimSpace(m))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 var (

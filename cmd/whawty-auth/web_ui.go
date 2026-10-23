@@ -35,11 +35,35 @@ import (
 	"net/http"
 )
 
+// uiSecurityHeaders are sent with every file of the web interface. The
+// web interface only loads files from its own origin and contains no inline
+// scripts or styles. Frames and form submissions to its own origin are
+// needed to make browsers store passwords (see the hidden iframe in
+// index.html). Bootstrap uses data: URLs for some images.
+// TODO: drop data: from img-src once the Bootstrap based UI is gone.
+var uiSecurityHeaders = map[string]string{
+	"Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+		"font-src 'self'; connect-src 'self'; frame-src 'self'; form-action 'self'; " +
+		"frame-ancestors 'self'; base-uri 'none'",
+	"X-Content-Type-Options": "nosniff",
+	"X-Frame-Options":        "SAMEORIGIN",
+	"Referrer-Policy":        "no-referrer",
+}
+
+func withUISecurityHeaders(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for name, value := range uiSecurityHeaders {
+			w.Header().Set(name, value)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 // addUIRoutes serves the web interface at /admin/ and redirects / and
 // /admin to it.
 func addUIRoutes(mux *http.ServeMux, assets fs.FS) {
 	toUI := relativeRedirect("admin/")
-	mux.Handle("/admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(assets))))
+	mux.Handle("/admin/", withUISecurityHeaders(http.StripPrefix("/admin/", http.FileServer(http.FS(assets)))))
 	mux.Handle("/admin", toUI)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

@@ -132,6 +132,7 @@ function auth_init() {
   });
   $("#login-username").on("keypress", function(event) { overrideEnter(event, $("#login-btn")); });
   $("#login-password").on("keypress", function(event) { overrideEnter(event, $("#login-btn")); });
+  $("#logout-btn").on("click", auth_logout);
 }
 
 function auth_cleanup() {
@@ -469,3 +470,6 @@ function main_init() {
   }
   async_load('js/zxcvbn.js');
 }
+
+// this script is loaded at the end of the page, so the DOM is ready
+admin_init();

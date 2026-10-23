@@ -42,7 +42,7 @@
 
           <div class="collapse navbar-collapse" id="navbarTop">
             <span class="navbar-text ms-auto">logged in as <strong id="username-field">UNKNOWN</strong>, role <strong id="role-field">UNKNOWN</strong></span>
-            <button type="button" class="btn btn-danger btn-sm ms-3 me-3" onclick="auth_logout()">
+            <button id="logout-btn" type="button" class="btn btn-danger btn-sm ms-3 me-3">
               <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Log Out
             </button>
           </div>
@@ -166,9 +166,6 @@
     <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="jquery/jquery.min.js"></script>
     <script src="js/admin.js"></script>
-    <script type="text/javascript">
-      admin_init();
-    </script>
 
   </body>
 </html>

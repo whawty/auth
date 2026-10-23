@@ -1,5 +1,5 @@
 // Dialog to set a password, uses <dialog id="password-dialog"> and
-// <template id="password-template"> of app.html.
+// <template id="password-template"> of index.html.
 //
 // Browsers offer to save or update a password when the form disappears
 // after a successful request to the server. That is wanted when users change

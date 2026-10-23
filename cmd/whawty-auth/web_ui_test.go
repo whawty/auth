@@ -92,12 +92,12 @@ func TestUIRoutes(t *testing.T) {
 
 func TestUIContentSecurityPolicy(t *testing.T) {
 	csp := uiSecurityHeaders["Content-Security-Policy"]
-	for _, directive := range []string{"default-src 'none'", "script-src 'self'", "style-src 'self'", "base-uri 'none'"} {
+	for _, directive := range []string{"default-src 'none'", "script-src 'self'", "style-src 'self'", "frame-ancestors 'none'", "base-uri 'none'"} {
 		if !strings.Contains(csp, directive+";") && !strings.HasSuffix(csp, directive) {
 			t.Errorf("Content-Security-Policy lacks %q: %s", directive, csp)
 		}
 	}
-	for _, unsafe := range []string{"'unsafe-inline'", "'unsafe-eval'", "*", "http:", "https:"} {
+	for _, unsafe := range []string{"'unsafe-inline'", "'unsafe-eval'", "*", "http:", "https:", "data:"} {
 		if strings.Contains(csp, unsafe) {
 			t.Errorf("Content-Security-Policy allows %s: %s", unsafe, csp)
 		}

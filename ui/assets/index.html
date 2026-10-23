@@ -1,171 +1,130 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>whawty auth - admin interface</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="whawty auth admin interface">
-    <meta name="author" content="Christian Pointner <equinox@spreadspace.org>">
-
-    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="fontawesome/css/fontawesome.min.css" rel="stylesheet">
-    <link href="fontawesome/css/solid.min.css" rel="stylesheet">
-    <link href="css/admin.css" rel="stylesheet">
+    <meta name="robots" content="noindex, nofollow">
+    <title>whawty.auth</title>
+    <link href="css/base.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet">
+    <link href="css/theme.css" rel="stylesheet">
   </head>
   <body>
-    <iframe id="remember" name="remember" hidden="hidden"></iframe>
+    <main id="page" class="page narrow">
 
-    <div class="container-fluid">
-
-      <div id="login-box">
-
-        <form id="login-form" class="form-auth" role="form" target="remember" action="blank">
-          <img class="d-block d-xs-none d-sm-none" src="img/logo-small.png" alt="logo" />
-          <div class="loginspacer d-xs-block d-sm-block">&nbsp;</div>
-          <img class="d-none d-xs-block d-sm-block" src="img/logo.png" alt="logo" />
-          <h1 class="form-auth-heading">WHAWTY auth</h1>
-          <input id="login-username" type="text" class="form-control" placeholder="Username" required autofocus>
-          <input id="login-password" type="password" class="form-control" placeholder="Password" required>
-          <div class="alertbox"></div>
-          <button id="login-btn" type="button" class="btn btn-primary btn-lg d-block ms-auto me-auto w-100"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>&nbsp;&nbsp;Log In</button>
-          <button id="login-submit" type="submit" hidden="hidden"></button>
-        </form>
-      </div>
-
-      <div id="mainwindow">
-
-        <nav class="navbar navbar-expand-md fixed-top navbar-dark bg-dark">
-          <span class="navbar-brand ms-3">WHAWTY auth - Admin Interface</span>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTop" aria-controls="navbarTop" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-
-          <div class="collapse navbar-collapse" id="navbarTop">
-            <span class="navbar-text ms-auto">logged in as <strong id="username-field">UNKNOWN</strong>, role <strong id="role-field">UNKNOWN</strong></span>
-            <button id="logout-btn" type="button" class="btn btn-danger btn-sm ms-3 me-3">
-              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Log Out
+      <header class="host">
+        <div class="brand-row">
+          <span class="mark"><svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#lock-keyhole"/></svg></span>
+          <div id="session" class="session" hidden>
+            <span>Logged in as <strong id="session-username"></strong></span>
+            <span id="session-admin" class="chip chip-accent" hidden>admin</span>
+            <button id="logout" class="btn btn-sm" type="button">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#log-out"/></svg>Log out
             </button>
           </div>
-        </nav>
+        </div>
+        <h1 class="title">whawty<span class="sub">.auth</span></h1>
+        <p id="description" class="description">Log in to change your password or manage accounts.</p>
+      </header>
 
-        <div class="mainspacer">&nbsp;</div>
+      <noscript>
+        <p class="alert alert-error">This page needs JavaScript. Please enable it in your browser.</p>
+      </noscript>
 
-        <div class="alertbox"></div>
+      <section id="view-login" aria-label="Log in"></section>
 
-        <div class="modal fade" id="changepw-modal" tabindex="-1" role="dialog">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <form id="changepw-form" role="form" target="remember" action="blank">
-                <div class="modal-header">
-                  <h4 class="modal-title">New Password for <strong id="changepw-userfield"></strong>...</h4>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="form-group">
-                    <input id="changepw-username" type="text" hidden="hidden">
-                    <input id="changepw-password" type="password" tabindex="1" class="form-control" placeholder="Password" required>
-                    <div id="pwstrength">
-                      <div id="pwestimatedcracktime" class="pull-left"></div>
-                      <div id="pwstrengthindicator" class="pull-right"></div>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <input id="changepw-password-retype" type="password" tabindex="2" class="form-control" placeholder="Retype Password" required>
-                  </div>
-                  <div id="pwstrengthtips"></div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" tabindex="4" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button id="changepw-btn" type="button" tabindex="3" class="btn btn-primary">Change</button>
-                  <button id="changepw-submit" type="submit" hidden="hidden"></button>
-                </div>
-              </form>
+      <section id="view-admin" aria-label="Users" hidden></section>
+
+      <section id="view-user" aria-label="Your account" hidden></section>
+
+    </main>
+
+    <dialog id="confirm-dialog" class="sheet" aria-labelledby="confirm-title">
+      <form method="dialog">
+        <div class="sheet-head">
+          <h2 id="confirm-title"></h2>
+          <button class="icon-btn" type="submit" value="cancel" aria-label="Close">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#x"/></svg>
+          </button>
+        </div>
+        <div class="sheet-body">
+          <p id="confirm-text"></p>
+        </div>
+        <div class="sheet-foot">
+          <button id="confirm-cancel" class="btn" type="submit" value="cancel">Cancel</button>
+          <button id="confirm-ok" class="btn btn-danger" type="submit" value="ok">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#trash-2"/></svg><span id="confirm-ok-label"></span>
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Browsers offer to save the password when the form disappears after a
+         successful request to the server, so app.js removes the form after a
+         successful login and adds a fresh copy of it when the login is needed
+         again. The form is never submitted natively (method="post" keeps the
+         password out of the URL should that ever happen). -->
+    <template id="login-template">
+      <form id="login-form" class="surface login-card stack" method="post" novalidate>
+        <div>
+          <label class="label" for="login-username">Username</label>
+          <input id="login-username" name="username" class="field" type="text" autocomplete="username" autocapitalize="none" spellcheck="false">
+        </div>
+        <div>
+          <label class="label" for="login-password">Password</label>
+          <input id="login-password" name="password" class="field" type="password" autocomplete="current-password">
+        </div>
+        <div id="login-error" class="alert alert-error" role="alert" hidden>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#circle-alert"/></svg>
+          <span id="login-error-text"></span>
+        </div>
+        <button id="login-submit" class="btn btn-primary btn-block" type="submit">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#log-in"/></svg>Log in
+        </button>
+      </form>
+    </template>
+
+    <!-- Filled from the template below by js/password.js, which also explains
+         when the form is removed after use. -->
+    <dialog id="password-dialog" class="sheet" aria-labelledby="password-title"></dialog>
+
+    <template id="password-template">
+      <form id="password-form" method="post" novalidate>
+        <div class="sheet-head">
+          <h2 id="password-title"></h2>
+          <button class="icon-btn" type="button" data-close aria-label="Close">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#x"/></svg>
+          </button>
+        </div>
+        <div class="sheet-body stack">
+          <input id="password-username" name="username" type="text" autocomplete="username" hidden>
+          <div>
+            <label class="label" for="password-new">New password</label>
+            <input id="password-new" name="new-password" class="field" type="password" autocomplete="new-password">
+            <div id="password-meter" class="meter" data-score="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            <div class="meter-text" aria-live="polite">
+              <strong id="password-score"></strong>
+              <span id="password-crack"></span>
             </div>
+            <ul id="password-hints" class="hints"></ul>
+          </div>
+          <div>
+            <label class="label" for="password-retype">Retype password</label>
+            <input id="password-retype" class="field" type="password" autocomplete="new-password">
+            <div id="password-match" class="match" aria-live="polite"></div>
+          </div>
+          <div id="password-error" class="alert alert-error" role="alert" hidden>
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="vendor/lucide/icons.svg#circle-alert"/></svg>
+            <span id="password-error-text"></span>
           </div>
         </div>
-
-        <div id="admin-view">
-
-          <form id="adduser-form" role="form">
-            <div class="row" id="adduser-row">
-              <div class="col-md-2"></div>
-              <div class="col-md-2">
-                <div class="btn-group" role="group" aria-label="User or Admin">
-                  <input type="radio" class="btn-check" id="addroleUser" autocomplete="off" name="addrole" value="user" checked>
-                  <label class="btn btn-outline-secondary" for="addroleUser">User</label>
-                  <input type="radio" class="btn-check" id="addroleAdmin" autocomplete="off" name="addrole" value="admin">
-                  <label class="btn btn-outline-secondary" for="addroleAdmin">Admin</label>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <input id="adduser-name" type="text" class="form-control" placeholder="Username" required>
-              </div>
-              <div class="col-md-2">
-                <button type="submit" class="btn btn-success"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>&nbsp;&nbsp;Add</button>
-              </div>
-              <div class="col-md-2"></div>
-            </div>
-          </form>
-
-          <div class="row">
-            <div class="col-md-1"></div>
-            <div class="col-md-10">
-              <table class="table table-striped" id="user-list">
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th class="text-center">Role</th>
-                    <th>Last Change</th>
-                    <th class="text-center">valid</th>
-                    <th class="text-center">supported</th>
-                    <th>Format (Parameter-Set)</th>
-                    <th class="text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                </tbody>
-              </table>
-            </div>
-            <div class="col-md-1"></div>
-          </div>
-
+        <div class="sheet-foot">
+          <button class="btn" type="button" data-close>Cancel</button>
+          <button id="password-submit" class="btn btn-primary" type="submit" disabled></button>
         </div>
+      </form>
+    </template>
 
-        <div id="user-view">
-
-          <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4">
-              <h1>User: <strong class="username">unknown</strong></h1>
-            </div>
-            <div class="col-md-4"></div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4">
-              Last Change: <strong class="lastchange">01.01.1970 00:00:00</strong>
-            </div>
-            <div class="col-md-4"></div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4">
-              <button type="button" class="btn btn-primary btn-lg"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>&nbsp;&nbsp;Change Password</button>
-            </div>
-            <div class="col-md-4"></div>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="jquery/jquery.min.js"></script>
-    <script src="js/admin.js"></script>
-
+    <script type="module" src="js/app.js"></script>
   </body>
 </html>

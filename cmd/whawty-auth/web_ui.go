@@ -36,17 +36,14 @@ import (
 )
 
 // uiSecurityHeaders are sent with every file of the web interface. The
-// web interface only loads files from its own origin and contains no inline
-// scripts or styles. Frames and form submissions to its own origin are
-// needed to make browsers store passwords (see the hidden iframe in
-// index.html). Bootstrap uses data: URLs for some images.
-// TODO: drop data: from img-src once the Bootstrap based UI is gone.
+// web interface only loads scripts, styles and images from its own origin,
+// talks only to its own web-api, contains no inline scripts or styles and
+// must not be shown in frames.
 var uiSecurityHeaders = map[string]string{
-	"Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
-		"font-src 'self'; connect-src 'self'; frame-src 'self'; form-action 'self'; " +
-		"frame-ancestors 'self'; base-uri 'none'",
+	"Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; " +
+		"connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
 	"X-Content-Type-Options": "nosniff",
-	"X-Frame-Options":        "SAMEORIGIN",
+	"X-Frame-Options":        "DENY",
 	"Referrer-Policy":        "no-referrer",
 }
 

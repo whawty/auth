@@ -32,5 +32,7 @@ synchronization between multiple hosts. A sample setup for this can be found [he
 
     © 2016 whawty contributors (see AUTHORS file)
 
-    whawty.auth makes use of zxcvbn from https://github.com/dropbox/zxcvbn.
-    The license of zxcvbn can be found in the file LICENSE.zxcvbn
+    The web interface of whawty.auth contains zxcvbn from
+    https://github.com/dropbox/zxcvbn (MIT License, see LICENSE.zxcvbn) and
+    icons from Lucide, https://lucide.dev (ISC License, some icons MIT
+    License). See ui/VENDORED.md for details on all third-party files.

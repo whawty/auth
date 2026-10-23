@@ -1,4 +1,4 @@
-// Confirmation dialog, uses the <dialog id="confirm-dialog"> of app.html.
+// Confirmation dialog, uses the <dialog id="confirm-dialog"> of index.html.
 
 import { $ } from './dom.js';
 

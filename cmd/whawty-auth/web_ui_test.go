@@ -138,6 +138,8 @@ func TestUIHTMLHasNoInlineCode(t *testing.T) {
 var (
 	htmlRefRe = regexp.MustCompile(`(?i)\b(?:src|href|action)\s*=\s*["']([^"']*)["']`)
 	cssRefRe  = regexp.MustCompile(`url\(\s*["']?([^"')]+)["']?\s*\)`)
+	// import ... from '...', export ... from '...' and import '...'
+	jsImportRe = regexp.MustCompile(`(?m)^\s*(?:import|export)\s[^'";]*?\bfrom\s*['"]([^'"]+)['"]|^\s*import\s*['"]([^'"]+)['"]`)
 )
 
 // checkAssetRef makes sure that ref, found in the asset file from, points to
@@ -178,6 +180,11 @@ func TestUIAssetsAreSelfContained(t *testing.T) {
 			re = htmlRefRe
 		case ".css":
 			re = cssRefRe
+		case ".js":
+			if strings.HasPrefix(name, "vendor/") { // third-party scripts are no modules
+				return nil
+			}
+			re = jsImportRe
 		default:
 			return nil
 		}
@@ -186,7 +193,11 @@ func TestUIAssetsAreSelfContained(t *testing.T) {
 			return err
 		}
 		for _, m := range re.FindAllStringSubmatch(string(data), -1) {
-			checkAssetRef(t, name, m[1])
+			ref := m[1]
+			if ref == "" && len(m) > 2 {
+				ref = m[2]
+			}
+			checkAssetRef(t, name, ref)
 			checked++
 		}
 		return nil

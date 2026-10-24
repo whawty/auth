@@ -558,10 +558,15 @@ func cmdRunSa(c *cli.Context) error {
 	return cli.NewExitError("shutting down since all auth sockets have closed.", 0)
 }
 
+// version is printed by --version. The release builds set it to the version
+// of the release tag (see .github/workflows/release.yml), builds using the
+// Makefile to what git describe says.
+var version = "0.4.0"
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "whawty-auth"
-	app.Version = "0.2"
+	app.Version = version
 	app.Usage = "manage whawty auth stores"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

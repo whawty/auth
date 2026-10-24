@@ -16,6 +16,8 @@ jobs:
           goarm: "7"
     steps:
     - uses: actions/checkout@v7
+    - name: Get the version from the release tag
+      run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
     - uses: wangyoucao577/go-release-action@v1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -25,6 +27,7 @@ jobs:
         project_path: "./cmd/whawty-auth"
         binary_name: "whawty-auth"
         pre_command: export CGO_ENABLED=0
+        ldflags: -X main.version=${{ env.VERSION }}
         extra_files: AUTHORS LICENSE LICENSE.zxcvbn README.md doc/man/whawty-auth.8
         md5sum: false
         sha256sum: true
@@ -33,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+    - name: Get the version from the release tag
+      run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
     - uses: docker/setup-qemu-action@v4
     - uses: VaultVulp/gp-docker-action@1.6.0
       with:
@@ -40,6 +45,8 @@ jobs:
         image-name: app
         image-platform: linux/arm64,linux/arm/v7,linux/amd64,linux/i386
         extract-git-tag: true
+        # one word: the action drops custom-args containing spaces
+        custom-args: --build-arg=VERSION=${{ env.VERSION }}
     - uses: VaultVulp/gp-docker-action@1.6.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}

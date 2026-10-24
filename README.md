@@ -30,7 +30,7 @@ synchronization between multiple hosts. A sample setup for this can be found [he
 
     3-clause BSD
 
-    © 2016 whawty contributors (see AUTHORS file)
+    © 2016-2026 whawty contributors (see AUTHORS file)
 
     The web interface of whawty.auth contains zxcvbn from
     https://github.com/dropbox/zxcvbn (MIT License, see LICENSE.zxcvbn) and

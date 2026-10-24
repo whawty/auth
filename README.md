@@ -1,7 +1,5 @@
 # whawty.auth
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/whawty/auth)](https://goreportcard.com/report/github.com/whawty/auth)
-
 whawty.auth is a simple file based authentication suite. Its **store** uses flat files containing password hashes. These
 hashes are currently based on scrypt but the algorithm can be upgraded to newer/stronger formats on the fly.
 To find out more about the storage backend read [this file](doc/SCHEMA.md).

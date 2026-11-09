@@ -35,10 +35,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 )
+
+const testAuxData = "totp: eyJ0ZXN0IjoidmFsdWUifQ\nwebauthn: eyJmb28iOiJiYXIifQ\n"
 
 // newHardeningTestDir returns an initialized store in a temporary directory using
 // cheap argon2id parameter-sets 1 (default) and 2.
@@ -66,10 +69,101 @@ func mustAdd(t *testing.T, d *Dir, user, password string, isAdmin bool) {
 	}
 }
 
+func appendAuxData(t *testing.T, filename string) {
+	t.Helper()
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString(testAuxData); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func readAuxData(t *testing.T, filename string) string {
+	t.Helper()
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, aux, _ := strings.Cut(string(data), "\n")
+	return aux
+}
+
 func mustAuthenticate(t *testing.T, d *Dir, user, password string) {
 	t.Helper()
 	if ok, _, _, _, err := d.Authenticate(user, password); !ok || err != nil {
 		t.Fatalf("authenticating '%s' failed: %v", user, err)
+	}
+}
+
+// #24: auxiliary data must survive every operation that rewrites the first line.
+func TestAuxDataPreserved(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw1", false)
+	filename := filepath.Join(d.BaseDir, "alice.user")
+	appendAuxData(t, filename)
+
+	if err := d.UpdateUser("alice", "pw2"); err != nil {
+		t.Fatal(err)
+	}
+	if aux := readAuxData(t, filename); aux != testAuxData {
+		t.Fatalf("aux data changed by update: %q", aux)
+	}
+
+	if err := d.SetAdmin("alice", true); err != nil {
+		t.Fatal(err)
+	}
+	filename = filepath.Join(d.BaseDir, "alice.admin")
+	if aux := readAuxData(t, filename); aux != testAuxData {
+		t.Fatalf("aux data changed by set-admin: %q", aux)
+	}
+
+	d.Default = 2
+	if upgraded, err := d.UpgradeUser("alice", "pw2"); err != nil || !upgraded {
+		t.Fatalf("upgrade failed: %v (upgraded=%v)", err, upgraded)
+	}
+	if aux := readAuxData(t, filename); aux != testAuxData {
+		t.Fatalf("aux data changed by upgrade: %q", aux)
+	}
+	mustAuthenticate(t, d, "alice", "pw2")
+}
+
+// #24: auxiliary data must not influence how the hash is parsed.
+func TestAuxDataIgnoredByParser(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "plain", "pw", false)
+	mustAdd(t, d, "withaux", "pw", true)
+	appendAuxData(t, filepath.Join(d.BaseDir, "withaux.admin"))
+
+	for _, name := range []string{"plain.user", "withaux.admin"} {
+		filename := filepath.Join(d.BaseDir, name)
+		formatID, _, paramID, hashStr, err := readHashStr(filename)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if formatID != "argon2id" || paramID != 1 || strings.ContainsAny(hashStr, "\n") {
+			t.Fatalf("%s: parsed wrongly: %q %d %q", name, formatID, paramID, hashStr)
+		}
+		if err := isFormatSupported(filename, d); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+	mustAuthenticate(t, d, "plain", "pw")
+	mustAuthenticate(t, d, "withaux", "pw")
+
+	list, err := d.ListFull()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !list["withaux"].IsSupported || !list["plain"].IsSupported {
+		t.Fatalf("ListFull reports wrong support status: %+v", list)
+	}
+	if err := d.Check(); err != nil {
+		t.Fatal(err)
 	}
 }
 

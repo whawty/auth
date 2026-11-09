@@ -13,6 +13,8 @@ This socket is also used by the **PAM** module which can be used to bring whawty
 The whawty.auth app can be configured to automatically do upgrades to newer hash algorithms when a user logs
 in. This way it is possible to smoothly upgrade to newer/stronger hashing formats. The app also supports
 synchronization between multiple hosts. A sample setup for this can be found [here](contrib/sync/).
+Writers coordinate using `flock(2)`, which might not work with older kernels or network file systems like
+NFS or CIFS. Sharing the store via a network file system is not supported, use the sync mechanism instead.
 
 ## golang API
 

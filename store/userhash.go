@@ -168,74 +168,95 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 	return filename + userExt
 }
 
-func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) error {
-	paramID := u.store.Default
+// generateHashLine creates a new first line for the user hash file using the
+// default parameter-set.
+func (u *UserHash) generateHashLine(password string) (string, error) {
 	hasher := u.store.Params[u.store.Default]
 	if hasher == nil {
-		return fmt.Errorf("whawty.auth.store: no default parameter-set")
+		return "", fmt.Errorf("whawty.auth.store: no default parameter-set")
 	}
 	hashStr, err := hasher.Generate(password)
 	if err != nil {
-		return err
+		return "", err
 	}
-	formatID := hasher.GetFormatID()
+	return fmt.Sprintf("%s:%d:%d:%s\n", hasher.GetFormatID(), time.Now().Unix(), u.store.Default, hashStr), nil
+}
 
-	// Set the flags based on whether we expect to create the file
-	// The file is opened read-only, since we write to a tmp file and atomically move it in place.
-	flags := os.O_RDONLY | os.O_EXCL
-	if mayCreate {
-		flags = flags | os.O_CREATE
-	}
-
-	file, err := os.OpenFile(u.getFilename(isAdmin), flags, 0600)
-	if err != nil {
-		return err
-	}
-	defer file.Close() //nolint:errcheck
-
+// writeHashLine writes hashLine to a temporary file and moves it in place as filename.
+// If create is false, everything after the first line of the existing file (the
+// auxiliary data) is copied to the new file. If create is true, filename must not exist.
+// The caller must hold the store lock.
+func (u *UserHash) writeHashLine(filename, hashLine string, create bool) error {
 	tmp, err := u.store.getTempFile()
 	if err != nil {
 		return err
 	}
-	defer tmp.Close()           //nolint:errcheck
 	defer os.Remove(tmp.Name()) //nolint:errcheck
+	defer tmp.Close()           //nolint:errcheck
 
-	// Write the new password hash
-	if _, err := io.WriteString(tmp, fmt.Sprintf("%s:%d:%d:%s\n", formatID, time.Now().Unix(), paramID, hashStr)); err != nil {
-		// TODO: retry if write was short??
+	if _, err := io.WriteString(tmp, hashLine); err != nil {
 		return err
 	}
 
-	// Create a reader for the original file
-	reader := bufio.NewReader(file)
+	if !create {
+		file, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+		defer file.Close() //nolint:errcheck
 
-	// Skip the first line
-	if _, err := reader.ReadString('\n'); err != nil && err != io.EOF {
-		return err
-	}
-
-	// Write the rest of the old file to the new one
-	if _, err := reader.WriteTo(tmp); err != nil {
-		return err
+		reader := bufio.NewReader(file)
+		// Skip the first line and copy the rest of the old file to the new one
+		if _, err := reader.ReadString('\n'); err != nil && err != io.EOF {
+			return err
+		}
+		if _, err := reader.WriteTo(tmp); err != nil {
+			return err
+		}
 	}
 
 	// Flush the file's contents to disk
 	if err := tmp.Sync(); err != nil {
 		return err
 	}
-
-	// Atomically move the new file in place
-	if err := os.Rename(tmp.Name(), file.Name()); err != nil {
+	if err := tmp.Close(); err != nil {
 		return err
 	}
 
-	// Flush the move to disk
-	dir, err := os.Open(filepath.Dir(file.Name()))
+	if create {
+		// Link fails if filename already exists, so we never overwrite a user
+		// file and never leave an empty one behind.
+		if err := os.Link(tmp.Name(), filename); err != nil {
+			if os.IsExist(err) {
+				return fmt.Errorf("whawty.auth.store: user '%s' already exists", u.user)
+			}
+			return err
+		}
+	} else {
+		// Atomically move the new file in place
+		if err := os.Rename(tmp.Name(), filename); err != nil {
+			return err
+		}
+	}
+
+	return syncDir(u.store.BaseDir)
+}
+
+// existsLocked is like Exists but also detects a user having both a .user and an .admin file.
+func (u *UserHash) existsLocked() (exists bool, isAdmin bool, err error) {
+	filename := filepath.Join(u.store.BaseDir, u.user)
+	admin, err := fileExists(filename + adminExt)
 	if err != nil {
-		return err
+		return false, false, err
 	}
-	defer dir.Close() //nolint:errcheck
-	return dir.Sync()
+	user, err := fileExists(filename + userExt)
+	if err != nil {
+		return false, false, err
+	}
+	if admin && user {
+		return true, true, fmt.Errorf("whawty.auth.store: both '%s' and '%s' exist", u.user+adminExt, u.user+userExt)
+	}
+	return admin || user, admin, nil
 }
 
 // Add creates the hash file. It is an error if the user already exists.
@@ -243,18 +264,43 @@ func (u *UserHash) Add(password string, isAdmin bool) error {
 	if !u.isValidName() {
 		return fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
 	}
-	exists, _, err := u.Exists()
+	hashLine, err := u.generateHashLine(password)
+	if err != nil {
+		return err
+	}
+
+	unlock, err := u.store.lock()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	exists, _, err := u.existsLocked()
 	if err != nil {
 		return err
 	} else if exists {
 		return fmt.Errorf("whawty.auth.store: user '%s' already exists", u.user)
 	}
-	return u.writeHashStr(password, isAdmin, true)
+	return u.writeHashLine(u.getFilename(isAdmin), hashLine, true)
 }
 
 // Update changes the password for user.
 func (u *UserHash) Update(password string) error {
-	exists, isAdmin, err := u.Exists()
+	if !u.isValidName() {
+		return fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
+	}
+	hashLine, err := u.generateHashLine(password)
+	if err != nil {
+		return err
+	}
+
+	unlock, err := u.store.lock()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	exists, isAdmin, err := u.existsLocked()
 	if err != nil {
 		return err
 	} else if !exists {
@@ -265,12 +311,21 @@ func (u *UserHash) Update(password string) error {
 		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format: %v", err)
 	}
 
-	return u.writeHashStr(password, isAdmin, false)
+	return u.writeHashLine(u.getFilename(isAdmin), hashLine, false)
 }
 
 // SetAdmin changes the admin status of user.
 func (u *UserHash) SetAdmin(adminState bool) error {
-	exists, isAdmin, err := u.Exists()
+	if !u.isValidName() {
+		return fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
+	}
+	unlock, err := u.store.lock()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	exists, isAdmin, err := u.existsLocked()
 	if err != nil {
 		return err
 	}
@@ -281,26 +336,29 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 		return nil
 	}
 
-	oldname := filepath.Join(u.store.BaseDir, u.user)
-	newname := oldname
-	if adminState {
-		oldname += userExt
-		newname += adminExt
-	} else {
-		oldname += adminExt
-		newname += userExt
+	if err := os.Rename(u.getFilename(isAdmin), u.getFilename(adminState)); err != nil {
+		return err
 	}
-	return os.Rename(oldname, newname)
+	return syncDir(u.store.BaseDir)
 }
 
-// Remove deletes hash file.
-func (u *UserHash) Remove() {
+// Remove deletes hash file. It is not an error if the user does not exist.
+func (u *UserHash) Remove() error {
 	if !u.isValidName() {
-		return
+		return nil
 	}
-	filename := filepath.Join(u.store.BaseDir, u.user)
-	os.Remove(filename + adminExt) //nolint:errcheck
-	os.Remove(filename + userExt)  //nolint:errcheck
+	unlock, err := u.store.lock()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	for _, isAdmin := range []bool{true, false} {
+		if err := os.Remove(u.getFilename(isAdmin)); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return syncDir(u.store.BaseDir)
 }
 
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if

@@ -53,7 +53,9 @@ func TestAddRemoveUser(t *testing.T) {
 		t.Fatal("adding user a second time returned no error!")
 	}
 
-	u.Remove()
+	if err := u.Remove(); err != nil {
+		t.Fatalf("removing user failed: %v", err)
+	}
 	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".user")); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
@@ -78,7 +80,9 @@ func TestAddRemoveAdmin(t *testing.T) {
 		t.Fatal("adding user a second time returned no error!")
 	}
 
-	u.Remove()
+	if err := u.Remove(); err != nil {
+		t.Fatalf("removing user failed: %v", err)
+	}
 	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".admin")); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
@@ -95,7 +99,7 @@ func TestAddUserAdmin(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if err := u.Add(password, true); err == nil {
 		t.Fatal("re-adding existing user as admin shouldn't work")
@@ -111,7 +115,7 @@ func TestAddAdminUser(t *testing.T) {
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if err := u.Add(password, false); err == nil {
 		t.Fatal("re-adding existing user as normal user shouldn't work")
@@ -133,7 +137,7 @@ func TestExistsUser(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if exists, isAdmin, err := u.Exists(); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -153,7 +157,7 @@ func TestExistsAdmin(t *testing.T) {
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if exists, isAdmin, err := u.Exists(); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -173,7 +177,7 @@ func TestSetAdmin(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if err := u.SetAdmin(true); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -253,7 +257,7 @@ func TestIsFormatSupported(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if err := isFormatSupported(filepath.Join(testBaseDirUserHash, username+".user"), testStoreUserHash); err != nil {
 		t.Fatal("unexpected error:", err)
@@ -299,7 +303,7 @@ func TestAuthenticate(t *testing.T) {
 	if err := u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if isAuthOk, isAdmin, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
@@ -381,7 +385,7 @@ func TestUpdateUser(t *testing.T) {
 	if err := u.Add(password1, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
@@ -411,7 +415,7 @@ func TestUpdateAdmin(t *testing.T) {
 	if err := u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed")
@@ -458,7 +462,7 @@ func TestArgon2ID(t *testing.T) {
 	if err := u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	if isAuthOk, _, _, _, _ := u.Authenticate(password1); !isAuthOk {
 		t.Fatal("authentication should succeed with correct password")
@@ -479,7 +483,7 @@ func TestUpdateToArgon2ID(t *testing.T) {
 	if err = u.Add(password1, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	defer u.Remove()
+	defer u.Remove() //nolint:errcheck
 
 	testStoreUserHash.Params[2], err = NewArgon2IDHasher(&Argon2IDParams{Time: 3, Memory: 64 * 1024, Threads: 2, Length: 32})
 	testStoreUserHash.Default = 2

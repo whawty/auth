@@ -57,6 +57,7 @@ const (
 	adminExt string = ".admin"
 	userExt  string = ".user"
 	tmpDir   string = ".tmp"
+	lockFile string = "lock"
 )
 
 func init() {
@@ -118,6 +119,16 @@ func (d *Dir) getTempFile() (tmp *os.File, err error) {
 	}
 
 	return os.CreateTemp(tmpDir, "")
+}
+
+// syncDir flushes changes to the directory entries of path to disk.
+func syncDir(path string) error {
+	dir, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer dir.Close() //nolint:errcheck
+	return dir.Sync()
 }
 
 // isHiddenFile returns true for all files which start with a dot. These files are ignored
@@ -242,9 +253,9 @@ func (d *Dir) SetAdmin(user string, adminState bool) (err error) {
 	return NewUserHash(d, user).SetAdmin(adminState)
 }
 
-// RemoveUser removes user from the store.
-func (d *Dir) RemoveUser(user string) {
-	NewUserHash(d, user).Remove()
+// RemoveUser removes user from the store. It is not an error if user does not exist.
+func (d *Dir) RemoveUser(user string) error {
+	return NewUserHash(d, user).Remove()
 }
 
 // User holds basic information about a specific user. This is used as the

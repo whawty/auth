@@ -99,7 +99,9 @@ func TestNoPathTraversal(t *testing.T) {
 	if err := d.UpdateUser(name, "changed"); err == nil {
 		t.Fatalf("UpdateUser(%q) succeeded", name)
 	}
-	d.RemoveUser(name)
+	if err := d.RemoveUser(name); err != nil {
+		t.Fatalf("RemoveUser(%q) failed: %v", name, err)
+	}
 	if data, err := os.ReadFile(target); err != nil || string(data) != line {
 		t.Fatalf("file outside of the store has been changed or removed: %q, %v", data, err)
 	}

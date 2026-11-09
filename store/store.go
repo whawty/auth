@@ -120,6 +120,19 @@ func (d *Dir) getTempFile() (tmp *os.File, err error) {
 	return os.CreateTemp(tmpDir, "")
 }
 
+// isHiddenFile returns true for all files which start with a dot. These files are ignored
+// by the store. This includes the '.tmp' directory as well as temporary files created
+// by tools like rsync.
+func isHiddenFile(name string) bool {
+	if !strings.HasPrefix(name, ".") {
+		return false
+	}
+	if name != tmpDir {
+		wl.Printf("ignoring hidden file: '%s'", name)
+	}
+	return true
+}
+
 func isDirEmpty(dir *os.File) bool {
 	entries, _ := dir.ReadDir(2)
 	if len(entries) == 0 {
@@ -177,8 +190,7 @@ func (d *Dir) Check() error {
 
 	result := errNoSupportedHash
 	for _, name := range names {
-		// Skip the '.tmp' directory
-		if name == tmpDir {
+		if isHiddenFile(name) {
 			continue
 		}
 
@@ -266,8 +278,7 @@ func (d *Dir) List() (UserList, error) {
 		}
 
 		for _, name := range names {
-			// Skip the '.tmp' directory
-			if name == tmpDir {
+			if isHiddenFile(name) {
 				continue
 			}
 
@@ -333,8 +344,7 @@ func (d *Dir) ListFull() (UserListFull, error) {
 		}
 
 		for _, name := range names {
-			// Skip the '.tmp' directory
-			if name == tmpDir {
+			if isHiddenFile(name) {
 				continue
 			}
 

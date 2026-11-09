@@ -203,8 +203,10 @@ func (s *store) add(username, password string, isAdmin bool) (result addResult) 
 }
 
 func (s *store) remove(username string) (result removeResult) {
-	s.dir.RemoveUser(username)
-	s.hooks.Notify <- true
+	result.err = s.dir.RemoveUser(username)
+	if result.err == nil {
+		s.hooks.Notify <- true
+	}
 	return
 }
 

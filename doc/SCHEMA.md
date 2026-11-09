@@ -26,6 +26,15 @@ writing new files, with a random name, in that directory, then
 atomically moving them to their final destination.  As such, `.tmp`
 should be backed by the same file system as the whawty.auth base.
 
+Agents that modify the store must hold an exclusive `flock(2)` lock on the
+file `.tmp/lock` for the whole read-modify-write of a user file: adding,
+updating, upgrading, changing the admin status and removing users as well as
+changing auxiliary data. Readers don't need to take the lock since files are
+only ever replaced atomically. `flock` might not work reliably with older
+kernels or on network file systems like NFS or CIFS. Sharing a store between
+machines via a network file system is not supported, use the
+[sync mechanism](../contrib/sync/) instead.
+
 Hidden files, i.e. files whose names start with a `.`, must be ignored by
 agents. This allows tools like rsync to place temporary files inside the
 directory during synchronization. Apart from that the directory must not

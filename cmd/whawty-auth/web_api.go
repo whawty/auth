@@ -48,10 +48,11 @@ func handleWebBasicAuth(store *Store, sessions *webSessionFactory, w http.Respon
 	}
 
 	ok, _, _, err := store.Authenticate(username, password)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	} else if !ok {
+	if err != nil || !ok {
+		// don't tell the client why, this would reveal whether the user exists
+		if err != nil {
+			wdl.Printf("web-api: authentication of '%s' failed: %v", username, err)
+		}
 		http.Error(w, "Authentication Failed", http.StatusUnauthorized)
 		return
 	}
@@ -95,9 +96,10 @@ func handleWebAuthenticate(store *Store, sessions *webSessionFactory, w http.Res
 
 	ok, isAdmin, lastChanged, err := store.Authenticate(reqdata.Username, reqdata.Password)
 	if err != nil || !ok {
+		// don't tell the client why, this would reveal whether the user exists
 		respdata.Error = "authentication failed"
 		if err != nil {
-			respdata.Error = err.Error()
+			wdl.Printf("web-api: authentication of '%s' failed: %v", reqdata.Username, err)
 		}
 		sendWebResponse(w, http.StatusUnauthorized, respdata)
 		return
@@ -275,9 +277,10 @@ func handleWebUpdate(store *Store, sessions *webSessionFactory, w http.ResponseW
 	} else if reqdata.Session == "" && reqdata.OldPassword != "" {
 		ok, _, _, err := store.Authenticate(reqdata.Username, reqdata.OldPassword)
 		if err != nil || !ok {
+			// don't tell the client why, this would reveal whether the user exists
 			respdata.Error = "authentication failed"
 			if err != nil {
-				respdata.Error = err.Error()
+				wdl.Printf("web-api: authentication of '%s' failed: %v", reqdata.Username, err)
 			}
 			sendWebResponse(w, http.StatusUnauthorized, respdata)
 			return

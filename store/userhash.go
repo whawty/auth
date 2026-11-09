@@ -61,23 +61,25 @@ func fileExists(path string) (bool, error) {
 	return true, err
 }
 
-// readHashStr returns the contents of the user hash file separated into format id
-// string, change time parameter id and the whole hash string.
-func readHashStr(filename string) (string, time.Time, uint, string, error) {
+// readHashLine returns the first line of the user hash file including the trailing newline.
+func readHashLine(filename string) (string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return "", time.Unix(0, 0), 0, "", err
+		return "", err
 	}
 	defer file.Close() //nolint:errcheck
 
-	reader := bufio.NewReader(file)
-
-	data, err := reader.ReadString('\n')
+	line, err := bufio.NewReader(file).ReadString('\n')
 	if err != nil && err != io.EOF {
-		return "", time.Unix(0, 0), 0, "", err
+		return "", err
 	}
+	return line, nil
+}
 
-	parts := strings.SplitN(string(data), ":", 4)
+// parseHashLine separates the first line of a user hash file into format id,
+// change time, parameter id and the format specific hash string.
+func parseHashLine(line string) (string, time.Time, uint, string, error) {
+	parts := strings.SplitN(strings.TrimSuffix(line, "\n"), ":", 4)
 	if len(parts) != 4 {
 		return "", time.Unix(0, 0), 0, "", fmt.Errorf("whawty.auth.store: hash file is invalid")
 	}
@@ -95,6 +97,16 @@ func readHashStr(filename string) (string, time.Time, uint, string, error) {
 	paramID := uint(tmpParamID)
 
 	return parts[0], lastchange, paramID, parts[3], nil
+}
+
+// readHashStr returns the contents of the user hash file separated into format id
+// string, change time parameter id and the whole hash string.
+func readHashStr(filename string) (string, time.Time, uint, string, error) {
+	line, err := readHashLine(filename)
+	if err != nil {
+		return "", time.Unix(0, 0), 0, "", err
+	}
+	return parseHashLine(line)
 }
 
 func isFormatSupportedFull(filename string, store *Dir) (supported bool, formatID string, lastChange time.Time, paramID uint, err error) {

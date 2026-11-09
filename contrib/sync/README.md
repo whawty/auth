@@ -80,7 +80,15 @@ Use the contents of `/var/lib/whawty/auth/.ssh/id_ed25519.pub` to add the entry 
 `authorized_keys` file of the master as documented above. You should now be able to sync password
 hashes from the master using the following command:
 
-    # sudo -u whawty-auth rsync -rlptv --delete -e ssh whawty-auth-master::store /var/lib/whawty/auth/store
+    # sudo -u whawty-auth rsync -rlptv --delete --delete-delay --delay-updates --exclude=/.tmp/ -e ssh whawty-auth-master::store /var/lib/whawty/auth/store
+
+`--delay-updates` makes rsync put all changed files in place at the end of the transfer in rapid
+succession, which keeps the time in which the slave sees a half-synchronized store short.
+`--delete-delay` makes rsync delete files only after that. Without it, a user whose admin status
+changed on the master would have no file at all on the slave during the transfer, because
+`<user>.user` gets deleted before `<user>.admin` arrives. `--exclude=/.tmp/` keeps the master's
+temporary files and lock file out of the transfer and protects the slave's `.tmp` directory from
+being deleted.
 
 On the first connection you will get asked to accept the ssh fingerprint of the master. If you run
 the command a second time no errors/warnings should be shown.

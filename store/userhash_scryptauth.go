@@ -86,7 +86,7 @@ func scryptAuthDecodeBase64(hashStr string) (salt, hash []byte, err error) {
 		return nil, nil, fmt.Errorf("whawty.auth.store: decoding hmac-sha256(scrypt) hash failed (%v)", err)
 	}
 
-	return hash, salt, nil
+	return salt, hash, nil
 }
 
 func (h *ScryptAuthHasher) GetFormatID() string {
@@ -94,7 +94,7 @@ func (h *ScryptAuthHasher) GetFormatID() string {
 }
 
 func (h *ScryptAuthHasher) IsValid(hashStr string) (bool, error) {
-	hash, salt, err := scryptAuthDecodeBase64(hashStr)
+	salt, hash, err := scryptAuthDecodeBase64(hashStr)
 	if err != nil {
 		return false, err
 	}
@@ -118,7 +118,7 @@ func (h *ScryptAuthHasher) Generate(password string) (string, error) {
 
 func (h *ScryptAuthHasher) Check(password, hashStr string) (isAuthenticated bool, err error) {
 	var hash, salt []byte
-	if hash, salt, err = scryptAuthDecodeBase64(hashStr); err != nil {
+	if salt, hash, err = scryptAuthDecodeBase64(hashStr); err != nil {
 		return
 	}
 

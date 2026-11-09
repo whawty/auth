@@ -70,7 +70,7 @@ func argon2IDDecodeBase64(hashStr string) (salt, hash []byte, err error) {
 		return nil, nil, fmt.Errorf("whawty.auth.store: decoding Argon2id hash failed (%v)", err)
 	}
 
-	return hash, salt, nil
+	return salt, hash, nil
 }
 
 func (h *Argon2IDHasher) GetFormatID() string {
@@ -106,7 +106,7 @@ func (h *Argon2IDHasher) Generate(password string) (string, error) {
 }
 
 func (h *Argon2IDHasher) Check(password, hashStr string) (bool, error) {
-	hash, salt, err := argon2IDDecodeBase64(hashStr)
+	salt, hash, err := argon2IDDecodeBase64(hashStr)
 	if err != nil {
 		return false, err
 	}

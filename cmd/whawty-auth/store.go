@@ -92,6 +92,14 @@ type updateRequest struct {
 	response chan<- updateResult
 }
 
+// upgradeRequest asks for the password hash of username to be upgraded to the
+// current default parameter-set. Upgrades are best-effort: requests are dropped
+// if the queue is full.
+type upgradeRequest struct {
+	username string
+	password string
+}
+
 type setAdminResult struct {
 	err error
 }
@@ -148,7 +156,8 @@ type store struct {
 	listChan         chan listRequest
 	listFullChan     chan listFullRequest
 	authenticateChan chan authenticateRequest
-	upgradeChan      chan updateRequest
+	upgradeChan      chan upgradeRequest // nil if upgrades are disabled
+	localUpgradeChan chan upgradeRequest // same as upgradeChan for local upgrades, nil otherwise
 }
 
 func (s *store) reload() {
@@ -247,9 +256,30 @@ func (s *store) listFull() (result listFullResult) {
 func (s *store) authenticate(username, password string) (result authenticateResult) {
 	result.ok, result.isAdmin, result.upgradeable, result.lastChanged, result.err = s.dir.Authenticate(username, password)
 	if result.ok && result.upgradeable && s.upgradeChan != nil {
-		s.upgradeChan <- updateRequest{username: username, password: password}
+		// This runs inside dispatchRequests(), which for local upgrades is also the reader
+		// of upgradeChan. A blocking send would deadlock the store once the queue is full.
+		select {
+		case s.upgradeChan <- upgradeRequest{username: username, password: password}:
+		default:
+			wdl.Printf("upgrade: queue is full, ignoring upgrade request for '%s'", username)
+		}
 	}
 	return
+}
+
+func (s *store) upgrade(username, password string) {
+	wdl.Printf("upgrade(local): upgrading '%s'", username)
+	upgraded, err := s.dir.UpgradeUser(username, password)
+	if err != nil {
+		wl.Printf("upgrade(local): failed for '%s': %v", username, err)
+		return
+	}
+	if !upgraded {
+		wdl.Printf("upgrade(local): '%s' has been changed in the meantime, not upgrading", username)
+		return
+	}
+	wdl.Printf("upgrade(local): successfully upgraded '%s'", username)
+	s.hooks.Notify <- true
 }
 
 func (s *store) dispatchRequests() {
@@ -269,16 +299,9 @@ func (s *store) dispatchRequests() {
 		case req := <-s.removeChan:
 			req.response <- s.remove(req.username)
 		case req := <-s.updateChan:
-			if req.response != nil {
-				req.response <- s.update(req.username, req.password)
-			} else {
-				wdl.Printf("upgrade(local): upgrading '%s'", req.username)
-				if resp := s.update(req.username, req.password); resp.err != nil {
-					wl.Printf("upgrade(local): failed for '%s': %v", req.username, resp.err)
-				} else {
-					wdl.Printf("upgrade(local): successfully upgraded '%s'", req.username)
-				}
-			}
+			req.response <- s.update(req.username, req.password)
+		case req := <-s.localUpgradeChan:
+			s.upgrade(req.username, req.password)
 		case req := <-s.setAdminChan:
 			req.response <- s.setAdmin(req.username, req.isAdmin)
 		case req := <-s.listChan:
@@ -291,7 +314,7 @@ func (s *store) dispatchRequests() {
 	}
 }
 
-func remoteHTTPUpgrade(update updateRequest, remote string) {
+func remoteHTTPUpgrade(update upgradeRequest, remote string) {
 	reqdata, err := json.Marshal(webUpdateRequest{Username: update.username, OldPassword: update.password})
 	if err != nil {
 		wl.Printf("upgrade(remote): error while encoding update request: %v", err)
@@ -312,13 +335,13 @@ func remoteHTTPUpgrade(update updateRequest, remote string) {
 	}
 }
 
-func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
+func remoteHTTPUpgrader(upgradeChan <-chan upgradeRequest, remote string) {
 	sem := make(chan bool, 10) // TODO: hardcoded value
 	for update := range upgradeChan {
 		select {
 		case sem <- true:
 			wdl.Printf("upgrade(remote): upgrading '%s' via %s", update.username, remote)
-			go func(update updateRequest, remote string) {
+			go func(update upgradeRequest, remote string) {
 				defer func() { <-sem }()
 				remoteHTTPUpgrade(update, remote)
 			}(update, remote)
@@ -328,7 +351,7 @@ func remoteHTTPUpgrader(upgradeChan <-chan updateRequest, remote string) {
 	}
 }
 
-func runRemoteUpgrader(remote string) (upgradeChan chan updateRequest, err error) {
+func runRemoteUpgrader(remote string) (upgradeChan chan upgradeRequest, err error) {
 	var r *url.URL
 	if r, err = url.Parse(remote); err != nil {
 		return
@@ -338,7 +361,7 @@ func runRemoteUpgrader(remote string) (upgradeChan chan updateRequest, err error
 		wl.Printf("upgrade(remote): Warning using unsecure url for remote updates: %s", remote)
 		fallthrough
 	case "https":
-		upgradeChan = make(chan updateRequest, 10)
+		upgradeChan = make(chan upgradeRequest, 10)
 		go remoteHTTPUpgrader(upgradeChan, remote)
 	default:
 		err = errors.New("unsupported hash-upgrade mode, must be either empty, 'local' or a http(s) url to the master")
@@ -504,7 +527,8 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir stri
 	case "":
 		s.upgradeChan = nil
 	case "local":
-		s.upgradeChan = s.updateChan
+		s.upgradeChan = make(chan upgradeRequest, 10)
+		s.localUpgradeChan = s.upgradeChan
 	default:
 		if s.upgradeChan, err = runRemoteUpgrader(doUpgrades); err != nil {
 			return

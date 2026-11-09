@@ -253,6 +253,13 @@ func (d *Dir) SetAdmin(user string, adminState bool) (err error) {
 	return NewUserHash(d, user).SetAdmin(adminState)
 }
 
+// UpgradeUser re-hashes the password of user using the default parameter-set. This only
+// happens if password is still the current password of user and the hash has not been
+// changed concurrently. It returns whether the hash has actually been upgraded.
+func (d *Dir) UpgradeUser(user, password string) (upgraded bool, err error) {
+	return NewUserHash(d, user).Upgrade(password)
+}
+
 // RemoveUser removes user from the store. It is not an error if user does not exist.
 func (d *Dir) RemoveUser(user string) error {
 	return NewUserHash(d, user).Remove()

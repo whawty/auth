@@ -163,8 +163,8 @@ func (u *UserHash) getFilename(isAdmin bool) string {
 }
 
 // generateHashLine creates a new first line for the user hash file using the
-// default parameter-set.
-func (u *UserHash) generateHashLine(password string) (string, error) {
+// default parameter-set. lastChange is the time the password has been changed.
+func (u *UserHash) generateHashLine(password string, lastChange time.Time) (string, error) {
 	hasher := u.store.Params[u.store.Default]
 	if hasher == nil {
 		return "", fmt.Errorf("whawty.auth.store: no default parameter-set")
@@ -173,7 +173,7 @@ func (u *UserHash) generateHashLine(password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s:%d:%d:%s\n", hasher.GetFormatID(), time.Now().Unix(), u.store.Default, hashStr), nil
+	return fmt.Sprintf("%s:%d:%d:%s\n", hasher.GetFormatID(), lastChange.Unix(), u.store.Default, hashStr), nil
 }
 
 // writeHashLine writes hashLine to a temporary file and moves it in place as filename.
@@ -255,7 +255,7 @@ func (u *UserHash) existsLocked() (exists bool, isAdmin bool, err error) {
 
 // Add creates the hash file. It is an error if the user already exists.
 func (u *UserHash) Add(password string, isAdmin bool) error {
-	hashLine, err := u.generateHashLine(password)
+	hashLine, err := u.generateHashLine(password, time.Now())
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func (u *UserHash) Add(password string, isAdmin bool) error {
 
 // Update changes the password for user.
 func (u *UserHash) Update(password string) error {
-	hashLine, err := u.generateHashLine(password)
+	hashLine, err := u.generateHashLine(password, time.Now())
 	if err != nil {
 		return err
 	}
@@ -300,6 +300,67 @@ func (u *UserHash) Update(password string) error {
 	}
 
 	return u.writeHashLine(u.getFilename(isAdmin), hashLine, false)
+}
+
+// Upgrade re-hashes password using the default parameter-set. This only happens if the
+// user's hash uses a different parameter-set, password is still the user's current
+// password and the hash hasn't been changed by somebody else in the meantime. The time
+// of the last password change is kept. Upgrade returns whether the hash was actually
+// upgraded.
+func (u *UserHash) Upgrade(password string) (upgraded bool, err error) {
+	exists, isAdmin, err := u.Exists()
+	if err != nil {
+		return false, err
+	} else if !exists {
+		return false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	}
+
+	oldLine, err := readHashLine(u.getFilename(isAdmin))
+	if err != nil {
+		return false, err
+	}
+	formatID, lastChange, paramID, hashStr, err := parseHashLine(oldLine)
+	if err != nil {
+		return false, err
+	}
+	if paramID == u.store.Default {
+		return false, nil
+	}
+	hasher := u.store.Params[paramID]
+	if hasher == nil || hasher.GetFormatID() != formatID {
+		return false, fmt.Errorf("whawty.auth.store: won't upgrade unsupported hash format '%s' with parameter-set %d", formatID, paramID)
+	}
+	if ok, _ := hasher.Check(password, hashStr); !ok {
+		return false, fmt.Errorf("whawty.auth.store: password of user '%s' has changed, not upgrading", u.user)
+	}
+
+	// The password stays the same, so does the time it has been changed.
+	newLine, err := u.generateHashLine(password, lastChange)
+	if err != nil {
+		return false, err
+	}
+
+	unlock, err := u.store.lock()
+	if err != nil {
+		return false, err
+	}
+	defer unlock()
+
+	if exists, isAdmin, err = u.existsLocked(); err != nil {
+		return false, err
+	} else if !exists {
+		return false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	}
+	// Only write the new hash if nobody changed the hash since we checked the password.
+	if currentLine, err := readHashLine(u.getFilename(isAdmin)); err != nil {
+		return false, err
+	} else if currentLine != oldLine {
+		return false, nil
+	}
+	if err := u.writeHashLine(u.getFilename(isAdmin), newLine, false); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // SetAdmin changes the admin status of user.

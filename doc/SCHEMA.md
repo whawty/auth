@@ -69,7 +69,8 @@ The first line of the file contains the password hash which has the following fo
 
 `algorithm-identifier` is a unique identifier for the hashing format. This id must
 not include a `:`. `last-change` is a UNIX time stamp and represents the last
-date/time when the password has been modified. `paramID` must be an integer greater
+date/time when the password has been modified. Upgrading the hash to another
+parameter-set doesn't modify the password and therefore keeps `last-change`. `paramID` must be an integer greater
 than zero that represents a set of algorithm specific parameters.
 A whawty.auth agent should support multiple parameter-sets to allow soft upgrades
 of password hashes. The parameter-sets must not be stored in the hash file but have

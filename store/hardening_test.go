@@ -32,6 +32,7 @@ package store
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -132,6 +133,87 @@ func TestRemoveUser(t *testing.T) {
 	}
 	if err := d.RemoveUser("alice"); err != nil {
 		t.Fatalf("removing a non-existing user failed: %v", err)
+	}
+}
+
+func TestUpgradeUser(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw", false)
+
+	if upgraded, err := d.UpgradeUser("alice", "pw"); err != nil || upgraded {
+		t.Fatalf("upgrade with unchanged default: upgraded=%v, err=%v", upgraded, err)
+	}
+
+	d.Default = 2
+	if upgraded, err := d.UpgradeUser("alice", "wrong"); err == nil || upgraded {
+		t.Fatalf("upgrade with wrong password: upgraded=%v, err=%v", upgraded, err)
+	}
+	if upgraded, err := d.UpgradeUser("alice", "pw"); err != nil || !upgraded {
+		t.Fatalf("upgrade failed: upgraded=%v, err=%v", upgraded, err)
+	}
+	if _, _, paramID, _, _ := readHashStr(filepath.Join(d.BaseDir, "alice.user")); paramID != 2 {
+		t.Fatalf("upgrade wrote parameter-set %d", paramID)
+	}
+	mustAuthenticate(t, d, "alice", "pw")
+}
+
+// An upgrade doesn't change the password, so it must keep the time of the last change.
+func TestUpgradeUserKeepsLastChange(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw", false)
+	filename := filepath.Join(d.BaseDir, "alice.user")
+
+	// pretend the password has been set a year ago
+	line, err := readHashLine(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	formatID, _, paramID, hashStr, err := parseHashLine(line)
+	if err != nil {
+		t.Fatal(err)
+	}
+	then := time.Now().Add(-365 * 24 * time.Hour).Truncate(time.Second)
+	line = fmt.Sprintf("%s:%d:%d:%s\n", formatID, then.Unix(), paramID, hashStr)
+	if err := os.WriteFile(filename, []byte(line), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	d.Default = 2
+	if upgraded, err := d.UpgradeUser("alice", "pw"); err != nil || !upgraded {
+		t.Fatalf("upgrade failed: upgraded=%v, err=%v", upgraded, err)
+	}
+	_, lastChange, paramID, _, err := readHashStr(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if paramID != 2 || !lastChange.Equal(then) {
+		t.Fatalf("upgrade wrote parameter-set %d and last-change %v, expected 2 and %v", paramID, lastChange, then)
+	}
+
+	if err := d.UpdateUser("alice", "new"); err != nil {
+		t.Fatal(err)
+	}
+	if _, lastChange, _, _, _ = readHashStr(filename); !lastChange.After(then) {
+		t.Fatalf("password change kept last-change %v", lastChange)
+	}
+}
+
+// An upgrade queued with the old password must not revert a password change.
+func TestUpgradeAfterPasswordChange(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "old", false)
+	d.Default = 2
+	// alice logs in with "old", an upgrade gets queued, then she changes her password
+	if err := d.UpdateUser("alice", "new"); err != nil {
+		t.Fatal(err)
+	}
+	d.Default = 1
+	if upgraded, _ := d.UpgradeUser("alice", "old"); upgraded {
+		t.Fatal("upgrade with old password succeeded")
+	}
+	mustAuthenticate(t, d, "alice", "new")
+	if ok, _, _, _, _ := d.Authenticate("alice", "old"); ok {
+		t.Fatal("old password is valid again")
 	}
 }
 

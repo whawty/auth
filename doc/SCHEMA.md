@@ -26,7 +26,10 @@ writing new files, with a random name, in that directory, then
 atomically moving them to their final destination.  As such, `.tmp`
 should be backed by the same file system as the whawty.auth base.
 
-The directory must not contain any other files. A valid whawty.auth base
+Hidden files, i.e. files whose names start with a `.`, must be ignored by
+agents. This allows tools like rsync to place temporary files inside the
+directory during synchronization. Apart from that the directory must not
+contain any other files. A valid whawty.auth base
 directory contains at least one admin file which uses a supported hashing
 algorithm.
 Furthermore a directory may contain only one hash file per user.

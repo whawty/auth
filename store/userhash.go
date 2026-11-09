@@ -448,6 +448,11 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 	if exists, isAdmin, err = u.Exists(); err != nil {
 		return
 	} else if !exists {
+		// Spend the same amount of time as for an existing user, so response times don't
+		// reveal which users exist.
+		if hasher := u.store.Params[u.store.Default]; hasher != nil {
+			hasher.Generate(password) //nolint:errcheck
+		}
 		return false, false, false, time.Unix(0, 0), fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 

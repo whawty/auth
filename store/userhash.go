@@ -35,7 +35,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -117,8 +116,16 @@ func readHashStr(filename string) (string, time.Time, uint, string, error) {
 }
 
 func isFormatSupportedFull(filename string, store *Dir) (supported bool, formatID string, lastChange time.Time, paramID uint, err error) {
+	line, err := readHashLine(filename)
+	if err != nil {
+		return false, "", time.Unix(0, 0), 0, err
+	}
+	return isLineSupportedFull(line, store)
+}
+
+func isLineSupportedFull(line string, store *Dir) (supported bool, formatID string, lastChange time.Time, paramID uint, err error) {
 	var hashStr string
-	if formatID, lastChange, paramID, hashStr, err = readHashStr(filename); err != nil {
+	if formatID, lastChange, paramID, hashStr, err = parseHashLine(line); err != nil {
 		return
 	}
 
@@ -428,45 +435,48 @@ func (u *UserHash) Remove() error {
 	return syncDir(u.store.BaseDir)
 }
 
-// maxHashFileLookups limits how often openHashFile() looks for the hash file of a user.
+// maxHashFileLookups limits how often readHashLineOf() looks for a v1 file of a user.
 const maxHashFileLookups = 6
 
 var errUserNotFound = errors.New("whawty.auth.store: user not found")
 
-// openHashFile opens the hash file of user without taking the store lock. Hash files are
-// never modified in place, so the opened file is a consistent snapshot of the user, and the
-// name it has been opened by tells whether the user is an admin.
-//
-// SetAdmin() renames the file, which may happen between looking for the .admin and the
-// .user file. Each failed lookup is therefore retried using the other name. For an existing
-// user two failed lookups in a row mean that the file has been renamed in between, so a user
-// is only reported as not existing if the file was renamed every time we were looking.
-// SetAdmin() holds the store lock and syncs the directory, which makes that practically
-// impossible. It returns errUserNotFound if no file has been found.
-func (u *UserHash) openHashFile() (file *os.File, isAdmin bool, err error) {
-	for i := 0; i < maxHashFileLookups; i++ {
-		isAdmin = i%2 == 0
-		file, err = os.Open(u.getFilename(isAdmin))
+// readV1HashFile reads the first line of the v1 hash file of user, trying the .admin file first.
+func (u *UserHash) readV1HashFile() (line string, isAdmin bool, err error) {
+	for _, isAdmin := range []bool{true, false} {
+		file, err := os.Open(u.getFilename(isAdmin))
 		if err == nil {
-			return file, isAdmin, nil
+			defer file.Close() //nolint:errcheck
+			line, err = readHashLineFrom(file)
+			return line, isAdmin, err
 		}
-		if !errors.Is(err, fs.ErrNotExist) {
-			return nil, false, err
+		if !isNotFound(err) {
+			return "", false, err
 		}
 	}
-	return nil, false, errUserNotFound
+	return "", false, errUserNotFound
 }
 
-// readHashLineOf reads the first line of the hash file of user without taking the store lock.
+// readHashLineOf reads the first line of the hash file of user and whether user is an admin,
+// without taking the store lock. Users stored in format v2 take precedence over v1 files.
 // It returns errUserNotFound if user does not exist.
+//
+// Every opened file is a consistent snapshot, since files are never modified in place. Finding
+// the file is what can go wrong: SetAdmin() renames v1 files, which may happen between looking
+// for the .admin and the .user file, and the migration replaces a v1 file by a user directory,
+// which may happen between looking for both formats. The lookup is therefore repeated. A user
+// that exists all the time is only missed if it got renamed or migrated between every two
+// lookups. Writers hold the store lock and sync the directory, which makes that practically
+// impossible.
 func (u *UserHash) readHashLineOf() (line string, isAdmin bool, err error) {
-	file, isAdmin, err := u.openHashFile()
-	if err != nil {
-		return "", false, err
+	for round := 0; round < maxHashFileLookups/2; round++ {
+		if line, isAdmin, err = u.readUserDir(); !errors.Is(err, errUserNotFound) {
+			return line, isAdmin, err
+		}
+		if line, isAdmin, err = u.readV1HashFile(); !errors.Is(err, errUserNotFound) {
+			return line, isAdmin, err
+		}
 	}
-	defer file.Close() //nolint:errcheck
-	line, err = readHashLineFrom(file)
-	return line, isAdmin, err
+	return "", false, errUserNotFound
 }
 
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if
@@ -475,13 +485,13 @@ func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
 	if !u.isValidName() {
 		return false, false, nil
 	}
-	file, isAdmin, err := u.openHashFile()
+	_, isAdmin, err = u.readHashLineOf()
 	if errors.Is(err, errUserNotFound) {
 		return false, false, nil
 	} else if err != nil {
 		return false, false, err
 	}
-	return true, isAdmin, file.Close()
+	return true, isAdmin, nil
 }
 
 // Authenticate checks the user password. It also returns whether user is an admin, the password is upgradable

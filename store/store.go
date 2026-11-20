@@ -39,7 +39,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -210,14 +209,42 @@ func (d *Dir) Check() error {
 		return err
 	}
 	defer dir.Close() //nolint:errcheck
-	names, err := dir.Readdirnames(0)
+	entries, err := dir.ReadDir(0)
 	if err != nil && err != io.EOF {
 		return err
 	}
 
 	result := errNoSupportedHash
-	for _, name := range names {
+	for _, entry := range entries {
+		name := entry.Name()
 		if isHiddenFile(name) {
+			continue
+		}
+
+		if isDir, err := isDirEntry(dir.Name(), entry); err != nil {
+			if isNotFound(err) {
+				continue // removed since we listed the directory
+			}
+			return err
+		} else if isDir {
+			// a user stored in format v2
+			if !userNameRe.MatchString(name) {
+				wl.Printf("ignoring directory for invalid username: '%s'", name)
+				continue
+			}
+			line, isAdmin, err := NewUserHash(d, name).readUserDir()
+			if errors.Is(err, errUserNotFound) {
+				// rsync creates the directory of a new user before its files
+				wl.Printf("ignoring user directory without hash file: '%s'", name)
+				continue
+			} else if err != nil {
+				return err
+			}
+			if isAdmin {
+				if supported, _, _, _, err := isLineSupportedFull(line, d); supported && err == nil {
+					result = nil
+				}
+			}
 			continue
 		}
 
@@ -299,51 +326,23 @@ func (d *Dir) List() (UserList, error) {
 	}
 	defer dir.Close() //nolint:errcheck
 
-	list := make(UserList)
-	for {
-		last := false
-		names, err := dir.Readdirnames(3)
-		if err != nil {
-			if err == io.EOF {
-				last = true
-			} else {
-				return list, err
-			}
-		}
-
-		for _, name := range names {
-			if isHiddenFile(name) {
-				continue
-			}
-
-			valid, user, isAdmin, err := checkUserFile(name)
-			if err != nil {
-				return list, err
-			}
-
-			if !valid {
-				wl.Printf("ignoring file for invalid username: '%s'", user)
-				continue
-			}
-
-			ok, _, lastchanged, _, err := isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
-			if errors.Is(err, fs.ErrNotExist) {
-				// the user has been removed or renamed since we listed the directory
-				continue
-			}
-			if !ok {
-				wl.Printf("ignoring file with unsupported hash format for username: '%s'", user)
-				continue
-			}
-
-			list[user] = User{isAdmin, lastchanged}
-		}
-
-		if last {
-			break
-		}
+	full, err := d.listFull(dir)
+	if err != nil {
+		return nil, err
 	}
-	return list, err
+	list := make(UserList)
+	for name, user := range full {
+		if !user.IsValid {
+			wl.Printf("ignoring file for invalid username: '%s'", name)
+			continue
+		}
+		if !user.IsSupported {
+			wl.Printf("ignoring file with unsupported hash format for username: '%s'", name)
+			continue
+		}
+		list[name] = User{user.IsAdmin, user.LastChanged}
+	}
+	return list, nil
 }
 
 // UserFull holds additional information about a specific user. This is used as the
@@ -369,42 +368,63 @@ func (d *Dir) ListFull() (UserListFull, error) {
 	}
 	defer dir.Close() //nolint:errcheck
 
+	return d.listFull(dir)
+}
+
+// listFull lists the users of both store formats. A user stored in format v2 takes
+// precedence over v1 files of the same user, which exist while the store gets migrated.
+func (d *Dir) listFull(dir *os.File) (UserListFull, error) {
+	entries, err := dir.ReadDir(0)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
 	list := make(UserListFull)
-	for {
-		last := false
-		names, err := dir.Readdirnames(3)
-		if err != nil {
-			if err == io.EOF {
-				last = true
-			} else {
-				return list, err
-			}
+	fromV2 := make(map[string]bool)
+	for _, entry := range entries {
+		name := entry.Name()
+		if isHiddenFile(name) {
+			continue
 		}
 
-		for _, name := range names {
-			if isHiddenFile(name) {
+		var user UserFull
+		var username, line string
+		isDir, err := isDirEntry(dir.Name(), entry)
+		if isNotFound(err) {
+			continue // removed since we listed the directory
+		} else if err != nil {
+			return list, err
+		}
+
+		if isDir {
+			username = name
+			user.IsValid = userNameRe.MatchString(name)
+			if line, user.IsAdmin, err = NewUserHash(d, name).readUserDir(); errors.Is(err, errUserNotFound) {
+				// rsync creates the directory of a new user before its files
 				continue
 			}
-
-			var user UserFull
-			var err error
-			var username string
+		} else {
 			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
 				return list, err
 			}
-			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, err = isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
-			if errors.Is(err, fs.ErrNotExist) {
+			if fromV2[username] {
+				continue
+			}
+			if line, err = readHashLine(filepath.Join(dir.Name(), name)); isNotFound(err) {
 				// the user has been removed or renamed since we listed the directory
 				continue
 			}
-			list[username] = user
 		}
-
-		if last {
-			break
+		// a user whose hash can't be read is listed as unsupported
+		if err == nil {
+			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, _ = isLineSupportedFull(line, d)
+		}
+		list[username] = user
+		if isDir {
+			fromV2[username] = true
 		}
 	}
-	return list, err
+	return list, nil
 }
 
 // Exists checks if user exists. It also returns whether user is an admin.

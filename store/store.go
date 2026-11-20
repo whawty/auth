@@ -39,6 +39,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -144,6 +145,21 @@ func isHiddenFile(name string) bool {
 	return true
 }
 
+// bothExist reports whether both files exist. SetAdmin() renaming one into the other between
+// two checks makes both appear to exist, so the files are checked alternately several times.
+// A real duplicate passes every check, while a false report needs a rename between every two
+// checks, which SetAdmin() holding the store lock and syncing the directory makes practically
+// impossible.
+func bothExist(a, b string) bool {
+	names := []string{a, b}
+	for i := 0; i < maxHashFileLookups; i++ {
+		if exists, _ := fileExists(names[i%2]); !exists {
+			return false
+		}
+	}
+	return true
+}
+
 func isDirEmpty(dir *os.File) bool {
 	entries, _ := dir.ReadDir(2)
 	if len(entries) == 0 {
@@ -214,14 +230,14 @@ func (d *Dir) Check() error {
 			wl.Printf("ignoring file for invalid username: '%s'", user)
 		}
 
-		if isAdmin {
-			if exists, _ := fileExists(filepath.Join(dir.Name(), user) + userExt); exists {
-				return fmt.Errorf("both '%s' and '%s' exist", name, user+userExt)
-			}
-		} else {
-			if exists, _ := fileExists(filepath.Join(dir.Name(), user) + adminExt); exists {
-				return fmt.Errorf("both '%s' and '%s' exist", name, user+adminExt)
-			}
+		other := user + userExt
+		if !isAdmin {
+			other = user + adminExt
+		}
+		if bothExist(filepath.Join(dir.Name(), name), filepath.Join(dir.Name(), other)) {
+			return fmt.Errorf("both '%s' and '%s' exist", name, other)
+		}
+		if !isAdmin {
 			continue
 		}
 
@@ -310,7 +326,11 @@ func (d *Dir) List() (UserList, error) {
 				continue
 			}
 
-			ok, _, lastchanged, _, _ := isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
+			ok, _, lastchanged, _, err := isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
+			if errors.Is(err, fs.ErrNotExist) {
+				// the user has been removed or renamed since we listed the directory
+				continue
+			}
 			if !ok {
 				wl.Printf("ignoring file with unsupported hash format for username: '%s'", user)
 				continue
@@ -372,7 +392,11 @@ func (d *Dir) ListFull() (UserListFull, error) {
 			if user.IsValid, username, user.IsAdmin, err = checkUserFile(name); err != nil {
 				return list, err
 			}
-			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, _ = isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
+			user.IsSupported, user.FormatID, user.LastChanged, user.ParamID, err = isFormatSupportedFull(filepath.Join(dir.Name(), name), d)
+			if errors.Is(err, fs.ErrNotExist) {
+				// the user has been removed or renamed since we listed the directory
+				continue
+			}
 			list[username] = user
 		}
 

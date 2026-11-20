@@ -142,6 +142,12 @@ func NewUserHash(store *Dir, user string) (u *UserHash) {
 	return
 }
 
+// isValidName returns whether the user name is valid. User names come from clients and become
+// part of paths, so a name like '../x' would read and write files outside of the store.
+func (u *UserHash) isValidName() bool {
+	return userNameRe.MatchString(u.user)
+}
+
 func (u *UserHash) getFilename(isAdmin bool) string {
 	filename := filepath.Join(u.store.BaseDir, u.user)
 	if isAdmin {
@@ -222,6 +228,9 @@ func (u *UserHash) writeHashStr(password string, isAdmin bool, mayCreate bool) e
 
 // Add creates the hash file. It is an error if the user already exists.
 func (u *UserHash) Add(password string, isAdmin bool) error {
+	if !u.isValidName() {
+		return fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
+	}
 	exists, _, err := u.Exists()
 	if err != nil {
 		return err
@@ -274,6 +283,9 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 
 // Remove deletes hash file.
 func (u *UserHash) Remove() {
+	if !u.isValidName() {
+		return
+	}
 	filename := filepath.Join(u.store.BaseDir, u.user)
 	os.Remove(filename + adminExt) //nolint:errcheck
 	os.Remove(filename + userExt)  //nolint:errcheck
@@ -282,6 +294,10 @@ func (u *UserHash) Remove() {
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if
 // the user's hash file format is not supported
 func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
+	// Update(), SetAdmin() and Authenticate() rely on this for invalid names.
+	if !u.isValidName() {
+		return false, false, nil
+	}
 	filename := filepath.Join(u.store.BaseDir, u.user)
 
 	if ok, err := fileExists(filename + adminExt); err != nil {

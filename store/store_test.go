@@ -336,28 +336,20 @@ func TestCheckDir(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 
-	if file, err := os.Create(filepath.Join(testBaseDir, "admin.user")); err != nil {
-		t.Fatal("unexpected error:", err)
-	} else {
-		file.Close() //nolint:errcheck
-	}
-	if err := store.Check(); err == nil {
-		t.Fatal("check should fail if admin and user hash for the same user exist")
-	}
-	if err := os.Remove(filepath.Join(testBaseDir, "admin.user")); err != nil {
-		t.Fatal("unexpected error:", err)
-	}
-
-	if file, err := os.Create(filepath.Join(testBaseDir, "foo.admin")); err != nil {
-		t.Fatal("unexpected error:", err)
-	} else {
-		file.Close() //nolint:errcheck
-	}
-	if err := store.Check(); err == nil {
-		t.Fatal("check should fail if admin and user hash for the same user exist")
-	}
-	if err := os.Remove(filepath.Join(testBaseDir, "foo.admin")); err != nil {
-		t.Fatal("unexpected error:", err)
+	// While a store gets migrated, v1 files of users stored in format v2 exist. They are
+	// ignored, even if they are broken.
+	for _, name := range []string{"admin.user", "foo.admin"} {
+		if file, err := os.Create(filepath.Join(testBaseDir, name)); err != nil {
+			t.Fatal("unexpected error:", err)
+		} else {
+			file.Close() //nolint:errcheck
+		}
+		if err := store.Check(); err != nil {
+			t.Fatalf("check should ignore the v1 file '%s' of a user stored in format v2: %v", name, err)
+		}
+		if err := os.Remove(filepath.Join(testBaseDir, name)); err != nil {
+			t.Fatal("unexpected error:", err)
+		}
 	}
 
 	// TODO: add more tests

@@ -280,3 +280,167 @@ func TestReadersDuringFormatChange(t *testing.T) {
 		t.Fatalf("correct password rejected %d of %d times (%d format changes meanwhile)", failed, n, moves)
 	}
 }
+
+func TestV2Writers(t *testing.T) {
+	d := newTestDir(t)
+	if err := d.Init("root", "rootpw"); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{hashFile, adminFile} {
+		if _, err := os.Stat(filepath.Join(d.BaseDir, "root", name)); err != nil {
+			t.Fatalf("Init() didn't create '%s': %v", name, err)
+		}
+	}
+	mustAdd(t, d, "alice", "pw1", false)
+	aliceDir := filepath.Join(d.BaseDir, "alice")
+	totp := filepath.Join(aliceDir, "totp")
+	if err := os.WriteFile(totp, []byte("{\"secret\":1}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	checkTotp := func(op string) {
+		t.Helper()
+		if data, err := os.ReadFile(totp); err != nil || string(data) != "{\"secret\":1}" {
+			t.Fatalf("%s changed the extension file: %q, %v", op, data, err)
+		}
+	}
+
+	if err := d.UpdateUser("alice", "pw2"); err != nil {
+		t.Fatal(err)
+	}
+	checkTotp("update")
+	mustAuthenticate(t, d, "alice", "pw2")
+
+	if err := d.SetAdmin("alice", true); err != nil {
+		t.Fatal(err)
+	}
+	checkTotp("set-admin")
+	if _, isAdmin, _ := d.Exists("alice"); !isAdmin {
+		t.Fatal("alice is no admin after set-admin")
+	}
+	if err := d.SetAdmin("alice", false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(aliceDir, adminFile)); !os.IsNotExist(err) {
+		t.Fatalf("admin file still exists: %v", err)
+	}
+
+	_, before, _, _, err := readHashStr(filepath.Join(aliceDir, hashFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Default = 2
+	if upgraded, err := d.UpgradeUser("alice", "pw2"); err != nil || !upgraded {
+		t.Fatalf("upgrade: %v, %v", upgraded, err)
+	}
+	checkTotp("upgrade")
+	if _, after, paramID, _, _ := readHashStr(filepath.Join(aliceDir, hashFile)); paramID != 2 || !after.Equal(before) {
+		t.Fatalf("upgrade wrote parameter-set %d and last-change %v, expected 2 and %v", paramID, after, before)
+	}
+	mustAuthenticate(t, d, "alice", "pw2")
+
+	if err := d.Check(); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.RemoveUser("alice"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(aliceDir); !os.IsNotExist(err) {
+		t.Fatalf("user directory still exists: %v", err)
+	}
+	if entries, err := os.ReadDir(filepath.Join(d.BaseDir, tmpDir)); err != nil || len(entries) != 1 || entries[0].Name() != lockFile {
+		t.Fatalf("writers left things behind in .tmp: %v, %v", entries, err)
+	}
+}
+
+// Until a store has been migrated, writers keep using format v1, also for new users.
+func TestV1StoreStaysV1(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "bob", "pw", true)
+	if _, err := os.Stat(filepath.Join(d.BaseDir, "bob.admin")); err != nil {
+		t.Fatalf("new user in a v1 store is not a v1 file: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(d.BaseDir, "bob")); !os.IsNotExist(err) {
+		t.Fatalf("new user in a v1 store got a directory: %v", err)
+	}
+}
+
+// User names may contain dots: 'alice.user' must never touch the v1 file of user 'alice'.
+func TestV2RemoveSparesV1FileOfOtherUser(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw", false)
+	if err := d.RemoveUser("alice.user"); err != nil {
+		t.Fatal(err)
+	}
+	mustAuthenticate(t, d, "alice", "pw")
+}
+
+// A directory without hash file is not a user, but adding one must not replace it.
+func TestV2AddRefusesExistingDir(t *testing.T) {
+	d := newTestDir(t)
+	putV2User(t, d, "root", "rootpw", true, nil)
+	for _, junk := range []bool{false, true} {
+		if err := os.Mkdir(filepath.Join(d.BaseDir, "bob"), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if junk {
+			if err := os.WriteFile(filepath.Join(d.BaseDir, "bob", "totp"), []byte("x"), 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := d.AddUser("bob", "pw", false); err == nil {
+			t.Fatalf("adding a user over an existing directory succeeded (junk=%v)", junk)
+		}
+		if err := os.RemoveAll(filepath.Join(d.BaseDir, "bob")); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestV2ReadersDuringWrites(t *testing.T) {
+	d := newTestDir(t)
+	if err := d.Init("root", "rootpw"); err != nil {
+		t.Fatal(err)
+	}
+	mustAdd(t, d, "alice", "pw", false)
+
+	stop := toggleAdmin(t, d, "alice")
+	for i := 0; i < 1000; i++ {
+		if ok, _, _, _, err := d.Authenticate("alice", "pw"); !ok || err != nil {
+			t.Fatalf("authenticate failed during set-admin: %v", err)
+		}
+		if i%20 == 0 {
+			if err := d.UpdateUser("alice", "pw"); err != nil {
+				t.Fatal(err)
+			}
+			if err := d.Check(); err != nil {
+				t.Fatalf("Check(): %v", err)
+			}
+		}
+	}
+	stop()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := 0; i < 200; i++ {
+			if err := d.RemoveUser("alice"); err != nil {
+				t.Error(err)
+				return
+			}
+			if err := d.AddUser("alice", "pw", i%2 == 0); err != nil {
+				t.Error(err)
+				return
+			}
+		}
+	}()
+	for running := true; running; {
+		select {
+		case <-done:
+			running = false
+		default:
+		}
+		if _, _, _, _, err := d.Authenticate("alice", "pw"); err != nil && !strings.Contains(err.Error(), "does not exist") {
+			t.Fatalf("authenticating a user being removed failed with: %v", err)
+		}
+	}
+}

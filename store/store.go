@@ -257,6 +257,11 @@ func (d *Dir) Check() error {
 			wl.Printf("ignoring file for invalid username: '%s'", user)
 		}
 
+		// while a store gets migrated, users stored in format v2 take precedence
+		if _, _, err := NewUserHash(d, user).readUserDir(); err == nil {
+			continue
+		}
+
 		other := user + userExt
 		if !isAdmin {
 			other = user + adminExt

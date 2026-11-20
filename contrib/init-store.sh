@@ -36,6 +36,7 @@ EOF
 echo -n "name of admin user: "
 read admin_user
 $WHAWTY_AUTH_BIN --store "$WHAWTY_AUTH_CONF" init "$admin_user"
-/bin/chown $WHAWTY_AUTH_USER:$WHAWTY_AUTH_GROUP "$WHAWTY_AUTH_STORE/$admin_user.admin"
+# init runs as root: this covers the user directory of the admin as well as .tmp and the lock file
+/bin/chown -R $WHAWTY_AUTH_USER:$WHAWTY_AUTH_GROUP "$WHAWTY_AUTH_STORE"
 
 exit 0

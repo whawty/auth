@@ -43,7 +43,7 @@ import (
 
 const testAuxData = "totp: eyJ0ZXN0IjoidmFsdWUifQ\nwebauthn: eyJmb28iOiJiYXIifQ\n"
 
-// newHardeningTestDir returns an initialized store in a temporary directory using
+// newHardeningTestDir returns a store in format v1 in a temporary directory using
 // cheap argon2id parameter-sets 1 (default) and 2.
 func newHardeningTestDir(t *testing.T) *Dir {
 	t.Helper()
@@ -56,9 +56,8 @@ func newHardeningTestDir(t *testing.T) *Dir {
 		d.Params[id] = h
 	}
 	d.Default = 1
-	if err := d.Init("root", "secret"); err != nil {
-		t.Fatal(err)
-	}
+	// These tests cover the v1 code paths, which are used until a store has been migrated.
+	putV1User(t, d, "root", "secret", true)
 	return d
 }
 

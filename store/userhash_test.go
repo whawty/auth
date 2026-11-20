@@ -45,8 +45,11 @@ func TestAddRemoveUser(t *testing.T) {
 	if err := u.Add(password, false); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".user")); err != nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username, hashFile)); err != nil {
 		t.Fatal("cannot read test user file after add:", err)
+	}
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username, adminFile)); !os.IsNotExist(err) {
+		t.Fatal("normal user has an admin file:", err)
 	}
 
 	if err := u.Add(password, false); err == nil {
@@ -56,7 +59,7 @@ func TestAddRemoveUser(t *testing.T) {
 	if err := u.Remove(); err != nil {
 		t.Fatalf("removing user failed: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".user")); err == nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username)); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
 		t.Fatal("unexpected error:", err)
@@ -72,8 +75,8 @@ func TestAddRemoveAdmin(t *testing.T) {
 	if err := u.Add(password, true); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".admin")); err != nil {
-		t.Fatal("cannot read test user file after add:", err)
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username, adminFile)); err != nil {
+		t.Fatal("cannot read test user admin file after add:", err)
 	}
 
 	if err := u.Add(password, true); err == nil {
@@ -83,7 +86,7 @@ func TestAddRemoveAdmin(t *testing.T) {
 	if err := u.Remove(); err != nil {
 		t.Fatalf("removing user failed: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username+".admin")); err == nil {
+	if _, err := os.Stat(filepath.Join(testBaseDirUserHash, username)); err == nil {
 		t.Fatal("test user does still exist after remove")
 	} else if !os.IsNotExist(err) {
 		t.Fatal("unexpected error:", err)
@@ -259,7 +262,7 @@ func TestIsFormatSupported(t *testing.T) {
 	}
 	defer u.Remove() //nolint:errcheck
 
-	if err := isFormatSupported(filepath.Join(testBaseDirUserHash, username+".user"), testStoreUserHash); err != nil {
+	if err := isFormatSupported(filepath.Join(testBaseDirUserHash, username, hashFile), testStoreUserHash); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 

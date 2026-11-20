@@ -289,13 +289,18 @@ func (u *UserHash) Add(password string, isAdmin bool) error {
 	}
 	defer unlock()
 
-	exists, _, err := u.existsLocked()
-	if err != nil {
+	if format, _, err := u.locateLocked(); err != nil {
 		return err
-	} else if exists {
+	} else if format != formatNone {
 		return fmt.Errorf("whawty.auth.store: user '%s' already exists", u.user)
 	}
-	return u.writeHashLine(u.getFilename(isAdmin), hashLine, true)
+	// Until the store has been migrated, new users are added in format v1 as well.
+	if hasV1Users, err := u.store.hasV1Users(); err != nil {
+		return err
+	} else if hasV1Users {
+		return u.writeHashLine(u.getFilename(isAdmin), hashLine, true)
+	}
+	return u.addUserDir(hashLine, isAdmin)
 }
 
 // Update changes the password for user.
@@ -314,18 +319,21 @@ func (u *UserHash) Update(password string) error {
 	}
 	defer unlock()
 
-	exists, isAdmin, err := u.existsLocked()
+	format, isAdmin, err := u.locateLocked()
 	if err != nil {
 		return err
-	} else if !exists {
+	} else if format == formatNone {
 		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 
-	if err := isFormatSupported(u.getFilename(isAdmin), u.store); err != nil {
+	path := u.hashPath(format, isAdmin)
+	if err := isFormatSupported(path, u.store); err != nil {
 		return fmt.Errorf("whawty.auth.store: won't overwrite unsupported hash format: %v", err)
 	}
-
-	return u.writeHashLine(u.getFilename(isAdmin), hashLine, false)
+	if format == formatV2 {
+		return u.store.replaceFile(path, hashLine)
+	}
+	return u.writeHashLine(path, hashLine, false)
 }
 
 // Upgrade re-hashes password using the default parameter-set. This only happens if the
@@ -370,22 +378,25 @@ func (u *UserHash) Upgrade(password string) (upgraded bool, err error) {
 	}
 	defer unlock()
 
-	exists, isAdmin, err := u.existsLocked()
+	format, isAdmin, err := u.locateLocked()
 	if err != nil {
 		return false, err
-	} else if !exists {
+	} else if format == formatNone {
 		return false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 	// Only write the new hash if nobody changed the hash since we checked the password.
-	if currentLine, err := readHashLine(u.getFilename(isAdmin)); err != nil {
+	path := u.hashPath(format, isAdmin)
+	if currentLine, err := readHashLine(path); err != nil {
 		return false, err
 	} else if currentLine != oldLine {
 		return false, nil
 	}
-	if err := u.writeHashLine(u.getFilename(isAdmin), newLine, false); err != nil {
-		return false, err
+	if format == formatV2 {
+		err = u.store.replaceFile(path, newLine)
+	} else {
+		err = u.writeHashLine(path, newLine, false)
 	}
-	return true, nil
+	return err == nil, err
 }
 
 // SetAdmin changes the admin status of user.
@@ -399,24 +410,27 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 	}
 	defer unlock()
 
-	exists, isAdmin, err := u.existsLocked()
+	format, isAdmin, err := u.locateLocked()
 	if err != nil {
 		return err
 	}
-	if !exists {
+	if format == formatNone {
 		return fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
 	}
 	if isAdmin == adminState {
 		return nil
 	}
 
+	if format == formatV2 {
+		return u.setAdminFile(adminState)
+	}
 	if err := os.Rename(u.getFilename(isAdmin), u.getFilename(adminState)); err != nil {
 		return err
 	}
 	return syncDir(u.store.BaseDir)
 }
 
-// Remove deletes hash file. It is not an error if the user does not exist.
+// Remove deletes the user in both store formats. It is not an error if the user does not exist.
 func (u *UserHash) Remove() error {
 	if !u.isValidName() {
 		return fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
@@ -427,6 +441,9 @@ func (u *UserHash) Remove() error {
 	}
 	defer unlock()
 
+	if err := u.removeUserDir(); err != nil {
+		return err
+	}
 	for _, isAdmin := range []bool{true, false} {
 		if err := os.Remove(u.getFilename(isAdmin)); err != nil && !os.IsNotExist(err) {
 			return err

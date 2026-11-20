@@ -32,8 +32,10 @@ package store
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -68,7 +70,12 @@ func readHashLine(filename string) (string, error) {
 		return "", err
 	}
 	defer file.Close() //nolint:errcheck
+	return readHashLineFrom(file)
+}
 
+// readHashLineFrom returns the first line of an open user hash file including the
+// trailing newline.
+func readHashLineFrom(file *os.File) (string, error) {
 	line, err := bufio.NewReader(file).ReadString('\n')
 	if err != nil && err != io.EOF {
 		return "", err
@@ -320,15 +327,13 @@ func (u *UserHash) Update(password string) error {
 // of the last password change is kept. Upgrade returns whether the hash was actually
 // upgraded.
 func (u *UserHash) Upgrade(password string) (upgraded bool, err error) {
-	exists, isAdmin, err := u.Exists()
-	if err != nil {
-		return false, err
-	} else if !exists {
-		return false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	if !u.isValidName() {
+		return false, fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
 	}
-
-	oldLine, err := readHashLine(u.getFilename(isAdmin))
-	if err != nil {
+	oldLine, _, err := u.readHashLineOf()
+	if errors.Is(err, errUserNotFound) {
+		return false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
+	} else if err != nil {
 		return false, err
 	}
 	formatID, lastChange, paramID, hashStr, err := parseHashLine(oldLine)
@@ -358,7 +363,8 @@ func (u *UserHash) Upgrade(password string) (upgraded bool, err error) {
 	}
 	defer unlock()
 
-	if exists, isAdmin, err = u.existsLocked(); err != nil {
+	exists, isAdmin, err := u.existsLocked()
+	if err != nil {
 		return false, err
 	} else if !exists {
 		return false, fmt.Errorf("whawty.auth.store: user '%s' does not exist", u.user)
@@ -422,32 +428,75 @@ func (u *UserHash) Remove() error {
 	return syncDir(u.store.BaseDir)
 }
 
+// maxHashFileLookups limits how often openHashFile() looks for the hash file of a user.
+const maxHashFileLookups = 6
+
+var errUserNotFound = errors.New("whawty.auth.store: user not found")
+
+// openHashFile opens the hash file of user without taking the store lock. Hash files are
+// never modified in place, so the opened file is a consistent snapshot of the user, and the
+// name it has been opened by tells whether the user is an admin.
+//
+// SetAdmin() renames the file, which may happen between looking for the .admin and the
+// .user file. Each failed lookup is therefore retried using the other name. For an existing
+// user two failed lookups in a row mean that the file has been renamed in between, so a user
+// is only reported as not existing if the file was renamed every time we were looking.
+// SetAdmin() holds the store lock and syncs the directory, which makes that practically
+// impossible. It returns errUserNotFound if no file has been found.
+func (u *UserHash) openHashFile() (file *os.File, isAdmin bool, err error) {
+	for i := 0; i < maxHashFileLookups; i++ {
+		isAdmin = i%2 == 0
+		file, err = os.Open(u.getFilename(isAdmin))
+		if err == nil {
+			return file, isAdmin, nil
+		}
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, false, err
+		}
+	}
+	return nil, false, errUserNotFound
+}
+
+// readHashLineOf reads the first line of the hash file of user without taking the store lock.
+// It returns errUserNotFound if user does not exist.
+func (u *UserHash) readHashLineOf() (line string, isAdmin bool, err error) {
+	file, isAdmin, err := u.openHashFile()
+	if err != nil {
+		return "", false, err
+	}
+	defer file.Close() //nolint:errcheck
+	line, err = readHashLineFrom(file)
+	return line, isAdmin, err
+}
+
 // Exists checks if user exists. It also returns whether user is an admin. This returns true even if
 // the user's hash file format is not supported
 func (u *UserHash) Exists() (exists bool, isAdmin bool, err error) {
-	// Update(), SetAdmin() and Authenticate() rely on this for invalid names.
 	if !u.isValidName() {
 		return false, false, nil
 	}
-	filename := filepath.Join(u.store.BaseDir, u.user)
-
-	if ok, err := fileExists(filename + adminExt); err != nil {
+	file, isAdmin, err := u.openHashFile()
+	if errors.Is(err, errUserNotFound) {
+		return false, false, nil
+	} else if err != nil {
 		return false, false, err
-	} else if ok {
-		return true, true, nil
 	}
-	isAdmin = false
-	exists, err = fileExists(filename + userExt)
-	return
+	return true, isAdmin, file.Close()
 }
 
 // Authenticate checks the user password. It also returns whether user is an admin, the password is upgradable
 // and when the password was last changed.
 func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgradeable bool, lastchange time.Time, err error) {
-	var exists bool
-	if exists, isAdmin, err = u.Exists(); err != nil {
+	var line string
+	if !u.isValidName() {
+		// an invalid name is treated exactly like an unknown user
+		err = errUserNotFound
+	} else {
+		line, isAdmin, err = u.readHashLineOf()
+	}
+	if err != nil && !errors.Is(err, errUserNotFound) {
 		return
-	} else if !exists {
+	} else if err != nil {
 		// Spend the same amount of time as for an existing user, so response times don't
 		// reveal which users exist.
 		if hasher := u.store.Params[u.store.Default]; hasher != nil {
@@ -458,7 +507,7 @@ func (u *UserHash) Authenticate(password string) (isAuthenticated, isAdmin, upgr
 
 	var formatID, hashStr string
 	var paramID uint
-	if formatID, lastchange, paramID, hashStr, err = readHashStr(u.getFilename(isAdmin)); err != nil {
+	if formatID, lastchange, paramID, hashStr, err = parseHashLine(line); err != nil {
 		return
 	}
 	upgradeable = (u.store.Default != paramID)

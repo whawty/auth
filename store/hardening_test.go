@@ -450,3 +450,117 @@ func TestConcurrentAuxWriter(t *testing.T) {
 		t.Fatalf("aux lines written: %d, surviving: %d", n, lines)
 	}
 }
+
+// toggleAdmin keeps changing the admin status of user until the returned function is called.
+func toggleAdmin(t *testing.T, d *Dir, user string) (stop func() int) {
+	t.Helper()
+	done := make(chan struct{})
+	toggles := make(chan int)
+	go func() {
+		for i := 0; ; i++ {
+			select {
+			case <-done:
+				toggles <- i
+				return
+			default:
+			}
+			if err := d.SetAdmin(user, i%2 == 0); err != nil {
+				t.Error(err)
+			}
+		}
+	}()
+	return func() int {
+		close(done)
+		return <-toggles
+	}
+}
+
+// Readers don't take the store lock, so they must find users while SetAdmin() renames their files.
+func TestReadersDuringSetAdmin(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw", false)
+
+	stop := toggleAdmin(t, d, "alice")
+	const n = 2000
+	failed := 0
+	for i := 0; i < n; i++ {
+		if ok, _, _, _, err := d.Authenticate("alice", "pw"); !ok || err != nil {
+			failed++
+			if failed == 1 {
+				t.Errorf("authenticate failed: %v", err)
+			}
+		}
+		if exists, _, err := d.Exists("alice"); !exists || err != nil {
+			t.Errorf("exists returned %v, %v", exists, err)
+		}
+		if i%20 == 0 {
+			if err := d.Check(); err != nil {
+				t.Errorf("Check(): %v", err)
+			}
+			list, err := d.ListFull()
+			if err != nil {
+				t.Errorf("ListFull(): %v", err)
+			}
+			for name, u := range list {
+				if !u.IsSupported {
+					t.Errorf("ListFull() reports '%s' as unsupported", name)
+				}
+			}
+			if _, err := d.List(); err != nil {
+				t.Errorf("List(): %v", err)
+			}
+		}
+	}
+	toggles := stop()
+	if failed > 0 {
+		t.Fatalf("correct password rejected %d of %d times (%d admin changes meanwhile)", failed, n, toggles)
+	}
+}
+
+// A user removed while being authenticated must simply not exist.
+func TestAuthenticateDuringRemove(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw", false)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := 0; i < 300; i++ {
+			if err := d.RemoveUser("alice"); err != nil {
+				t.Error(err)
+				return
+			}
+			if err := d.AddUser("alice", "pw", i%2 == 0); err != nil {
+				t.Error(err)
+				return
+			}
+		}
+	}()
+	for running := true; running; {
+		select {
+		case <-done:
+			running = false
+		default:
+		}
+		_, _, _, _, err := d.Authenticate("alice", "pw")
+		if err != nil && !strings.Contains(err.Error(), "does not exist") {
+			t.Fatalf("authenticating a user being removed failed with: %v", err)
+		}
+	}
+}
+
+// A user really having both files must still make Check() fail.
+func TestCheckDetectsDuplicate(t *testing.T) {
+	d := newHardeningTestDir(t)
+	mustAdd(t, d, "alice", "pw", false)
+	data, err := os.ReadFile(filepath.Join(d.BaseDir, "alice.user"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(d.BaseDir, "alice.admin"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Check(); err == nil || !strings.Contains(err.Error(), "both") {
+		t.Fatalf("Check() on a user with both files returned: %v", err)
+	}
+}

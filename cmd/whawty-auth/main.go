@@ -187,6 +187,29 @@ func cmdRemove(c *cli.Context) error {
 	return cli.NewExitError(fmt.Sprintf("user '%s' successfully removed!", username), 0)
 }
 
+func cmdMigrate(c *cli.Context) error {
+	s, err := openAndCheck(c)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 3)
+	}
+	st := s.GetInterface()
+
+	migrated, err := st.Migrate()
+	for _, user := range migrated {
+		fmt.Printf("migrated user '%s'\n", user)
+	}
+	if err != nil {
+		return cli.NewExitError(fmt.Sprintf("Error migrating whawty store: %s", err), 3)
+	}
+	if err := st.Check(); err != nil {
+		return cli.NewExitError(fmt.Sprintf("Error checking whawty store after migration: %s", err), 3)
+	}
+	if len(migrated) == 0 {
+		return cli.NewExitError("whawty store is already in format v2, nothing to do", 0)
+	}
+	return cli.NewExitError(fmt.Sprintf("whawty store successfully migrated to format v2 (%d users)", len(migrated)), 0)
+}
+
 func cmdUpdate(c *cli.Context) error {
 	s, err := openAndCheck(c)
 	if err != nil {
@@ -629,6 +652,11 @@ func main() {
 			Usage:     "remove a user from the store",
 			ArgsUsage: "<username>",
 			Action:    cmdRemove,
+		},
+		{
+			Name:   "migrate",
+			Usage:  "convert all users stored in format v1 to format v2, all agents must support format v2 first",
+			Action: cmdMigrate,
 		},
 		{
 			Name:      "update",

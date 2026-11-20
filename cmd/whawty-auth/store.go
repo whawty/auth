@@ -128,6 +128,15 @@ type listFullRequest struct {
 	response chan<- listFullResult
 }
 
+type migrateResult struct {
+	migrated []string
+	err      error
+}
+
+type migrateRequest struct {
+	response chan<- migrateResult
+}
+
 type authenticateResult struct {
 	ok          bool
 	isAdmin     bool
@@ -155,6 +164,7 @@ type store struct {
 	setAdminChan     chan setAdminRequest
 	listChan         chan listRequest
 	listFullChan     chan listFullRequest
+	migrateChan      chan migrateRequest
 	authenticateChan chan authenticateRequest
 	upgradeChan      chan upgradeRequest // nil if upgrades are disabled
 	localUpgradeChan chan upgradeRequest // same as upgradeChan for local upgrades, nil otherwise
@@ -206,6 +216,14 @@ func (s *store) add(username, password string, isAdmin bool) (result addResult) 
 	}
 	result.err = s.dir.AddUser(username, password, isAdmin)
 	if result.err == nil {
+		s.hooks.Notify <- true
+	}
+	return
+}
+
+func (s *store) migrate() (result migrateResult) {
+	result.migrated, result.err = s.dir.Migrate()
+	if len(result.migrated) > 0 {
 		s.hooks.Notify <- true
 	}
 	return
@@ -308,6 +326,8 @@ func (s *store) dispatchRequests() {
 			req.response <- s.list()
 		case req := <-s.listFullChan:
 			req.response <- s.listFull()
+		case req := <-s.migrateChan:
+			req.response <- s.migrate()
 		case req := <-s.authenticateChan:
 			req.response <- s.authenticate(req.username, req.password)
 		}
@@ -381,6 +401,7 @@ type Store struct {
 	setAdminChan     chan<- setAdminRequest
 	listChan         chan<- listRequest
 	listFullChan     chan<- listFullRequest
+	migrateChan      chan<- migrateRequest
 	authenticateChan chan<- authenticateRequest
 }
 
@@ -474,6 +495,17 @@ func (s *Store) ListFull() (lib.UserListFull, error) {
 	return res.list, res.err
 }
 
+// Migrate converts all users stored in format v1 to format v2 and returns their names.
+func (s *Store) Migrate() ([]string, error) {
+	resCh := make(chan migrateResult)
+	req := migrateRequest{}
+	req.response = resCh
+	s.migrateChan <- req
+
+	res := <-resCh
+	return res.migrated, res.err
+}
+
 func (s *Store) Authenticate(username, password string) (bool, bool, time.Time, error) {
 	resCh := make(chan authenticateResult)
 	req := authenticateRequest{}
@@ -496,6 +528,7 @@ func (s *store) GetInterface() *Store {
 	ch.setAdminChan = s.setAdminChan
 	ch.listChan = s.listChan
 	ch.listFullChan = s.listFullChan
+	ch.migrateChan = s.migrateChan
 	ch.authenticateChan = s.authenticateChan
 	return ch
 }
@@ -521,6 +554,7 @@ func NewStore(configfile, doUpgrades, policyType, policyCondition, hooksDir stri
 	s.setAdminChan = make(chan setAdminRequest, 10)
 	s.listChan = make(chan listRequest, 10)
 	s.listFullChan = make(chan listFullRequest, 10)
+	s.migrateChan = make(chan migrateRequest, 1)
 	s.authenticateChan = make(chan authenticateRequest, 10)
 
 	switch doUpgrades {

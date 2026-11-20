@@ -84,11 +84,12 @@ hashes from the master using the following command:
 
 `--delay-updates` makes rsync put all changed files in place at the end of the transfer in rapid
 succession, which keeps the time in which the slave sees a half-synchronized store short.
-`--delete-delay` makes rsync delete files only after that. Without it, a user whose admin status
-changed on the master would have no file at all on the slave during the transfer, because
-`<user>.user` gets deleted before `<user>.admin` arrives. `--exclude=/.tmp/` keeps the master's
-temporary files and lock file out of the transfer and protects the slave's `.tmp` directory from
-being deleted.
+`--delete-delay` makes rsync delete files only after that. Without it, old files get deleted before
+their replacements arrive: in store format v1 a user whose admin status changed on the master would
+have no file at all on the slave during the transfer, because `<user>.user` gets deleted before
+`<user>.admin` arrives, and while a store gets migrated to format v2 the same would happen to every
+user. `--exclude=/.tmp/` keeps the master's temporary files and lock file out of the transfer and
+protects the slave's `.tmp` directory from being deleted.
 
 On the first connection you will get asked to accept the ssh fingerprint of the master. If you run
 the command a second time no errors/warnings should be shown.

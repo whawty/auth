@@ -143,3 +143,43 @@ func TestLocalUpgradesDontDeadlock(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// The app serializes the migration with all other requests and reports the migrated users.
+func TestMigrate(t *testing.T) {
+	base := t.TempDir()
+	storeDir := filepath.Join(base, "store")
+	if err := os.Mkdir(storeDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	cfg := filepath.Join(base, "store.yml")
+	writeTestStoreConfig(t, cfg, storeDir, 1)
+	d, err := lib.NewDirFromConfig(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Init("root", "pw"); err != nil {
+		t.Fatal(err)
+	}
+	// turn root into a user stored in format v1
+	if err := os.Rename(filepath.Join(storeDir, "root", "hash"), filepath.Join(storeDir, "root.admin")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(filepath.Join(storeDir, "root")); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := NewStore(cfg, "", "", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	st := s.GetInterface()
+	if migrated, err := st.Migrate(); err != nil || len(migrated) != 1 || migrated[0] != "root" {
+		t.Fatalf("migrate: %v, %v", migrated, err)
+	}
+	if ok, isAdmin, _, err := st.Authenticate("root", "pw"); !ok || !isAdmin || err != nil {
+		t.Fatalf("authenticate after migration: %v, %v, %v", ok, isAdmin, err)
+	}
+	if migrated, err := st.Migrate(); err != nil || len(migrated) != 0 {
+		t.Fatalf("second migration: %v, %v", migrated, err)
+	}
+}

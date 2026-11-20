@@ -176,3 +176,13 @@ Agents may support both formats while stores get migrated. In this case:
 - A user stored in format v2 takes precedence over v1 files of the same user.
 - As long as the store contains users in format v1, new users are added in format v1 too.
 - Existing users are always written in their current format.
+
+A store is migrated by converting one user at a time while holding the lock: the
+directory of the user is built in `.tmp` and moved into place, then the v1 file is
+removed. Readers therefore find every user in at least one of the formats. Since
+user names may contain dots, the directory of user `alice.user` has the name of the
+v1 file of user `alice`: users are converted in order of the length of their names,
+which removes such a file before its name is needed for a directory. Replicas that
+get the store with rsync can't avoid it: rsync deletes the file right away to make
+room for the directory, so user `alice` doesn't exist on them until the transfer
+has finished.

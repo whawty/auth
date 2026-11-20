@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -57,7 +58,8 @@ func newNameTestDir(t *testing.T) (*Dir, Hasher) {
 func TestInvalidNames(t *testing.T) {
 	d, _ := newNameTestDir(t)
 	for _, name := range []string{"", ".", "..", ".tmp", "../x", "a/b", "a/../b", "/etc/passwd", "a\\b", "a\nb", "a\x00b", "-a"} {
-		if ok, _, _, _, err := d.Authenticate(name, "secret"); ok || err == nil {
+		// an invalid name behaves exactly like an unknown user
+		if ok, _, _, _, err := d.Authenticate(name, "secret"); ok || err == nil || !strings.Contains(err.Error(), "does not exist") {
 			t.Errorf("Authenticate(%q): ok=%v err=%v", name, ok, err)
 		}
 		if exists, _, err := d.Exists(name); exists || err != nil {
@@ -71,6 +73,12 @@ func TestInvalidNames(t *testing.T) {
 		}
 		if err := NewUserHash(d, name).Add("pw", true); err == nil {
 			t.Errorf("Add(%q) succeeded", name)
+		}
+		if upgraded, err := d.UpgradeUser(name, "secret"); upgraded || err == nil {
+			t.Errorf("UpgradeUser(%q): %v, %v", name, upgraded, err)
+		}
+		if err := d.RemoveUser(name); err == nil {
+			t.Errorf("RemoveUser(%q) succeeded", name)
 		}
 	}
 }
@@ -99,8 +107,8 @@ func TestNoPathTraversal(t *testing.T) {
 	if err := d.UpdateUser(name, "changed"); err == nil {
 		t.Fatalf("UpdateUser(%q) succeeded", name)
 	}
-	if err := d.RemoveUser(name); err != nil {
-		t.Fatalf("RemoveUser(%q) failed: %v", name, err)
+	if err := d.RemoveUser(name); err == nil {
+		t.Fatalf("RemoveUser(%q) succeeded", name)
 	}
 	if data, err := os.ReadFile(target); err != nil || string(data) != line {
 		t.Fatalf("file outside of the store has been changed or removed: %q, %v", data, err)

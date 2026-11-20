@@ -412,7 +412,7 @@ func (u *UserHash) SetAdmin(adminState bool) error {
 // Remove deletes hash file. It is not an error if the user does not exist.
 func (u *UserHash) Remove() error {
 	if !u.isValidName() {
-		return nil
+		return fmt.Errorf("whawty.auth.store: username '%s' is invalid", u.user)
 	}
 	unlock, err := u.store.lock()
 	if err != nil {

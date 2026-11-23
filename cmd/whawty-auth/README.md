@@ -4,7 +4,7 @@
 
 ### Package Manager
 
-The easiest way to install the *whawty.auth app* is by installing one of the packages. For example, Debian packages can be found in the [spreadspace APT Repository](https://build.spreadspace.org/).
+The easiest way to install the *whawty.auth app* is by installing one of the packages. For example, Debian packages can be found in the [spreadspace APT Repository](https://apt.spreadspace.org/).
 
 
 ### go get

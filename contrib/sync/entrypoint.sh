@@ -19,7 +19,7 @@ case "$MODE" in
     ;;
   client)
     while
-     /usr/bin/rsync -rtpW --delete --delete-delay --delay-updates --partial-dir=.tmp -e 'ssh -F /config/ssh_config' 'rsync://whawty-auth-master/store' '/store' || /bin/true
+      /usr/bin/rsync -rtpWi --delete --delete-delay --delay-updates --exclude=/.tmp/ -e 'ssh -F /config/ssh_config' 'rsync://whawty-auth-master/store' '/store' || /bin/true
     do sleep "$CLIENT_SLEEP"; done
     ;;
   *)

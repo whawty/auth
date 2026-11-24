@@ -3,7 +3,7 @@ Description=whawty-auth store resync
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/rsync -rlpt --delete --delete-delay --delay-updates --exclude=/.tmp/ -e ssh whawty-auth-master::store /var/lib/whawty/auth/store
+ExecStart=/usr/bin/rsync -rptWi --delete --delete-delay --delay-updates --exclude=/.tmp/ -e ssh whawty-auth-master::store /var/lib/whawty/auth/store
 User=whawty-auth
 Group=whawty-auth
 PrivateTmp=yes

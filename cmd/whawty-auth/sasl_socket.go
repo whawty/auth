@@ -44,7 +44,7 @@ func callback(login, password, service, realm, path string, store *Store) (ok bo
 	if err != nil {
 		// don't tell the client why, this would reveal whether the user exists
 		wdl.Printf("authentication of '%s' on '%s' failed: %v", login, path, err)
-		return false, "wrong credentials", nil
+		ok = false
 	}
 	if ok {
 		msg = "successfully authenticated"
